@@ -1,5 +1,9 @@
 # Rust で作るゲームボーイエミュレータ
 
+```shell
+cargo run <path_to_rom>
+```
+
 ## 参考リンク
 
 - [Pan Docs](https://gbdev.io/pandocs/)
