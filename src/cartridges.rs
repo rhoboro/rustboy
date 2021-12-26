@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 
@@ -38,7 +39,7 @@ struct CartridgeHeader {
     global_checksum: [u8; 2],
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Hash)]
 #[allow(dead_code)]
 enum CartridgeType {
     RomOnly = 0x00,
@@ -99,24 +100,46 @@ enum RamSize {
     KB64 = 0x05,
 }
 
-#[derive(Debug)]
 pub struct Cartridge {
+    // ROMデータサイズは 16KB * バンク数N
+    // 最初の 16KB が00バンク
+    // 以降は 16KB ごとにバンクNとなる
+    // N はヘッダーの RomSize から算出
     header: CartridgeHeader,
+
+    // ROMデータ
+    rom_data: Vec<u8>,
+
+    // RAMデータ
+    // データのセーブなどに利用
+    // RamSize から算出
+    ram_data: Vec<u8>,
+}
+
+impl Debug for Cartridge {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        // rom_data は表示しない
+        write!(f, "{:?}", self.header)
+    }
 }
 
 impl Cartridge {
     pub fn new(filename: &str) -> Self {
         let mut f = File::open(filename).expect("Rom file does not found");
         let mut buf = Vec::new();
-        // TODO: 必要な箇所だけ読み込む
-        let _ = f.read_to_end(&mut buf);
+        let rom_size = f.read_to_end(&mut buf).unwrap();
+        assert_eq!(rom_size % (16 * 1024), 0);
 
         // header checksum
         Self::validate_checksum(&buf).expect("Rom file checksum failed");
 
         let header: CartridgeHeader =
             unsafe { std::ptr::read(buf[0x100..0x14F].as_ptr() as *const _) };
-        Self { header }
+        Self {
+            header,
+            rom_data: buf,
+            ram_data: Vec::new(),
+        }
     }
 
     fn validate_checksum(buf: &Vec<u8>) -> Result<i16, String> {
@@ -130,5 +153,45 @@ impl Cartridge {
         } else {
             Err("Failed".to_string())
         }
+    }
+
+    pub fn load(&self, memory_map: &mut [u8; 0xFFFF]) {
+        match self.header.cartridge_type {
+            CartridgeType::RomOnly => {
+                // ROM バンク なし
+                // カートリッジが32KB以下ならそのままマップ
+                for i in 0x0000..0x7FFF {
+                    memory_map[i] = self.rom_data[i]
+                }
+            }
+            CartridgeType::Mbc1 => {
+                // ROM バンク 00
+                // カートリッジの最初の16KB
+                for i in 0x0000..0x3FFF {
+                    memory_map[i] = self.rom_data[i]
+                }
+                // ROM バンク 01-7F(20, 40, 60を除く125個まで)
+                let bank_num = 0x01;
+                let offset = 0x4000 * bank_num;
+                for i in 0x4000..0x7FFF {
+                    memory_map[i] = self.rom_data[i + offset];
+                }
+            }
+            _ => {
+                todo!()
+            }
+        }
+    }
+}
+
+trait MBC {
+    fn new() -> Self;
+}
+
+struct RomOnly {}
+
+impl MBC for RomOnly {
+    fn new() -> RomOnly {
+        Self {}
     }
 }
