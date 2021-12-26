@@ -110,8 +110,25 @@ impl Cartridge {
         let mut buf = Vec::new();
         // TODO: 必要な箇所だけ読み込む
         let _ = f.read_to_end(&mut buf);
+
+        // header checksum
+        Self::validate_checksum(&buf).expect("Rom file checksum failed");
+
         let header: CartridgeHeader =
             unsafe { std::ptr::read(buf[0x100..0x14F].as_ptr() as *const _) };
         Self { header }
+    }
+
+    fn validate_checksum(buf: &Vec<u8>) -> Result<i16, String> {
+        // https://gbdev.io/pandocs/The_Cartridge_Header.html#014d---header-checksum
+        let mut x: i16 = 0;
+        for m in 0x134..=0x14C {
+            x = (x - buf[m] as i16 - 1) & 0x00FF;
+        }
+        if x == buf[0x14D] as i16 {
+            Ok(x)
+        } else {
+            Err("Failed".to_string())
+        }
     }
 }
