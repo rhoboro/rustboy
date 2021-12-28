@@ -35,7 +35,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
     // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
 
-    let mb = MotherBoard::new(&config);
+    let mut mb = MotherBoard::new(&config);
     mb.run()
 }
 
@@ -53,7 +53,9 @@ impl MotherBoard {
         Self { cartridge }
     }
 
-    fn run(&self) -> Result<(), Box<dyn Error>> {
+    fn run(&mut self) -> Result<(), Box<dyn Error>> {
+        println!("{:?}", self.cartridge);
+        self.cartridge.switch_bank(2);
         println!("{:?}", self.cartridge);
         Ok(())
     }

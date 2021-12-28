@@ -78,6 +78,7 @@ enum CartridgeType {
 #[derive(Debug)]
 #[allow(dead_code)]
 enum RomSize {
+    // TODO: バンク数Nも enum から取得できるようにしたい
     KByte32 = 0x00,
     KByte64 = 0x01,
     KByte128 = 0x02,
@@ -106,14 +107,17 @@ enum RamSize {
 pub struct Cartridge {
     header: CartridgeHeader,
 
+    // Memory Bank Controller
+    mbc: Box<dyn MBC>,
+
     // ROMデータ
     // ROMデータサイズは 16KB * バンク数N
     // 最初の 16KB が00バンク
     // 以降は 16KB ごとにバンクNとなる
-    rom_banks: Vec<Vec<u8>>,
-
-    // 現在のバンク番号
-    current_bank: usize,
+    // メモリマップの0000-3FFFがバンク0に接続される
+    // メモリマップの4000-7FFFがバンク1-Nのいずれかに接続される
+    // バンクの切り替えはMBCが行う
+    // rom_banks: Vec<Vec<u8>>,
 
     // ROMデータに含まれるバンク数
     num_of_banks: usize,
@@ -127,7 +131,13 @@ pub struct Cartridge {
 impl Debug for Cartridge {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // rom_data は表示しない
-        write!(f, "{:?}, num_of_banks: {}", self.header, self.num_of_banks)
+        write!(
+            f,
+            "{:?}, num_of_banks: {}, current_bank_num: {}",
+            self.header,
+            self.num_of_banks,
+            self.mbc.get_current_bank()
+        )
     }
 }
 
@@ -147,11 +157,11 @@ impl Cartridge {
         // TODO: header.rom_size から算出
         let num_of_banks = rom_size / (BANK_SIZE);
         let rom_banks = buf.chunks(BANK_SIZE).map(|c| c.to_vec()).collect();
+        let mbc = Self::create_mbc(&header.cartridge_type, rom_banks);
         Self {
             header,
-            rom_banks,
+            mbc,
             num_of_banks,
-            current_bank: 1,
             ram_data: Vec::new(),
         }
     }
@@ -167,5 +177,73 @@ impl Cartridge {
         } else {
             Err("Failed".to_string())
         }
+    }
+
+    fn create_mbc(mbc_type: &CartridgeType, banks: Vec<Vec<u8>>) -> Box<dyn MBC> {
+        match mbc_type {
+            CartridgeType::RomOnly => Box::new(RomOnly::new(banks)),
+            CartridgeType::Mbc1 => Box::new(MBC1::new(banks)),
+            _ => Box::new(MBC1::new(banks)),
+        }
+    }
+
+    pub fn switch_bank(&mut self, num: usize) {
+        self.mbc.switch_bank(num)
+    }
+    pub fn get_current_bank(&self) -> usize {
+        self.mbc.get_current_bank()
+    }
+}
+
+trait MBC {
+    fn new(banks: Vec<Vec<u8>>) -> Self
+    where
+        Self: Sized;
+    fn switch_bank(&mut self, num: usize);
+    fn get_current_bank(&self) -> usize;
+}
+
+struct RomOnly {
+    rom_banks: Vec<Vec<u8>>,
+    current_bank: usize,
+}
+
+impl MBC for RomOnly {
+    fn new(banks: Vec<Vec<u8>>) -> Self {
+        Self {
+            rom_banks: banks,
+            current_bank: 1,
+        }
+    }
+    fn switch_bank(&mut self, num: usize) {
+        unimplemented!();
+    }
+    fn get_current_bank(&self) -> usize {
+        self.current_bank
+    }
+}
+
+struct MBC1 {
+    rom_banks: Vec<Vec<u8>>,
+    current_bank: usize,
+}
+
+impl MBC for MBC1 {
+    fn new(banks: Vec<Vec<u8>>) -> Self {
+        Self {
+            rom_banks: banks,
+            current_bank: 1,
+        }
+    }
+    fn switch_bank(&mut self, num: usize) {
+        if num >= self.rom_banks.len() {
+            // TODO: エラーを返す
+            eprintln!("Out of index");
+        } else {
+            self.current_bank = num;
+        }
+    }
+    fn get_current_bank(&self) -> usize {
+        self.current_bank
     }
 }
