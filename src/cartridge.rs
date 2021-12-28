@@ -2,6 +2,9 @@ use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 
+// バンク1つのサイズは16KB
+const BANK_SIZE: usize = 16 * 1024;
+
 #[derive(Debug)]
 struct CartridgeHeader {
     // 0100-0103
@@ -101,14 +104,19 @@ enum RamSize {
 }
 
 pub struct Cartridge {
-    // ROMデータサイズは 16KB * バンク数N
-    // 最初の 16KB が00バンク
-    // 以降は 16KB ごとにバンクNとなる
-    // N はヘッダーの RomSize から算出
     header: CartridgeHeader,
 
     // ROMデータ
-    rom_data: Vec<u8>,
+    // ROMデータサイズは 16KB * バンク数N
+    // 最初の 16KB が00バンク
+    // 以降は 16KB ごとにバンクNとなる
+    rom_banks: Vec<Vec<u8>>,
+
+    // 現在のバンク番号
+    current_bank: usize,
+
+    // ROMデータに含まれるバンク数
+    num_of_banks: usize,
 
     // RAMデータ
     // データのセーブなどに利用
@@ -119,7 +127,7 @@ pub struct Cartridge {
 impl Debug for Cartridge {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // rom_data は表示しない
-        write!(f, "{:?}", self.header)
+        write!(f, "{:?}, num_of_banks: {}", self.header, self.num_of_banks)
     }
 }
 
@@ -128,16 +136,22 @@ impl Cartridge {
         let mut f = File::open(filename).expect("Rom file does not found");
         let mut buf = Vec::new();
         let rom_size = f.read_to_end(&mut buf).unwrap();
-        assert_eq!(rom_size % (16 * 1024), 0);
+        assert_eq!(rom_size % (BANK_SIZE), 0);
 
         // header checksum
         Self::validate_checksum(&buf).expect("Rom file checksum failed");
 
         let header: CartridgeHeader =
             unsafe { std::ptr::read(buf[0x100..0x14F].as_ptr() as *const _) };
+
+        // TODO: header.rom_size から算出
+        let num_of_banks = rom_size / (BANK_SIZE);
+        let rom_banks = buf.chunks(BANK_SIZE).map(|c| c.to_vec()).collect();
         Self {
             header,
-            rom_data: buf,
+            rom_banks,
+            num_of_banks,
+            current_bank: 1,
             ram_data: Vec::new(),
         }
     }
@@ -153,45 +167,5 @@ impl Cartridge {
         } else {
             Err("Failed".to_string())
         }
-    }
-
-    pub fn load(&self, memory_map: &mut [u8; 0xFFFF]) {
-        match self.header.cartridge_type {
-            CartridgeType::RomOnly => {
-                // ROM バンク なし
-                // カートリッジが32KB以下ならそのままマップ
-                for i in 0x0000..0x7FFF {
-                    memory_map[i] = self.rom_data[i]
-                }
-            }
-            CartridgeType::Mbc1 => {
-                // ROM バンク 00
-                // カートリッジの最初の16KB
-                for i in 0x0000..0x3FFF {
-                    memory_map[i] = self.rom_data[i]
-                }
-                // ROM バンク 01-7F(20, 40, 60を除く125個まで)
-                let bank_num = 0x01;
-                let offset = 0x4000 * bank_num;
-                for i in 0x4000..0x7FFF {
-                    memory_map[i] = self.rom_data[i + offset];
-                }
-            }
-            _ => {
-                todo!()
-            }
-        }
-    }
-}
-
-trait MBC {
-    fn new() -> Self;
-}
-
-struct RomOnly {}
-
-impl MBC for RomOnly {
-    fn new() -> RomOnly {
-        Self {}
     }
 }

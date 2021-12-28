@@ -42,6 +42,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 #[derive(Debug)]
 pub struct MotherBoard {
     cartridge: Cartridge,
+    // cpu
+    // lcd
+    // joypad
 }
 
 impl MotherBoard {
