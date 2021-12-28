@@ -2,6 +2,7 @@ use crate::cartridge::Cartridge;
 
 use std::error::Error;
 
+/// 引数から構築される設定値群
 pub struct Config {
     pub romfile: String,
 }
@@ -16,6 +17,7 @@ impl Config {
     }
 }
 
+/// エントリポイント
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     // https://w.atwiki.jp/gbspec/pages/13.html
     // 0x0000 - 0x3FFF: 16KB ROM バンク0
