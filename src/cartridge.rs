@@ -1,3 +1,4 @@
+use crate::Address;
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
@@ -166,7 +167,7 @@ impl Cartridge {
         }
     }
 
-    fn validate_checksum(buf: &Vec<u8>) -> Result<i16, String> {
+    fn validate_checksum(buf: &Vec<u8>) -> Result<i16, &str> {
         // https://gbdev.io/pandocs/The_Cartridge_Header.html#014d---header-checksum
         let mut x: i16 = 0;
         for m in 0x134..=0x14C {
@@ -175,7 +176,7 @@ impl Cartridge {
         if x == buf[0x14D] as i16 {
             Ok(x)
         } else {
-            Err("Failed".to_string())
+            Err("Broken Data")
         }
     }
 
@@ -187,11 +188,23 @@ impl Cartridge {
         }
     }
 
-    pub fn switch_bank(&mut self, num: usize) {
+    pub fn switch_bank(&mut self, num: usize) -> Result<(), &str> {
         self.mbc.switch_bank(num)
     }
     pub fn current_bank(&self) -> usize {
         self.mbc.current_bank()
+    }
+    pub fn read_rom(&self, address: Address) -> Result<u8, &str> {
+        self.mbc.read(address)
+    }
+    pub fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        self.mbc.write(address, data)
+    }
+    pub fn read_ram(&self, address: Address) -> Result<u8, &str> {
+        todo!()
+    }
+    pub fn write_ram(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        todo!()
     }
 }
 
@@ -199,8 +212,34 @@ trait Mbc {
     fn new(banks: Vec<Vec<u8>>) -> Self
     where
         Self: Sized;
-    fn switch_bank(&mut self, num: usize);
+    fn switch_bank(&mut self, num: usize) -> Result<(), &str>;
     fn current_bank(&self) -> usize;
+    fn read(&self, address: Address) -> Result<u8, &str> {
+        match address {
+            0x0000..=0x7FFF => {
+                // バンク0から読み込み
+                todo!()
+            }
+            0xA000..=0xBFFF => {
+                // バンク1-Nから読み込み
+                todo!()
+            }
+            _ => Err("Rom Read Error"),
+        }
+    }
+    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        match address {
+            0x0000..=0x7FFF => {
+                // バンク0に書き込み
+                todo!()
+            }
+            0xA000..=0xBFFF => {
+                // バンク1-Nに書き込み
+                todo!()
+            }
+            _ => Err("Rom Write Error"),
+        }
+    }
 }
 
 struct RomOnly {
@@ -215,7 +254,7 @@ impl Mbc for RomOnly {
             current_bank: 1,
         }
     }
-    fn switch_bank(&mut self, _num: usize) {
+    fn switch_bank(&mut self, _num: usize) -> Result<(), &str> {
         unimplemented!();
     }
     fn current_bank(&self) -> usize {
@@ -235,12 +274,12 @@ impl Mbc for Mbc1 {
             current_bank: 1,
         }
     }
-    fn switch_bank(&mut self, num: usize) {
+    fn switch_bank(&mut self, num: usize) -> Result<(), &str> {
         if num >= self.rom_banks.len() {
-            // TODO: エラーを返す
-            eprintln!("Out of index");
+            Err("Out of index")
         } else {
             self.current_bank = num;
+            Ok(())
         }
     }
     fn current_bank(&self) -> usize {
