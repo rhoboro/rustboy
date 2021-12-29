@@ -55,7 +55,7 @@ impl MotherBoard {
             0x0000..=0x7FFF => {
                 // 0x0000 - 0x3FFF: 16KB ROM バンク0
                 // 0x4000 - 0x7FFF: 16KB ROM バンク1 から N
-                self.cartridge.read_rom(address)
+                self.cartridge.read(address)
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
@@ -105,7 +105,7 @@ impl MotherBoard {
             0x0000..=0x7FFF => {
                 // 0x0000 - 0x3FFF: 16KB ROM バンク0
                 // 0x4000 - 0x7FFF: 16KB ROM バンク1 から N
-                self.cartridge.write_rom(address, data)
+                self.cartridge.write(address, data)
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM

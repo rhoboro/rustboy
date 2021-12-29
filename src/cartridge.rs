@@ -1,10 +1,14 @@
 use crate::Address;
+use std::convert::TryInto;
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 
 // バンク1つのサイズは16KB
-const BANK_SIZE: usize = 16 * 1024;
+const BANK_SIZE_ROM: usize = 16 * 1024;
+const BANK_SIZE_RAM: usize = 8 * 1024;
+type RomBank = [u8; BANK_SIZE_ROM];
+type RamBank = [u8; BANK_SIZE_RAM];
 
 #[derive(Debug)]
 struct CartridgeHeader {
@@ -94,6 +98,25 @@ enum RomSize {
     MBytes1_5 = 0x54,
 }
 
+impl RomSize {
+    fn num_of_banks(&self) -> usize {
+        match self {
+            RomSize::KBytes32 => 0,
+            RomSize::KBytes64 => 4,
+            RomSize::KBytes128 => 8,
+            RomSize::KBytes256 => 16,
+            RomSize::KBytes512 => 32,
+            RomSize::MBytes1 => 64,
+            RomSize::MBytes2 => 128,
+            RomSize::MBytes4 => 256,
+            RomSize::MBytes8 => 512,
+            RomSize::MBytes1_1 => 72,
+            RomSize::MBytes1_2 => 80,
+            RomSize::MBytes1_5 => 96,
+        }
+    }
+}
+
 #[derive(Debug)]
 #[allow(dead_code)]
 enum RamSize {
@@ -105,28 +128,23 @@ enum RamSize {
     KB64 = 0x05,
 }
 
+impl RamSize {
+    fn num_of_banks(&self) -> usize {
+        match self {
+            RamSize::NoRam | RamSize::UnUsed => 0,
+            RamSize::KB8 => 1,
+            RamSize::KB32 => 4,
+            RamSize::KB64 => 8,
+            RamSize::KB128 => 16,
+        }
+    }
+}
+
 pub struct Cartridge {
     header: CartridgeHeader,
 
     // Memory Bank Controller
     mbc: Box<dyn Mbc>,
-
-    // ROMデータ
-    // ROMデータサイズは 16KB * バンク数N
-    // 最初の 16KB が00バンク
-    // 以降は 16KB ごとにバンクNとなる
-    // メモリマップの0000-3FFFがバンク0に接続される
-    // メモリマップの4000-7FFFがバンク1-Nのいずれかに接続される
-    // バンクの切り替えはMBCが行う
-    // rom_banks: Vec<Vec<u8>>,
-
-    // ROMデータに含まれるバンク数
-    num_of_banks: usize,
-
-    // RAMデータ
-    // データのセーブなどに利用
-    // RamSize から算出
-    ram_data: Vec<u8>,
 }
 
 impl Debug for Cartridge {
@@ -136,7 +154,7 @@ impl Debug for Cartridge {
             f,
             "{:?}, num_of_banks: {}, current_bank_num: {}",
             self.header,
-            self.num_of_banks,
+            self.header.rom_size.num_of_banks(),
             self.mbc.current_bank()
         )
     }
@@ -147,7 +165,7 @@ impl Cartridge {
         let mut f = File::open(filename).expect("Rom file does not found");
         let mut buf = Vec::new();
         let rom_size = f.read_to_end(&mut buf).unwrap();
-        assert_eq!(rom_size % (BANK_SIZE), 0);
+        assert_eq!(rom_size % (BANK_SIZE_ROM), 0);
 
         // header checksum
         Self::validate_checksum(&buf).expect("Rom file checksum failed");
@@ -155,16 +173,12 @@ impl Cartridge {
         let header: CartridgeHeader =
             unsafe { std::ptr::read(buf[0x100..0x14F].as_ptr() as *const _) };
 
-        // TODO: header.rom_size から算出
-        let num_of_banks = rom_size / (BANK_SIZE);
-        let rom_banks = buf.chunks(BANK_SIZE).map(|c| c.to_vec()).collect();
-        let mbc = Self::create_mbc(&header.cartridge_type, rom_banks);
-        Self {
-            header,
-            mbc,
-            num_of_banks,
-            ram_data: Vec::new(),
-        }
+        let rom_banks = buf
+            .chunks(BANK_SIZE_ROM)
+            .map(|c| c.try_into().unwrap())
+            .collect();
+        let mbc = Self::create_mbc(&header.cartridge_type, &header.ram_size, rom_banks);
+        Self { header, mbc }
     }
 
     fn validate_checksum(buf: &Vec<u8>) -> Result<i16, &str> {
@@ -180,11 +194,15 @@ impl Cartridge {
         }
     }
 
-    fn create_mbc(mbc_type: &CartridgeType, banks: Vec<Vec<u8>>) -> Box<dyn Mbc> {
+    fn create_mbc(
+        mbc_type: &CartridgeType,
+        ram_size: &RamSize,
+        banks: Vec<RomBank>,
+    ) -> Box<dyn Mbc> {
         match mbc_type {
-            CartridgeType::RomOnly => Box::new(RomOnly::new(banks)),
-            CartridgeType::Mbc1 => Box::new(Mbc1::new(banks)),
-            _ => Box::new(Mbc1::new(banks)),
+            CartridgeType::RomOnly => Box::new(RomOnly::new(banks, ram_size)),
+            CartridgeType::Mbc1 => Box::new(Mbc1::new(banks, ram_size)),
+            _ => todo!(),
         }
     }
 
@@ -194,40 +212,37 @@ impl Cartridge {
     pub fn current_bank(&self) -> usize {
         self.mbc.current_bank()
     }
-    pub fn read_rom(&self, address: Address) -> Result<u8, &str> {
-        self.mbc.read_rom(address)
+    pub fn read(&self, address: Address) -> Result<u8, &str> {
+        self.mbc.read(address)
     }
-    pub fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
-        self.mbc.write_rom(address, data)
-    }
-    pub fn read_ram(&self, address: Address) -> Result<u8, &str> {
-        todo!()
-    }
-    pub fn write_ram(&mut self, address: Address, data: u8) -> Result<(), &str> {
-        todo!()
+    pub fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        self.mbc.write(address, data)
     }
 }
 
 trait Mbc {
-    fn new(banks: Vec<Vec<u8>>) -> Self
+    fn new(banks: Vec<RomBank>, ram_size: &RamSize) -> Self
     where
         Self: Sized;
     fn switch_bank(&mut self, num: usize) -> Result<(), &str>;
     fn current_bank(&self) -> usize;
-    fn read_rom(&self, address: Address) -> Result<u8, &str>;
-    // ROM だけど MBC 制御レジスタへの書き込みにも利用される
-    fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str>;
+    // ROM/RAMの読み込み
+    fn read(&self, address: Address) -> Result<u8, &str>;
+    // ROM/RAMの書き込み（ROM内の一部がMBC制御レジスタへの書き込みにも利用される）
+    fn write(&mut self, address: Address, data: u8) -> Result<(), &str>;
 }
 
 struct RomOnly {
-    rom_banks: Vec<Vec<u8>>,
+    rom_banks: Vec<RomBank>,
+    ram_banks: Vec<RamBank>,
     current_bank: usize,
 }
 
 impl Mbc for RomOnly {
-    fn new(banks: Vec<Vec<u8>>) -> Self {
+    fn new(banks: Vec<RomBank>, ram_size: &RamSize) -> Self {
         Self {
             rom_banks: banks,
+            ram_banks: vec![[0; BANK_SIZE_RAM]; ram_size.num_of_banks()],
             current_bank: 1,
         }
     }
@@ -237,7 +252,7 @@ impl Mbc for RomOnly {
     fn current_bank(&self) -> usize {
         self.current_bank
     }
-    fn read_rom(&self, address: Address) -> Result<u8, &str> {
+    fn read(&self, address: Address) -> Result<u8, &str> {
         match address {
             0x0000..=0x3FFF => {
                 // バンク0から読み込み
@@ -247,7 +262,7 @@ impl Mbc for RomOnly {
             _ => Err("Rom Read Error"),
         }
     }
-    fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
+    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
         match address {
             0x0000..=0x3FFF => {
                 self.rom_banks[0][address as usize] = data;
@@ -263,15 +278,33 @@ impl Mbc for RomOnly {
 }
 
 struct Mbc1 {
-    rom_banks: Vec<Vec<u8>>,
+    rom_banks: Vec<RomBank>,
+    ram_banks: Vec<RamBank>,
     current_bank: usize,
+    bank_mode: BankMode,
+    ram_mode: RamMode,
+}
+
+enum BankMode {
+    // ROMバンクモードではRAMバンクは 0x00 のみを使用することができる
+    Rom,
+    // RAMバンクモードではROMバンクは 0x00-0x1F のみ使用することができる
+    Ram,
+}
+
+enum RamMode {
+    Disable,
+    Enable,
 }
 
 impl Mbc for Mbc1 {
-    fn new(banks: Vec<Vec<u8>>) -> Self {
+    fn new(banks: Vec<RomBank>, ram_size: &RamSize) -> Self {
         Self {
             rom_banks: banks,
+            ram_banks: vec![[0; BANK_SIZE_RAM]; ram_size.num_of_banks()],
             current_bank: 1,
+            bank_mode: BankMode::Rom,
+            ram_mode: RamMode::Disable,
         }
     }
     fn switch_bank(&mut self, num: usize) -> Result<(), &str> {
@@ -285,7 +318,7 @@ impl Mbc for Mbc1 {
     fn current_bank(&self) -> usize {
         self.current_bank
     }
-    fn read_rom(&self, address: Address) -> Result<u8, &str> {
+    fn read(&self, address: Address) -> Result<u8, &str> {
         match address {
             0x0000..=0x3FFF => {
                 // バンク0から読み込み
@@ -298,19 +331,51 @@ impl Mbc for Mbc1 {
             _ => Err("Rom Read Error"),
         }
     }
-    fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
+    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        // TODO: bit演算。自信ないので後で確認
         match address {
-            0x0000..=0x7FFF => {
-                // バンク0に書き込み
-                self.rom_banks[0][address as usize] = data;
+            0x0000..=0x1FFF => {
+                // 外部RAMの有効/無効切替
+                match data & 0x0F {
+                    0x0A => {
+                        self.ram_mode = RamMode::Enable;
+                    }
+                    _ => {
+                        self.ram_mode = RamMode::Disable;
+                    }
+                }
                 Ok(())
             }
-            0xA000..=0xBFFF => {
-                // バンク1-Nに書き込み
-                self.rom_banks[self.current_bank][(address - 0x4000) as usize] = data;
-                Ok(())
+            0x2000..=0x3FFF => {
+                // ROM バンク番号 (書き込み専用)
+                // ROM バンクの下位5bit
+                todo!()
             }
-            _ => Err("Rom Write Error"),
+            0x4000..=0x5FFF => {
+                // RAM バンク番号または、 ROM バンク番号の上位ビット (書き込み専用)
+                match self.bank_mode {
+                    BankMode::Rom => {
+                        // Romバンクの上位2bitを指定する
+                        todo!()
+                    }
+                    BankMode::Ram => {
+                        // Ramバンクを切り替える
+                        todo!()
+                    }
+                }
+            }
+            0x6000..=0x7FFF => match data & 0x1 {
+                0 => {
+                    self.bank_mode = BankMode::Rom;
+                    Ok(())
+                }
+                1 => {
+                    self.bank_mode = BankMode::Ram;
+                    Ok(())
+                }
+                _ => Err("Must be 0 or 1"),
+            },
+            _ => Err(""),
         }
     }
 }
