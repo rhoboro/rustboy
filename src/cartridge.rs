@@ -79,18 +79,18 @@ enum CartridgeType {
 #[allow(dead_code)]
 enum RomSize {
     // TODO: バンク数Nも enum から取得できるようにしたい
-    KByte32 = 0x00,
-    KByte64 = 0x01,
-    KByte128 = 0x02,
-    KByte256 = 0x03,
-    KByte512 = 0x04,
-    MByte1 = 0x05,
-    MByte2 = 0x06,
-    MByte4 = 0x07,
-    MByte8 = 0x08,
-    MByte1_1 = 0x52,
-    MByte1_2 = 0x53,
-    MByte1_5 = 0x54,
+    KBytes32 = 0x00,
+    KBytes64 = 0x01,
+    KBytes128 = 0x02,
+    KBytes256 = 0x03,
+    KBytes512 = 0x04,
+    MBytes1 = 0x05,
+    MBytes2 = 0x06,
+    MBytes4 = 0x07,
+    MBytes8 = 0x08,
+    MBytes1_1 = 0x52,
+    MBytes1_2 = 0x53,
+    MBytes1_5 = 0x54,
 }
 
 #[derive(Debug)]
@@ -108,7 +108,7 @@ pub struct Cartridge {
     header: CartridgeHeader,
 
     // Memory Bank Controller
-    mbc: Box<dyn MBC>,
+    mbc: Box<dyn Mbc>,
 
     // ROMデータ
     // ROMデータサイズは 16KB * バンク数N
@@ -136,7 +136,7 @@ impl Debug for Cartridge {
             "{:?}, num_of_banks: {}, current_bank_num: {}",
             self.header,
             self.num_of_banks,
-            self.mbc.get_current_bank()
+            self.mbc.current_bank()
         )
     }
 }
@@ -179,28 +179,28 @@ impl Cartridge {
         }
     }
 
-    fn create_mbc(mbc_type: &CartridgeType, banks: Vec<Vec<u8>>) -> Box<dyn MBC> {
+    fn create_mbc(mbc_type: &CartridgeType, banks: Vec<Vec<u8>>) -> Box<dyn Mbc> {
         match mbc_type {
             CartridgeType::RomOnly => Box::new(RomOnly::new(banks)),
-            CartridgeType::Mbc1 => Box::new(MBC1::new(banks)),
-            _ => Box::new(MBC1::new(banks)),
+            CartridgeType::Mbc1 => Box::new(Mbc1::new(banks)),
+            _ => Box::new(Mbc1::new(banks)),
         }
     }
 
     pub fn switch_bank(&mut self, num: usize) {
         self.mbc.switch_bank(num)
     }
-    pub fn get_current_bank(&self) -> usize {
-        self.mbc.get_current_bank()
+    pub fn current_bank(&self) -> usize {
+        self.mbc.current_bank()
     }
 }
 
-trait MBC {
+trait Mbc {
     fn new(banks: Vec<Vec<u8>>) -> Self
     where
         Self: Sized;
     fn switch_bank(&mut self, num: usize);
-    fn get_current_bank(&self) -> usize;
+    fn current_bank(&self) -> usize;
 }
 
 struct RomOnly {
@@ -208,27 +208,27 @@ struct RomOnly {
     current_bank: usize,
 }
 
-impl MBC for RomOnly {
+impl Mbc for RomOnly {
     fn new(banks: Vec<Vec<u8>>) -> Self {
         Self {
             rom_banks: banks,
             current_bank: 1,
         }
     }
-    fn switch_bank(&mut self, num: usize) {
+    fn switch_bank(&mut self, _num: usize) {
         unimplemented!();
     }
-    fn get_current_bank(&self) -> usize {
+    fn current_bank(&self) -> usize {
         self.current_bank
     }
 }
 
-struct MBC1 {
+struct Mbc1 {
     rom_banks: Vec<Vec<u8>>,
     current_bank: usize,
 }
 
-impl MBC for MBC1 {
+impl Mbc for Mbc1 {
     fn new(banks: Vec<Vec<u8>>) -> Self {
         Self {
             rom_banks: banks,
@@ -243,7 +243,7 @@ impl MBC for MBC1 {
             self.current_bank = num;
         }
     }
-    fn get_current_bank(&self) -> usize {
+    fn current_bank(&self) -> usize {
         self.current_bank
     }
 }
