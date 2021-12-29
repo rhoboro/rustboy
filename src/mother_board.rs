@@ -40,8 +40,11 @@ impl MotherBoard {
 
     fn run(&mut self) -> Result<(), &str> {
         println!("{:?}", self.cartridge);
+        println!("{:?}", self.read(0x4364));
         self.cartridge.switch_bank(2);
-        println!("{:?}", self.cartridge);
+        println!("{:?}", self.read(0x4364));
+        self.cartridge.switch_bank(1);
+        println!("{:?}", self.read(0x4364));
         Ok(())
     }
 
@@ -49,14 +52,17 @@ impl MotherBoard {
     fn read(&self, address: Address) -> Result<u8, &str> {
         // https://w.atwiki.jp/gbspec/pages/13.html
         match address {
-            0x0000..=0x7FFF | 0xA000..=0xBFFF => {
+            0x0000..=0x7FFF => {
                 // 0x0000 - 0x3FFF: 16KB ROM バンク0
                 // 0x4000 - 0x7FFF: 16KB ROM バンク1 から N
-                // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
                 self.cartridge.read_rom(address)
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
+                todo!()
+            }
+            0xA000..=0xBFFF => {
+                // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
                 todo!()
             }
             0xC000..=0xDFFF => {
@@ -96,14 +102,17 @@ impl MotherBoard {
     // メモリに1バイト書き込む
     fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
         match address {
-            0x0000..=0x7FFF | 0xA000..=0xBFFF => {
+            0x0000..=0x7FFF => {
                 // 0x0000 - 0x3FFF: 16KB ROM バンク0
                 // 0x4000 - 0x7FFF: 16KB ROM バンク1 から N
-                // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
                 self.cartridge.write_rom(address, data)
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
+                todo!()
+            }
+            0xA000..=0xBFFF => {
+                // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
                 todo!()
             }
             0xC000..=0xDFFF => {

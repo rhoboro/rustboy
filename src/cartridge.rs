@@ -195,10 +195,10 @@ impl Cartridge {
         self.mbc.current_bank()
     }
     pub fn read_rom(&self, address: Address) -> Result<u8, &str> {
-        self.mbc.read(address)
+        self.mbc.read_rom(address)
     }
     pub fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
-        self.mbc.write(address, data)
+        self.mbc.write_rom(address, data)
     }
     pub fn read_ram(&self, address: Address) -> Result<u8, &str> {
         todo!()
@@ -214,32 +214,9 @@ trait Mbc {
         Self: Sized;
     fn switch_bank(&mut self, num: usize) -> Result<(), &str>;
     fn current_bank(&self) -> usize;
-    fn read(&self, address: Address) -> Result<u8, &str> {
-        match address {
-            0x0000..=0x7FFF => {
-                // バンク0から読み込み
-                todo!()
-            }
-            0xA000..=0xBFFF => {
-                // バンク1-Nから読み込み
-                todo!()
-            }
-            _ => Err("Rom Read Error"),
-        }
-    }
-    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
-        match address {
-            0x0000..=0x7FFF => {
-                // バンク0に書き込み
-                todo!()
-            }
-            0xA000..=0xBFFF => {
-                // バンク1-Nに書き込み
-                todo!()
-            }
-            _ => Err("Rom Write Error"),
-        }
-    }
+    fn read_rom(&self, address: Address) -> Result<u8, &str>;
+    // ROM だけど MBC 制御レジスタへの書き込みにも利用される
+    fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str>;
 }
 
 struct RomOnly {
@@ -259,6 +236,29 @@ impl Mbc for RomOnly {
     }
     fn current_bank(&self) -> usize {
         self.current_bank
+    }
+    fn read_rom(&self, address: Address) -> Result<u8, &str> {
+        match address {
+            0x0000..=0x3FFF => {
+                // バンク0から読み込み
+                Ok(self.rom_banks[0][address as usize])
+            }
+            0x4000..=0x7FFF => Ok(self.rom_banks[1][(address - 0x4000) as usize]),
+            _ => Err("Rom Read Error"),
+        }
+    }
+    fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        match address {
+            0x0000..=0x3FFF => {
+                self.rom_banks[0][address as usize] = data;
+                Ok(())
+            }
+            0x4000..=0x7FFF => {
+                self.rom_banks[1][(address - 0x4000) as usize] = data;
+                Ok(())
+            }
+            _ => Err("Rom Write Error"),
+        }
     }
 }
 
@@ -284,5 +284,33 @@ impl Mbc for Mbc1 {
     }
     fn current_bank(&self) -> usize {
         self.current_bank
+    }
+    fn read_rom(&self, address: Address) -> Result<u8, &str> {
+        match address {
+            0x0000..=0x3FFF => {
+                // バンク0から読み込み
+                Ok(self.rom_banks[0][address as usize])
+            }
+            0x4000..=0x7FFF => {
+                // バンク1-Nから読み込み
+                Ok(self.rom_banks[self.current_bank][(address - 0x4000) as usize])
+            }
+            _ => Err("Rom Read Error"),
+        }
+    }
+    fn write_rom(&mut self, address: Address, data: u8) -> Result<(), &str> {
+        match address {
+            0x0000..=0x7FFF => {
+                // バンク0に書き込み
+                self.rom_banks[0][address as usize] = data;
+                Ok(())
+            }
+            0xA000..=0xBFFF => {
+                // バンク1-Nに書き込み
+                self.rom_banks[self.current_bank][(address - 0x4000) as usize] = data;
+                Ok(())
+            }
+            _ => Err("Rom Write Error"),
+        }
     }
 }
