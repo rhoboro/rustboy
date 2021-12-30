@@ -213,10 +213,10 @@ impl Cartridge {
     pub fn current_bank(&self) -> usize {
         self.mbc.current_bank()
     }
-    pub fn read(&self, address: Address) -> Result<u8, &str> {
+    pub fn read(&self, address: Address) -> u8 {
         self.mbc.read(address)
     }
-    pub fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+    pub fn write(&mut self, address: Address, data: u8) {
         self.mbc.write(address, data)
     }
 }
@@ -225,9 +225,9 @@ trait Mbc {
     fn switch_bank(&mut self, num: usize) -> Result<(), &str>;
     fn current_bank(&self) -> usize;
     // ROM/RAMの読み込み
-    fn read(&self, address: Address) -> Result<u8, &str>;
+    fn read(&self, address: Address) -> u8;
     // ROM/RAMの書き込み（ROM内の一部がMBC制御レジスタへの書き込みにも利用される）
-    fn write(&mut self, address: Address, data: u8) -> Result<(), &str>;
+    fn write(&mut self, address: Address, data: u8);
 }
 
 struct RomOnly {
@@ -253,27 +253,25 @@ impl Mbc for RomOnly {
     fn current_bank(&self) -> usize {
         self.current_bank
     }
-    fn read(&self, address: Address) -> Result<u8, &str> {
+    fn read(&self, address: Address) -> u8 {
         match address {
             0x0000..=0x3FFF => {
                 // バンク0から読み込み
-                Ok(self.rom_banks[0][address as usize])
+                self.rom_banks[0][address as usize]
             }
-            0x4000..=0x7FFF => Ok(self.rom_banks[1][(address - 0x4000) as usize]),
-            _ => Err("Rom Read Error"),
+            0x4000..=0x7FFF => self.rom_banks[1][(address - 0x4000) as usize],
+            _ => unimplemented!(),
         }
     }
-    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+    fn write(&mut self, address: Address, data: u8) {
         match address {
             0x0000..=0x3FFF => {
                 self.rom_banks[0][address as usize] = data;
-                Ok(())
             }
             0x4000..=0x7FFF => {
                 self.rom_banks[1][(address - 0x4000) as usize] = data;
-                Ok(())
             }
-            _ => Err("Rom Write Error"),
+            _ => unimplemented!(),
         }
     }
 }
@@ -322,20 +320,20 @@ impl Mbc for Mbc1 {
     fn current_bank(&self) -> usize {
         self.current_bank
     }
-    fn read(&self, address: Address) -> Result<u8, &str> {
+    fn read(&self, address: Address) -> u8 {
         match address {
             0x0000..=0x3FFF => {
                 // バンク0から読み込み
-                Ok(self.rom_banks[0][address as usize])
+                self.rom_banks[0][address as usize]
             }
             0x4000..=0x7FFF => {
                 // バンク1-Nから読み込み
-                Ok(self.rom_banks[self.current_bank][(address - 0x4000) as usize])
+                self.rom_banks[self.current_bank][(address - 0x4000) as usize]
             }
-            _ => Err("Rom Read Error"),
+            _ => unreachable!(),
         }
     }
-    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+    fn write(&mut self, address: Address, data: u8) {
         // TODO: bit演算。自信ないので後で確認
         match address {
             0x0000..=0x1FFF => {
@@ -348,36 +346,31 @@ impl Mbc for Mbc1 {
                         self.ram_mode = RamMode::Disable;
                     }
                 }
-                Ok(())
             }
             0x2000..=0x3FFF => {
                 // ROM バンク番号 (書き込み専用)
                 // ROM バンクの下位5bit
                 let mask = data & 0x1F;
                 self.current_bank = (self.current_bank & 0b1100000) | (mask as usize | 0x7F);
-                Ok(())
             }
             0x4000..=0x5FFF => {
                 // RAM バンク番号または、 ROM バンク番号の上位ビット (書き込み専用)
                 match self.bank_mode {
-                    BankMode::Rom => {
-                        match data & 0x3 {
-                            0x00 => {
-                                self.current_bank = self.current_bank & 0b0011111;
-                            }
-                            0x01 => {
-                                self.current_bank = (self.current_bank & 0b1011111) | 0b0100000;
-                            }
-                            0x10 => {
-                                self.current_bank = (self.current_bank & 0b0111111) | 0b1000000;
-                            }
-                            0x11 => {
-                                self.current_bank = self.current_bank | 0b1100000;
-                            }
-                            _ => unimplemented!(),
+                    BankMode::Rom => match data & 0x3 {
+                        0x00 => {
+                            self.current_bank = self.current_bank & 0b0011111;
                         }
-                        Ok(())
-                    }
+                        0x01 => {
+                            self.current_bank = (self.current_bank & 0b1011111) | 0b0100000;
+                        }
+                        0x10 => {
+                            self.current_bank = (self.current_bank & 0b0111111) | 0b1000000;
+                        }
+                        0x11 => {
+                            self.current_bank = self.current_bank | 0b1100000;
+                        }
+                        _ => unimplemented!(),
+                    },
                     BankMode::Ram => {
                         // Ramバンクを切り替える
                         todo!()
@@ -387,15 +380,13 @@ impl Mbc for Mbc1 {
             0x6000..=0x7FFF => match data & 0x1 {
                 0 => {
                     self.bank_mode = BankMode::Rom;
-                    Ok(())
                 }
                 1 => {
                     self.bank_mode = BankMode::Ram;
-                    Ok(())
                 }
-                _ => Err("Must be 0 or 1"),
+                _ => unreachable!(),
             },
-            _ => Err(""),
+            _ => unimplemented!(),
         }
     }
 }

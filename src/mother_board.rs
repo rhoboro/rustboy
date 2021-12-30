@@ -43,15 +43,15 @@ impl MotherBoard {
     fn run(&mut self) -> Result<(), &str> {
         println!("{:?}", self.cartridge);
         println!("{:?}", self.read(0x4364));
-        self.cartridge.switch_bank(2);
+        self.cartridge.switch_bank(2).unwrap();
         println!("{:?}", self.read(0x4364));
-        self.cartridge.switch_bank(1);
+        self.cartridge.switch_bank(1).unwrap();
         println!("{:?}", self.read(0x4364));
         Ok(())
     }
 
     // メモリから1バイト読み込む
-    fn read(&self, address: Address) -> Result<u8, &str> {
+    fn read(&self, address: Address) -> u8 {
         // https://w.atwiki.jp/gbspec/pages/13.html
         match address {
             0x0000..=0x7FFF => {
@@ -97,17 +97,16 @@ impl MotherBoard {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
                 todo!()
             }
-            _ => Err("Memory Read Error"),
         }
     }
 
     // メモリに1バイト書き込む
-    fn write(&mut self, address: Address, data: u8) -> Result<(), &str> {
+    fn write(&mut self, address: Address, data: u8) {
         match address {
             0x0000..=0x7FFF => {
                 // 0x0000 - 0x3FFF: 16KB ROM バンク0
                 // 0x4000 - 0x7FFF: 16KB ROM バンク1 から N
-                self.cartridge.write(address, data)
+                self.cartridge.write(address, data);
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
@@ -147,7 +146,6 @@ impl MotherBoard {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
                 todo!()
             }
-            _ => Err("Memory Write Error"),
         }
     }
 }
