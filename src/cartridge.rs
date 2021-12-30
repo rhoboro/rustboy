@@ -7,6 +7,7 @@ use std::io::Read;
 // バンク1つのサイズは16KB
 const BANK_SIZE_ROM: usize = 16 * 1024;
 const BANK_SIZE_RAM: usize = 8 * 1024;
+
 type RomBank = [u8; BANK_SIZE_ROM];
 type RamBank = [u8; BANK_SIZE_RAM];
 
@@ -221,9 +222,6 @@ impl Cartridge {
 }
 
 trait Mbc {
-    fn new(banks: Vec<RomBank>, ram_size: &RamSize) -> Self
-    where
-        Self: Sized;
     fn switch_bank(&mut self, num: usize) -> Result<(), &str>;
     fn current_bank(&self) -> usize;
     // ROM/RAMの読み込み
@@ -238,7 +236,7 @@ struct RomOnly {
     current_bank: usize,
 }
 
-impl Mbc for RomOnly {
+impl RomOnly {
     fn new(banks: Vec<RomBank>, ram_size: &RamSize) -> Self {
         Self {
             rom_banks: banks,
@@ -246,6 +244,9 @@ impl Mbc for RomOnly {
             current_bank: 1,
         }
     }
+}
+
+impl Mbc for RomOnly {
     fn switch_bank(&mut self, _num: usize) -> Result<(), &str> {
         unimplemented!();
     }
@@ -297,7 +298,7 @@ enum RamMode {
     Enable,
 }
 
-impl Mbc for Mbc1 {
+impl Mbc1 {
     fn new(banks: Vec<RomBank>, ram_size: &RamSize) -> Self {
         Self {
             rom_banks: banks,
@@ -307,6 +308,9 @@ impl Mbc for Mbc1 {
             ram_mode: RamMode::Disable,
         }
     }
+}
+
+impl Mbc for Mbc1 {
     fn switch_bank(&mut self, num: usize) -> Result<(), &str> {
         if num >= self.rom_banks.len() {
             Err("Out of index")
@@ -349,14 +353,30 @@ impl Mbc for Mbc1 {
             0x2000..=0x3FFF => {
                 // ROM バンク番号 (書き込み専用)
                 // ROM バンクの下位5bit
-                todo!()
+                let mask = data & 0x1F;
+                self.current_bank = (self.current_bank & 0b1100000) | (mask as usize | 0x7F);
+                Ok(())
             }
             0x4000..=0x5FFF => {
                 // RAM バンク番号または、 ROM バンク番号の上位ビット (書き込み専用)
                 match self.bank_mode {
                     BankMode::Rom => {
-                        // Romバンクの上位2bitを指定する
-                        todo!()
+                        match data & 0x3 {
+                            0x00 => {
+                                self.current_bank = self.current_bank & 0b0011111;
+                            }
+                            0x01 => {
+                                self.current_bank = (self.current_bank & 0b1011111) | 0b0100000;
+                            }
+                            0x10 => {
+                                self.current_bank = (self.current_bank & 0b0111111) | 0b1000000;
+                            }
+                            0x11 => {
+                                self.current_bank = self.current_bank | 0b1100000;
+                            }
+                            _ => unimplemented!(),
+                        }
+                        Ok(())
                     }
                     BankMode::Ram => {
                         // Ramバンクを切り替える
