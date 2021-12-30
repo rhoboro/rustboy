@@ -1,4 +1,5 @@
 use crate::cartridge::Cartridge;
+use crate::cpu::CPU;
 
 use crate::Address;
 
@@ -27,7 +28,7 @@ pub fn run(config: Config) -> Result<(), &'static str> {
 #[derive(Debug)]
 pub struct MotherBoard {
     cartridge: Cartridge,
-    // cpu
+    cpu: CPU,
     // lcd
     // joypad
 }
@@ -35,7 +36,8 @@ pub struct MotherBoard {
 impl MotherBoard {
     pub fn new(config: &Config) -> Self {
         let cartridge = Cartridge::new(&config.romfile);
-        Self { cartridge }
+        let cpu = CPU::new();
+        Self { cartridge, cpu }
     }
 
     fn run(&mut self) -> Result<(), &str> {
