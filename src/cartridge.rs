@@ -351,7 +351,9 @@ impl Mbc for Mbc1 {
                 // ROM バンク番号 (書き込み専用)
                 // ROM バンクの下位5bit
                 let mask = data & 0x1F;
-                self.current_bank = (self.current_bank & 0b1100000) | (mask as usize | 0x7F);
+                println!("current bank: {}", self.current_bank);
+                self.current_bank = (self.current_bank & 0b1100000) | (mask as usize & 0x7F);
+                println!("new current bank: {}", self.current_bank);
             }
             0x4000..=0x5FFF => {
                 // RAM バンク番号または、 ROM バンク番号の上位ビット (書き込み専用)

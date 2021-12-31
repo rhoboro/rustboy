@@ -1,5 +1,5 @@
 use crate::cartridge::Cartridge;
-use crate::cpu::CPU;
+use crate::cpu::{Bus, CPU};
 
 use crate::Address;
 
@@ -27,7 +27,6 @@ pub fn run(config: Config) -> Result<(), &'static str> {
 
 #[derive(Debug)]
 pub struct MotherBoard {
-    cartridge: Cartridge,
     cpu: CPU,
     // lcd
     // joypad
@@ -36,20 +35,25 @@ pub struct MotherBoard {
 impl MotherBoard {
     pub fn new(config: &Config) -> Self {
         let cartridge = Cartridge::new(&config.romfile);
-        let cpu = CPU::new();
-        Self { cartridge, cpu }
+        let bus = Box::new(DataBus { cartridge });
+        let cpu = CPU::new(bus);
+        Self { cpu }
     }
 
     fn run(&mut self) -> Result<(), &str> {
-        println!("{:?}", self.cartridge);
-        println!("{:?}", self.read(0x4364));
-        self.cartridge.switch_bank(2).unwrap();
-        println!("{:?}", self.read(0x4364));
-        self.cartridge.switch_bank(1).unwrap();
-        println!("{:?}", self.read(0x4364));
+        loop {
+            self.cpu.tick();
+            break;
+        }
         Ok(())
     }
+}
 
+struct DataBus {
+    cartridge: Cartridge,
+}
+
+impl Bus for DataBus {
     // メモリから1バイト読み込む
     fn read(&self, address: Address) -> u8 {
         // https://w.atwiki.jp/gbspec/pages/13.html

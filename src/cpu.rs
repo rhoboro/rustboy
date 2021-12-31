@@ -1,17 +1,22 @@
+use core::fmt::Debug;
 use std::default::Default;
+use std::fmt::Formatter;
 
 // Bus は Trait にしてDIしたい
 // アドレスバスは16bit
 // データバスは8bit
-#[derive(Debug)]
-struct Bus {}
-
-impl Bus {
+pub trait Bus {
     fn read(&self, address: u16) -> u8 {
         todo!()
     }
-    fn write(&self, address: u16, data: u8) {
+    fn write(&mut self, address: u16, data: u8) {
         todo!()
+    }
+}
+
+impl Debug for dyn Bus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "")
     }
 }
 
@@ -100,23 +105,45 @@ pub struct CPU {
     ie: InterruptEnables,
     // メモリマップの 0xFF0F に対応
     ifg: InterruptFlags,
-    bus: Bus,
+    bus: Box<dyn Bus>,
 }
 
 impl CPU {
-    pub fn new() -> Self {
+    pub fn new(bus: Box<dyn Bus>) -> Self {
         Self {
-            bus: Bus {},
+            bus,
             registers: Registers::default(),
             ime: false,
             ie: InterruptEnables::default(),
             ifg: InterruptFlags::default(),
         }
     }
+    pub fn tick(&mut self) {
+        // バンクの切り替え
+        println!("{}", self.bus.read(0x4500));
+        println!("{}", self.bus.read(0x4501));
+        println!("{}", self.bus.read(0x4502));
+        self.bus.write(0x2000, 0x01);
+        println!("{}", self.bus.read(0x4500));
+        println!("{}", self.bus.read(0x4501));
+        println!("{}", self.bus.read(0x4502));
+        self.bus.write(0x2000, 0x02);
+        println!("{}", self.bus.read(0x4500));
+        println!("{}", self.bus.read(0x4501));
+        println!("{}", self.bus.read(0x4502));
+        self.bus.write(0x2000, 0x03);
+        println!("{}", self.bus.read(0x4500));
+        println!("{}", self.bus.read(0x4501));
+        println!("{}", self.bus.read(0x4502));
+        self.bus.write(0x2000, 0x01);
+        println!("{}", self.bus.read(0x4500));
+        println!("{}", self.bus.read(0x4501));
+        println!("{}", self.bus.read(0x4502));
+    }
     fn read(&self, address: u16) -> u8 {
         self.bus.read(address)
     }
-    fn write(&self, address: u16, data: u8) {
+    fn write(&mut self, address: u16, data: u8) {
         self.bus.write(address, data)
     }
 }
