@@ -1,5 +1,6 @@
 use crate::Address;
 use core::fmt::Debug;
+use std::convert::Into;
 use std::default::Default;
 use std::fmt::Formatter;
 
@@ -23,6 +24,7 @@ impl Debug for dyn Bus {
 
 #[derive(Default, Debug)]
 struct Flags {
+    // 外部クレートを使う場合は bitflags が良さそう
     // 7bit: Zero flag
     // 結果が0のときにセットする
     // jump で利用される
@@ -40,13 +42,50 @@ struct Flags {
     // 8bit加算で0xFF、16bit加算で0xFFFFを超えたとき、減算で0未満のときにセットされる
     // jump といくつかの命令(ADC, SBC, RL, RLAなど)で利用される
     c: bool,
-    unused0: bool,
-    unused1: bool,
-    unused2: bool,
-    unused3: bool,
+    // 下記は使わない
+    unused3: Option<bool>,
+    unused2: Option<bool>,
+    unused1: Option<bool>,
+    unused0: Option<bool>,
 }
 
-#[derive(Default, Debug)]
+impl From<u8> for Flags {
+    fn from(v: u8) -> Self {
+        Self {
+            z: ((v & 0b10000000) >> 7) == 0b1,
+            n: ((v & 0b01000000) >> 6) == 0b1,
+            h: ((v & 0b00100000) >> 5) == 0b1,
+            c: ((v & 0b00010000) >> 4) == 0b1,
+            unused3: Option::None,
+            unused2: Option::None,
+            unused1: Option::None,
+            unused0: Option::None,
+        }
+    }
+}
+
+impl Into<u8> for Flags {
+    fn into(self) -> u8 {
+        let mut v;
+        if self.z {
+            v = 0b10000000;
+        } else {
+            v = 0b00000000;
+        }
+        if self.n {
+            v |= 0b010000000;
+        }
+        if self.h {
+            v |= 0b001000000;
+        }
+        if self.c {
+            v |= 0b000100000;
+        }
+        v
+    }
+}
+
+#[derive(Debug)]
 struct Registers {
     // https://w.atwiki.jp/gbspec/pages/34.html
     // 8ビットレジスタは AF、BC、DE、HL の組み合わせで
@@ -59,12 +98,43 @@ struct Registers {
     b: u8,
     c: u8,
     d: u8,
+    e: u8,
     h: u8,
     l: u8,
     // スタックポインタ
     sp: u16,
     // プログラムカウンタ
     pc: u16,
+}
+
+impl Registers {
+    fn new() -> Self {
+        Self {
+            a: 0x01,
+            f: Flags::from(0xB0),
+            b: 0x00,
+            c: 0x13,
+            d: 0x00,
+            e: 0xD8,
+            h: 0x01,
+            l: 0x4D,
+            sp: 0xFFFF,
+            pc: 0x0100,
+        }
+    }
+    fn reset(&mut self) {
+        // https://w.atwiki.jp/gbspec/pages/26.html
+        self.a = 0x01;
+        self.f = Flags::from(0xB0);
+        self.b = 0x00;
+        self.c = 0x13;
+        self.d = 0x00;
+        self.e = 0xD8;
+        self.h = 0x01;
+        self.l = 0x4D;
+        self.sp = 0xFFFF;
+        self.pc = 0x0100;
+    }
 }
 
 #[derive(Default, Debug)]
@@ -113,7 +183,7 @@ impl CPU {
     pub fn new(bus: Box<dyn Bus>) -> Self {
         Self {
             bus,
-            registers: Registers::default(),
+            registers: Registers::new(),
             ime: false,
             ie: InterruptEnables::default(),
             ifg: InterruptFlags::default(),
@@ -146,5 +216,10 @@ impl CPU {
     }
     fn write(&mut self, address: Address, data: u8) {
         self.bus.write(address, data)
+    }
+
+    #[allow(dead_code)]
+    fn reset(&mut self) {
+        self.registers.reset()
     }
 }
