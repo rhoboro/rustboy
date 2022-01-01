@@ -84,22 +84,17 @@ impl Cartridge {
         }
     }
 
-    pub fn switch_bank(&mut self, num: usize) -> Result<(), &str> {
-        self.mbc.switch_bank(num)
-    }
-    pub fn current_bank(&self) -> usize {
-        self.mbc.current_bank()
-    }
     pub fn read(&self, address: Address) -> u8 {
         self.mbc.read(address)
     }
+
     pub fn write(&mut self, address: Address, data: u8) {
         self.mbc.write(address, data)
     }
 }
 
 pub trait Mbc {
-    fn switch_bank(&mut self, num: usize) -> Result<(), &str>;
+    // デバッグ用
     fn current_bank(&self) -> usize;
     // ROM/RAMの読み込み
     fn read(&self, address: Address) -> u8;

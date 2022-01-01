@@ -34,14 +34,6 @@ impl Mbc1 {
 }
 
 impl Mbc for Mbc1 {
-    fn switch_bank(&mut self, num: usize) -> Result<(), &str> {
-        if num >= self.rom_banks.len() {
-            Err("Out of index")
-        } else {
-            self.current_bank = num;
-            Ok(())
-        }
-    }
     fn current_bank(&self) -> usize {
         self.current_bank
     }

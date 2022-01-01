@@ -18,9 +18,6 @@ impl RomOnly {
 }
 
 impl Mbc for RomOnly {
-    fn switch_bank(&mut self, _num: usize) -> Result<(), &str> {
-        unimplemented!();
-    }
     fn current_bank(&self) -> usize {
         self.current_bank
     }
