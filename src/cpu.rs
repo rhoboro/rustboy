@@ -190,26 +190,63 @@ impl CPU {
         }
     }
     pub fn tick(&mut self) {
-        // バンクの切り替え
-        println!("{}", self.read(0x4500));
-        println!("{}", self.read(0x4501));
-        println!("{}", self.read(0x4502));
-        self.write(0x2000, 0x01);
-        println!("{}", self.read(0x4500));
-        println!("{}", self.read(0x4501));
-        println!("{}", self.read(0x4502));
-        self.write(0x2000, 0x02);
-        println!("{}", self.read(0x4500));
-        println!("{}", self.read(0x4501));
-        println!("{}", self.read(0x4502));
-        self.write(0x2000, 0x03);
-        println!("{}", self.read(0x4500));
-        println!("{}", self.read(0x4501));
-        println!("{}", self.read(0x4502));
-        self.write(0x2000, 0x01);
-        println!("{}", self.read(0x4500));
-        println!("{}", self.read(0x4501));
-        println!("{}", self.read(0x4502));
+        self.reset();
+
+        println!("{}", self.read(0xFF00)); // P1
+        println!("{}", self.read(0xFF01)); // SB
+        println!("{}", self.read(0xFF02)); // SC
+        println!("{}", self.read(0xFF04)); // DIV
+        println!("{}", self.read(0xFF05)); // TIMA
+        println!("{}", self.read(0xFF06)); // TMA
+        println!("{}", self.read(0xFF07)); // TAC
+        println!("{}", self.read(0xFF0F)); // IF
+        println!("{}", self.read(0xFF10)); // NR10
+        println!("{}", self.read(0xFF11)); // NR11
+        println!("{}", self.read(0xFF12)); // NR12
+        println!("{}", self.read(0xFF13)); // NR13
+        println!("{}", self.read(0xFF14)); // NR14
+        println!("{}", self.read(0xFF16)); // NR21
+        println!("{}", self.read(0xFF17)); // NR22
+        println!("{}", self.read(0xFF18)); // NR23
+        println!("{}", self.read(0xFF19)); // NR24
+        println!("{}", self.read(0xFF1A)); // NR30
+        println!("{}", self.read(0xFF1B)); // NR31
+        println!("{}", self.read(0xFF1C)); // NR32
+        println!("{}", self.read(0xFF1D)); // NR33
+        println!("{}", self.read(0xFF1E)); // NR34
+        println!("{}", self.read(0xFF20)); // NR41
+        println!("{}", self.read(0xFF21)); // NR42
+        println!("{}", self.read(0xFF22)); // NR43
+        println!("{}", self.read(0xFF23)); // NR44
+        println!("{}", self.read(0xFF24)); // NR50
+        println!("{}", self.read(0xFF25)); // NR51
+        println!("{}", self.read(0xFF26)); // NR52
+        println!("{}", self.read(0xFF40)); // LCDC
+        println!("{}", self.read(0xFF41)); // STAT
+        println!("{}", self.read(0xFF42)); // SCY
+        println!("{}", self.read(0xFF43)); // SCX
+        println!("{}", self.read(0xFF44)); // LY
+        println!("{}", self.read(0xFF45)); // LYC
+        println!("{}", self.read(0xFF46)); // DMA
+        println!("{}", self.read(0xFF47)); // BGP
+        println!("{}", self.read(0xFF48)); // OBP0
+        println!("{}", self.read(0xFF49)); // OBP1
+        println!("{}", self.read(0xFF4A)); // WY
+        println!("{}", self.read(0xFF4B)); // WX
+        println!("{}", self.read(0xFF4D)); // KEY1
+        println!("{}", self.read(0xFF4F)); // VBK
+        println!("{}", self.read(0xFF51)); // HDMA1
+        println!("{}", self.read(0xFF52)); // HDMA2
+        println!("{}", self.read(0xFF53)); // HDMA3
+        println!("{}", self.read(0xFF54)); // HDMA4
+        println!("{}", self.read(0xFF55)); // HDMA5
+        println!("{}", self.read(0xFF56)); // RP
+        println!("{}", self.read(0xFF68)); // BCPS
+        println!("{}", self.read(0xFF69)); // BCPD
+        println!("{}", self.read(0xFF6A)); // OCPS
+        println!("{}", self.read(0xFF6B)); // OCPD
+        println!("{}", self.read(0xFF70)); // SVBK
+        println!("{}", self.read(0xFFFF)); // IE
     }
     fn read(&self, address: Address) -> u8 {
         self.bus.read(address)
@@ -220,6 +257,62 @@ impl CPU {
 
     #[allow(dead_code)]
     fn reset(&mut self) {
+        self.write(0xFF00, 0xCF); // P1
+        self.write(0xFF01, 0x00); // SB
+        self.write(0xFF02, 0x7E); // SC
+        self.write(0xFF04, 0x18); // DIV
+        self.write(0xFF05, 0x00); // TIMA
+        self.write(0xFF06, 0x00); // TMA
+        self.write(0xFF07, 0xF8); // TAC
+        self.write(0xFF0F, 0xE1); // IF
+        self.write(0xFF10, 0x80); // NR10
+        self.write(0xFF11, 0xBF); // NR11
+        self.write(0xFF12, 0xF3); // NR12
+        self.write(0xFF13, 0xFF); // NR13
+        self.write(0xFF14, 0xBF); // NR14
+        self.write(0xFF16, 0x3F); // NR21
+        self.write(0xFF17, 0x00); // NR22
+        self.write(0xFF18, 0xFF); // NR23
+        self.write(0xFF19, 0xBF); // NR24
+        self.write(0xFF1A, 0x7F); // NR30
+        self.write(0xFF1B, 0xFF); // NR31
+        self.write(0xFF1C, 0x9F); // NR32
+        self.write(0xFF1D, 0xFF); // NR33
+        self.write(0xFF1E, 0xBF); // NR34
+        self.write(0xFF20, 0xFF); // NR41
+        self.write(0xFF21, 0x00); // NR42
+        self.write(0xFF22, 0x00); // NR43
+        self.write(0xFF23, 0xBF); // NR44
+        self.write(0xFF24, 0x77); // NR50
+        self.write(0xFF25, 0xF3); // NR51
+        self.write(0xFF26, 0xF1); // NR52
+        self.write(0xFF40, 0x91); // LCDC
+        self.write(0xFF41, 0x81); // STAT
+        self.write(0xFF42, 0x00); // SCY
+        self.write(0xFF43, 0x00); // SCX
+        self.write(0xFF44, 0x91); // LY
+        self.write(0xFF45, 0x00); // LYC
+        self.write(0xFF46, 0xFF); // DMA
+        self.write(0xFF47, 0xFC); // BGP
+        // self.write(0xFF48,  ??7); // OBP0
+        // self.write(0xFF49,  ??7); // OBP1
+        self.write(0xFF4A, 0x00); // WY
+        self.write(0xFF4B, 0x00); // WX
+        self.write(0xFF4D, 0xFF); // KEY1
+        self.write(0xFF4F, 0xFF); // VBK
+        self.write(0xFF51, 0xFF); // HDMA1
+        self.write(0xFF52, 0xFF); // HDMA2
+        self.write(0xFF53, 0xFF); // HDMA3
+        self.write(0xFF54, 0xFF); // HDMA4
+        self.write(0xFF55, 0xFF); // HDMA5
+        self.write(0xFF56, 0xFF); // RP
+        self.write(0xFF68, 0xFF); // BCPS
+        self.write(0xFF69, 0xFF); // BCPD
+        self.write(0xFF6A, 0xFF); // OCPS
+        self.write(0xFF6B, 0xFF); // OCPD
+        self.write(0xFF70, 0xFF); // SVBK
+        self.write(0xFFFF, 0x00); // IE
+
         self.registers.reset()
     }
 }
