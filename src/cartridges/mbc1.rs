@@ -3,6 +3,7 @@ use crate::Address;
 
 pub struct Mbc1 {
     rom_banks: Vec<RomBank>,
+    #[allow(dead_code)]
     ram_banks: Vec<RamBank>,
     current_bank: usize,
     bank_mode: BankMode,

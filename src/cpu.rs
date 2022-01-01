@@ -1,3 +1,4 @@
+use crate::Address;
 use core::fmt::Debug;
 use std::default::Default;
 use std::fmt::Formatter;
@@ -6,10 +7,10 @@ use std::fmt::Formatter;
 // アドレスバスは16bit
 // データバスは8bit
 pub trait Bus {
-    fn read(&self, address: u16) -> u8 {
+    fn read(&self, _address: Address) -> u8 {
         todo!()
     }
-    fn write(&mut self, address: u16, data: u8) {
+    fn write(&mut self, _address: Address, _data: u8) {
         todo!()
     }
 }
@@ -120,30 +121,30 @@ impl CPU {
     }
     pub fn tick(&mut self) {
         // バンクの切り替え
-        println!("{}", self.bus.read(0x4500));
-        println!("{}", self.bus.read(0x4501));
-        println!("{}", self.bus.read(0x4502));
-        self.bus.write(0x2000, 0x01);
-        println!("{}", self.bus.read(0x4500));
-        println!("{}", self.bus.read(0x4501));
-        println!("{}", self.bus.read(0x4502));
-        self.bus.write(0x2000, 0x02);
-        println!("{}", self.bus.read(0x4500));
-        println!("{}", self.bus.read(0x4501));
-        println!("{}", self.bus.read(0x4502));
-        self.bus.write(0x2000, 0x03);
-        println!("{}", self.bus.read(0x4500));
-        println!("{}", self.bus.read(0x4501));
-        println!("{}", self.bus.read(0x4502));
-        self.bus.write(0x2000, 0x01);
-        println!("{}", self.bus.read(0x4500));
-        println!("{}", self.bus.read(0x4501));
-        println!("{}", self.bus.read(0x4502));
+        println!("{}", self.read(0x4500));
+        println!("{}", self.read(0x4501));
+        println!("{}", self.read(0x4502));
+        self.write(0x2000, 0x01);
+        println!("{}", self.read(0x4500));
+        println!("{}", self.read(0x4501));
+        println!("{}", self.read(0x4502));
+        self.write(0x2000, 0x02);
+        println!("{}", self.read(0x4500));
+        println!("{}", self.read(0x4501));
+        println!("{}", self.read(0x4502));
+        self.write(0x2000, 0x03);
+        println!("{}", self.read(0x4500));
+        println!("{}", self.read(0x4501));
+        println!("{}", self.read(0x4502));
+        self.write(0x2000, 0x01);
+        println!("{}", self.read(0x4500));
+        println!("{}", self.read(0x4501));
+        println!("{}", self.read(0x4502));
     }
-    fn read(&self, address: u16) -> u8 {
+    fn read(&self, address: Address) -> u8 {
         self.bus.read(address)
     }
-    fn write(&mut self, address: u16, data: u8) {
+    fn write(&mut self, address: Address, data: u8) {
         self.bus.write(address, data)
     }
 }

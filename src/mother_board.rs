@@ -21,7 +21,7 @@ impl Config {
 /// エントリポイント
 pub fn run(config: Config) -> Result<(), &'static str> {
     let mut mb = MotherBoard::new(&config);
-    mb.run();
+    let _ = mb.run();
     Ok(())
 }
 
