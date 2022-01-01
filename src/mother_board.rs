@@ -1,5 +1,8 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
+use crate::lcd::Lcd;
+use crate::sound::Sound;
+use crate::timer::Timer;
 
 use crate::Address;
 
@@ -36,7 +39,10 @@ impl MotherBoard {
     pub fn new(config: &Config) -> Self {
         let cartridge = Cartridge::new(&config.romfile);
         let bus = Box::new(DataBus { cartridge });
-        let cpu = CPU::new(bus);
+        let timer = Box::new(Timer {});
+        let lcd = Box::new(Lcd {});
+        let sound = Box::new(Sound {});
+        let cpu = CPU::new(bus, timer, sound, lcd);
         Self { cpu }
     }
 
@@ -81,26 +87,7 @@ impl Bus for DataBus {
                 todo!()
             }
             // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
-            0xFE00..=0xFE9F => {
-                // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-                todo!()
-            }
-            0xFEA0..=0xFEFF => {
-                // 0xFEA0 - 0xFEFF: 未使用
-                unimplemented!()
-            }
-            0xFF00..=0xFF7F => {
-                // 0xFF00 - 0xFF7F: I/Oレジスタ
-                todo!()
-            }
-            0xFF80..=0xFFFE => {
-                // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                todo!()
-            }
-            0xFFFF => {
-                // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
-                todo!()
-            }
+            _ => unreachable!(),
         }
     }
 
@@ -130,26 +117,7 @@ impl Bus for DataBus {
                 todo!()
             }
             // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
-            0xFE00..=0xFE9F => {
-                // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-                todo!()
-            }
-            0xFEA0..=0xFEFF => {
-                // 0xFEA0 - 0xFEFF: 未使用
-                unimplemented!()
-            }
-            0xFF00..=0xFF7F => {
-                // 0xFF00 - 0xFF7F: I/Oレジスタ
-                todo!()
-            }
-            0xFF80..=0xFFFE => {
-                // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                todo!()
-            }
-            0xFFFF => {
-                // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
-                todo!()
-            }
+            _ => unreachable!(),
         }
     }
 }

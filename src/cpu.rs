@@ -1,19 +1,15 @@
+use crate::io::IO;
 use crate::Address;
 use core::fmt::Debug;
 use std::convert::Into;
 use std::default::Default;
 use std::fmt::Formatter;
 
-// Bus は Trait にしてDIしたい
 // アドレスバスは16bit
 // データバスは8bit
 pub trait Bus {
-    fn read(&self, _address: Address) -> u8 {
-        todo!()
-    }
-    fn write(&mut self, _address: Address, _data: u8) {
-        todo!()
-    }
+    fn read(&self, _address: Address) -> u8;
+    fn write(&mut self, _address: Address, _data: u8);
 }
 
 impl Debug for dyn Bus {
@@ -22,7 +18,7 @@ impl Debug for dyn Bus {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Copy, Clone, Debug)]
 struct Flags {
     // 外部クレートを使う場合は bitflags が良さそう
     // 7bit: Zero flag
@@ -137,7 +133,7 @@ impl Registers {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Copy, Clone, Debug)]
 struct InterruptEnables {
     // https://gbdev.io/pandocs/Interrupts.html
     // Bit 4: Joypad   Interrupt Enable (INT $60)  (1=Enable)
@@ -152,7 +148,41 @@ struct InterruptEnables {
     v_blank: bool,
 }
 
-#[derive(Default, Debug)]
+impl From<u8> for InterruptEnables {
+    fn from(v: u8) -> Self {
+        Self {
+            joypad: ((v & 0b0010000) >> 4) == 0b1,
+            serial: ((v & 0b0001000) >> 3) == 0b1,
+            timer: ((v & 0b0000100) >> 2) == 0b1,
+            lcd_stat: ((v & 0b0000010) >> 1) == 0b1,
+            v_blank: (v & 0b0000001) == 0b1,
+        }
+    }
+}
+
+impl Into<u8> for InterruptEnables {
+    fn into(self) -> u8 {
+        let mut v = 0b00000000;
+        if self.joypad {
+            v |= 0b00010000;
+        }
+        if self.serial {
+            v |= 0b000001000;
+        }
+        if self.timer {
+            v |= 0b000000100;
+        }
+        if self.lcd_stat {
+            v |= 0b000000010;
+        }
+        if self.v_blank {
+            v |= 0b000000001;
+        }
+        v
+    }
+}
+
+#[derive(Default, Copy, Clone, Debug)]
 struct InterruptFlags {
     // https://gbdev.io/pandocs/Interrupts.html
     // Bit 4: Joypad   Interrupt Request (INT $60)  (1=Request)
@@ -167,26 +197,101 @@ struct InterruptFlags {
     v_blank: bool,
 }
 
+impl From<u8> for InterruptFlags {
+    fn from(v: u8) -> Self {
+        Self {
+            joypad: ((v & 0b0010000) >> 4) == 0b1,
+            serial: ((v & 0b0001000) >> 3) == 0b1,
+            timer: ((v & 0b0000100) >> 2) == 0b1,
+            lcd_stat: ((v & 0b0000010) >> 1) == 0b1,
+            v_blank: (v & 0b0000001) == 0b1,
+        }
+    }
+}
+
+impl Into<u8> for InterruptFlags {
+    fn into(self) -> u8 {
+        let mut v = 0b00000000;
+        if self.joypad {
+            v |= 0b00010000;
+        }
+        if self.serial {
+            v |= 0b000001000;
+        }
+        if self.timer {
+            v |= 0b000000100;
+        }
+        if self.lcd_stat {
+            v |= 0b000000010;
+        }
+        if self.v_blank {
+            v |= 0b000000001;
+        }
+        v
+    }
+}
+
 #[derive(Debug)]
 pub struct CPU {
     registers: Registers,
+    bus: Box<dyn Bus>,
     // Interrupt Master Enable Flag
     ime: bool,
-    // メモリマップの 0xFFFF に対応
-    ie: InterruptEnables,
-    // メモリマップの 0xFF0F に対応
+
+    // 0xFE00 - 0xFE9F スプライト属性テーブル (Object Attribute Memory)
+    // oam: Box<dyn IO>,
+
+    // 以下はIOレジスタ
+    // 0xFF00 コントロールパッド情報/機種タイプ
+    p1: u8,
+    // 0xFF01 シリアル通信送受信データ
+    sb: u8,
+    // 0xFF02 シリアル通信制御
+    sc: u8,
+    // 0xFF04 ディバイダーレジスタ
+    div: u8,
+    // 0xFF05 - 0xFF07
+    timer: Box<dyn IO>,
+
+    // 0xFF0F 割り込みフラグ
     ifg: InterruptFlags,
-    bus: Box<dyn Bus>,
+
+    // 0xFF10 - FF3F
+    sound: Box<dyn IO>,
+
+    // 0xFF46 DMA(Direct Memory Access)
+    dma: u8,
+
+    // 0xFF40 - 0xFF4B
+    lcd: Box<dyn IO>,
+
+    // 0xFF80 - 0xFFFE はSPが指すスタック領域
+
+    // 0xFFFF 割り込みマスク
+    ie: InterruptEnables,
 }
 
 impl CPU {
-    pub fn new(bus: Box<dyn Bus>) -> Self {
+    pub fn new(
+        bus: Box<dyn Bus>,
+        timer: Box<dyn IO>,
+        sound: Box<dyn IO>,
+        lcd: Box<dyn IO>,
+    ) -> Self {
         Self {
             bus,
+            lcd,
+            timer,
+            sound,
             registers: Registers::new(),
             ime: false,
-            ie: InterruptEnables::default(),
+            p1: 0,
+            sb: 0,
+            sc: 0,
+            div: 0,
             ifg: InterruptFlags::default(),
+            dma: 0,
+            ie: InterruptEnables::default(),
         }
     }
     pub fn tick(&mut self) {
@@ -233,26 +338,81 @@ impl CPU {
         println!("{}", self.read(0xFF49)); // OBP1
         println!("{}", self.read(0xFF4A)); // WY
         println!("{}", self.read(0xFF4B)); // WX
-        println!("{}", self.read(0xFF4D)); // KEY1
-        println!("{}", self.read(0xFF4F)); // VBK
-        println!("{}", self.read(0xFF51)); // HDMA1
-        println!("{}", self.read(0xFF52)); // HDMA2
-        println!("{}", self.read(0xFF53)); // HDMA3
-        println!("{}", self.read(0xFF54)); // HDMA4
-        println!("{}", self.read(0xFF55)); // HDMA5
-        println!("{}", self.read(0xFF56)); // RP
-        println!("{}", self.read(0xFF68)); // BCPS
-        println!("{}", self.read(0xFF69)); // BCPD
-        println!("{}", self.read(0xFF6A)); // OCPS
-        println!("{}", self.read(0xFF6B)); // OCPD
-        println!("{}", self.read(0xFF70)); // SVBK
         println!("{}", self.read(0xFFFF)); // IE
     }
     fn read(&self, address: Address) -> u8 {
-        self.bus.read(address)
+        match address {
+            0xFE00..=0xFE9F => {
+                // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
+                todo!()
+            }
+            0xFEA0..=0xFEFF => {
+                // 0xFEA0 - 0xFEFF: 未使用
+                unimplemented!()
+            }
+            0xFF00..=0xFF7F => {
+                // 0xFF00 - 0xFF7F: I/Oレジスタ
+                match address {
+                    0xFF00 => self.p1,
+                    0xFF01 => self.sb,
+                    0xFF02 => self.sc,
+                    0xFF04 => self.div,
+                    0xFF05..=0xFF07 => self.timer.read(address),
+                    0xFF0F => self.ifg.into(),
+                    0xFF10..=0xFF3F => self.sound.read(address),
+                    0xFF46 => self.dma,
+                    0xFF40..=0xFF4B => self.lcd.read(address),
+                    _ => unreachable!(),
+                }
+            }
+            0xFF80..=0xFFFE => {
+                // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
+                todo!()
+            }
+            0xFFFF => {
+                // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
+                self.ie.into()
+            }
+            // 0x0000 - 0xFDFF は ROM/RAM へのアクセス
+            _ => self.bus.read(address),
+        }
     }
     fn write(&mut self, address: Address, data: u8) {
-        self.bus.write(address, data)
+        match address {
+            0xFE00..=0xFE9F => {
+                // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
+                todo!()
+            }
+            0xFEA0..=0xFEFF => {
+                // 0xFEA0 - 0xFEFF: 未使用
+                unreachable!()
+            }
+            0xFF00..=0xFF7F => {
+                // 0xFF00 - 0xFF7F: I/Oレジスタ
+                match address {
+                    0xFF00 => self.p1 = data,
+                    0xFF01 => self.sb = data,
+                    0xFF02 => self.sc = data,
+                    0xFF04 => self.div = data,
+                    0xFF05..=0xFF07 => self.timer.write(address, data),
+                    0xFF0F => self.ifg = InterruptFlags::from(data),
+                    0xFF10..=0xFF3F => self.sound.write(address, data),
+                    0xFF46 => self.dma = data,
+                    0xFF40..=0xFF4B => self.lcd.write(address, data),
+                    _ => unreachable!(),
+                }
+            }
+            0xFF80..=0xFFFE => {
+                // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
+                todo!()
+            }
+            0xFFFF => {
+                // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
+                self.ie = InterruptEnables::from(data);
+            }
+            // 0x0000 - 0xFDFF は ROM/RAM へのアクセス
+            _ => self.bus.write(address, data),
+        }
     }
 
     #[allow(dead_code)]
@@ -294,23 +454,10 @@ impl CPU {
         self.write(0xFF45, 0x00); // LYC
         self.write(0xFF46, 0xFF); // DMA
         self.write(0xFF47, 0xFC); // BGP
-        // self.write(0xFF48,  ??7); // OBP0
-        // self.write(0xFF49,  ??7); // OBP1
+        self.write(0xFF48, 0xFF); // OBP0
+        self.write(0xFF49, 0xFF); // OBP1
         self.write(0xFF4A, 0x00); // WY
         self.write(0xFF4B, 0x00); // WX
-        self.write(0xFF4D, 0xFF); // KEY1
-        self.write(0xFF4F, 0xFF); // VBK
-        self.write(0xFF51, 0xFF); // HDMA1
-        self.write(0xFF52, 0xFF); // HDMA2
-        self.write(0xFF53, 0xFF); // HDMA3
-        self.write(0xFF54, 0xFF); // HDMA4
-        self.write(0xFF55, 0xFF); // HDMA5
-        self.write(0xFF56, 0xFF); // RP
-        self.write(0xFF68, 0xFF); // BCPS
-        self.write(0xFF69, 0xFF); // BCPD
-        self.write(0xFF6A, 0xFF); // OCPS
-        self.write(0xFF6B, 0xFF); // OCPD
-        self.write(0xFF70, 0xFF); // SVBK
         self.write(0xFFFF, 0x00); // IE
 
         self.registers.reset()
