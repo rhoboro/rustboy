@@ -1,4 +1,4 @@
-mod cartridge;
+mod cartridges;
 mod cpu;
 mod mother_board;
 type Address = u16;

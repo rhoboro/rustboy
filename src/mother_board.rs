@@ -1,4 +1,4 @@
-use crate::cartridge::Cartridge;
+use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
 
 use crate::Address;
