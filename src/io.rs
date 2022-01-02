@@ -2,13 +2,8 @@ use crate::Address;
 use std::fmt::{Debug, Formatter};
 
 pub trait IO {
-    fn read(&self, address: Address) -> u8 {
-        println!("Read: {}", address);
-        0
-    }
-    fn write(&mut self, address: Address, data: u8) {
-        println!("Write: {}, Data: {}", address, data);
-    }
+    fn read(&self, address: Address) -> u8;
+    fn write(&mut self, address: Address, data: u8);
 }
 
 impl Debug for dyn IO {
