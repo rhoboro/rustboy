@@ -297,7 +297,9 @@ impl CPU {
         }
     }
     pub fn tick(&mut self) -> Result<u8, &str> {
+        // fetch
         let opcode = self.fetch();
+        // decode & execute
         if opcode == 0xCB {
             // CBの場合は16bit命令になる
             let opcode = self.fetch();
@@ -1073,7 +1075,19 @@ impl CPU {
         println!("SCF");
     }
     // bytes: 2 cycles: [12, 8]
-    fn jr_c_r8_0x38(&mut self) {}
+    fn jr_c_r8_0x38(&mut self) {
+        println!("JR C, r8");
+        let r8: i16 = self.read(self.registers.pc).into();
+        self.registers.pc += 1;
+        println!(
+            "pc: {:x?}, C: {:x?}, r8: {:x?}",
+            self.registers.pc, self.registers.f.c, r8
+        );
+        if self.registers.f.c {
+            self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            println!("pc: {:x?}", self.registers.pc);
+        }
+    }
     // bytes: 1 cycles: [8]
     fn add_hl_sp_0x39(&mut self) {}
     // bytes: 1 cycles: [8]
@@ -1354,7 +1368,11 @@ impl CPU {
     fn jp_nz_a16_0xc2(&mut self) {}
     // bytes: 3 cycles: [16]
     fn jp_a16_0xc3(&mut self) {
-        println!("JP a16");
+        let l: u16 = self.read(self.registers.pc).into();
+        let h: u16 = self.read(self.registers.pc + 1).into();
+        let a16 = h << 8 | l;
+        println!("JP a16: {:x?}", a16);
+        self.registers.pc = a16;
     }
     // bytes: 3 cycles: [24, 12]
     fn call_nz_a16_0xc4(&mut self) {}
@@ -1445,13 +1463,20 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn rst_28h_0xef(&mut self) {}
     // bytes: 2 cycles: [12]
-    fn ldh_a_a8_0xf0(&mut self) {}
+    fn ldh_a_a8_0xf0(&mut self) {
+        println!("LDH A, a8");
+        let a8 = self.read(self.registers.pc);
+        self.registers.a = a8;
+    }
     // bytes: 1 cycles: [12]
     fn pop_af_0xf1(&mut self) {}
     // bytes: 1 cycles: [8]
     fn ld_a_c_0xf2(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn di_0xf3(&mut self) {}
+    fn di_0xf3(&mut self) {
+        println!("DI");
+        self.ime = false;
+    }
     // bytes: 1 cycles: [4]
     fn illegal_f4_0xf4(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -1473,7 +1498,17 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_fd_0xfd(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn cp_d8_0xfe(&mut self) {}
+    fn cp_d8_0xfe(&mut self) {
+        println!("CP d8");
+        let d8 = self.read(self.registers.pc);
+        self.registers.pc += 1;
+        let (_, borrow) = self.registers.a.overflowing_sub(d8);
+        let (_, h_borrow) = (self.registers.a & 0x0F).overflowing_sub(d8 & 0x0F);
+        self.registers.f.z = self.registers.a == d8;
+        self.registers.f.n = true;
+        self.registers.f.h = h_borrow;
+        self.registers.f.c = borrow;
+    }
     // bytes: 1 cycles: [16]
     fn rst_38h_0xff(&mut self) {}
     // bytes: 2 cycles: [8]
