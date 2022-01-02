@@ -50,8 +50,11 @@ impl MotherBoard {
     fn run(&mut self) -> Result<(), &str> {
         self.cpu.reset();
         loop {
-            self.cpu.tick();
-            break;
+            let opcode = self.cpu.tick().unwrap();
+            if opcode == 0x76 {
+                // HALT
+                break;
+            }
         }
         Ok(())
     }

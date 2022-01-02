@@ -98,9 +98,9 @@ struct Registers {
     h: u8,
     l: u8,
     // スタックポインタ
-    sp: u16,
+    sp: Address,
     // プログラムカウンタ
-    pc: u16,
+    pc: Address,
 }
 
 impl Registers {
@@ -266,6 +266,7 @@ pub struct CPU {
     lcd: Box<dyn IO>,
 
     // 0xFF80 - 0xFFFE はSPが指すスタック領域
+    stack: [u8; 0xFFFE - 0xFF80 + 1],
 
     // 0xFFFF 割り込みマスク
     ie: InterruptEnables,
@@ -291,13 +292,29 @@ impl CPU {
             div: 0,
             ifg: InterruptFlags::default(),
             dma: 0,
+            stack: [0; 127],
             ie: InterruptEnables::default(),
         }
     }
-    pub fn tick(&mut self) {
-        // fetch
-        // decode
-        // execute
+    pub fn tick(&mut self) -> Result<u8, &str> {
+        let opcode = self.fetch();
+        self.execute(opcode);
+        Ok(opcode)
+    }
+    fn fetch(&mut self) -> u8 {
+        let opcode = self.read(self.registers.pc);
+        // PCのインクリメントはopcode実行よりも前
+        self.registers.pc += 0x01;
+        opcode
+    }
+    fn execute(&mut self, opcode: u8) {
+        match opcode {
+            0x00 => println!("NOP"),
+            0x37 => println!("SCF"),
+            0xC3 => println!("JP a16"),
+            0x76 => println!("HALT"),
+            _ => print!(""),
+        }
     }
     fn read(&self, address: Address) -> u8 {
         match address {
