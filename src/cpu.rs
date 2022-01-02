@@ -295,50 +295,9 @@ impl CPU {
         }
     }
     pub fn tick(&mut self) {
-        self.reset();
-
-        println!("{}", self.read(0xFF00)); // P1
-        println!("{}", self.read(0xFF01)); // SB
-        println!("{}", self.read(0xFF02)); // SC
-        println!("{}", self.read(0xFF04)); // DIV
-        println!("{}", self.read(0xFF05)); // TIMA
-        println!("{}", self.read(0xFF06)); // TMA
-        println!("{}", self.read(0xFF07)); // TAC
-        println!("{}", self.read(0xFF0F)); // IF
-        println!("{}", self.read(0xFF10)); // NR10
-        println!("{}", self.read(0xFF11)); // NR11
-        println!("{}", self.read(0xFF12)); // NR12
-        println!("{}", self.read(0xFF13)); // NR13
-        println!("{}", self.read(0xFF14)); // NR14
-        println!("{}", self.read(0xFF16)); // NR21
-        println!("{}", self.read(0xFF17)); // NR22
-        println!("{}", self.read(0xFF18)); // NR23
-        println!("{}", self.read(0xFF19)); // NR24
-        println!("{}", self.read(0xFF1A)); // NR30
-        println!("{}", self.read(0xFF1B)); // NR31
-        println!("{}", self.read(0xFF1C)); // NR32
-        println!("{}", self.read(0xFF1D)); // NR33
-        println!("{}", self.read(0xFF1E)); // NR34
-        println!("{}", self.read(0xFF20)); // NR41
-        println!("{}", self.read(0xFF21)); // NR42
-        println!("{}", self.read(0xFF22)); // NR43
-        println!("{}", self.read(0xFF23)); // NR44
-        println!("{}", self.read(0xFF24)); // NR50
-        println!("{}", self.read(0xFF25)); // NR51
-        println!("{}", self.read(0xFF26)); // NR52
-        println!("{}", self.read(0xFF40)); // LCDC
-        println!("{}", self.read(0xFF41)); // STAT
-        println!("{}", self.read(0xFF42)); // SCY
-        println!("{}", self.read(0xFF43)); // SCX
-        println!("{}", self.read(0xFF44)); // LY
-        println!("{}", self.read(0xFF45)); // LYC
-        println!("{}", self.read(0xFF46)); // DMA
-        println!("{}", self.read(0xFF47)); // BGP
-        println!("{}", self.read(0xFF48)); // OBP0
-        println!("{}", self.read(0xFF49)); // OBP1
-        println!("{}", self.read(0xFF4A)); // WY
-        println!("{}", self.read(0xFF4B)); // WX
-        println!("{}", self.read(0xFFFF)); // IE
+        // fetch
+        // decode
+        // execute
     }
     fn read(&self, address: Address) -> u8 {
         match address {
@@ -415,8 +374,7 @@ impl CPU {
         }
     }
 
-    #[allow(dead_code)]
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.write(0xFF00, 0xCF); // P1
         self.write(0xFF01, 0x00); // SB
         self.write(0xFF02, 0x7E); // SC
@@ -460,6 +418,50 @@ impl CPU {
         self.write(0xFF4B, 0x00); // WX
         self.write(0xFFFF, 0x00); // IE
 
-        self.registers.reset()
+        self.registers.reset();
+
+        // デバッグ用
+        println!("{}", self.read(0xFF00)); // P1
+        println!("{}", self.read(0xFF01)); // SB
+        println!("{}", self.read(0xFF02)); // SC
+        println!("{}", self.read(0xFF04)); // DIV
+        println!("{}", self.read(0xFF05)); // TIMA
+        println!("{}", self.read(0xFF06)); // TMA
+        println!("{}", self.read(0xFF07)); // TAC
+        println!("{}", self.read(0xFF0F)); // IF
+        println!("{}", self.read(0xFF10)); // NR10
+        println!("{}", self.read(0xFF11)); // NR11
+        println!("{}", self.read(0xFF12)); // NR12
+        println!("{}", self.read(0xFF13)); // NR13
+        println!("{}", self.read(0xFF14)); // NR14
+        println!("{}", self.read(0xFF16)); // NR21
+        println!("{}", self.read(0xFF17)); // NR22
+        println!("{}", self.read(0xFF18)); // NR23
+        println!("{}", self.read(0xFF19)); // NR24
+        println!("{}", self.read(0xFF1A)); // NR30
+        println!("{}", self.read(0xFF1B)); // NR31
+        println!("{}", self.read(0xFF1C)); // NR32
+        println!("{}", self.read(0xFF1D)); // NR33
+        println!("{}", self.read(0xFF1E)); // NR34
+        println!("{}", self.read(0xFF20)); // NR41
+        println!("{}", self.read(0xFF21)); // NR42
+        println!("{}", self.read(0xFF22)); // NR43
+        println!("{}", self.read(0xFF23)); // NR44
+        println!("{}", self.read(0xFF24)); // NR50
+        println!("{}", self.read(0xFF25)); // NR51
+        println!("{}", self.read(0xFF26)); // NR52
+        println!("{}", self.read(0xFF40)); // LCDC
+        println!("{}", self.read(0xFF41)); // STAT
+        println!("{}", self.read(0xFF42)); // SCY
+        println!("{}", self.read(0xFF43)); // SCX
+        println!("{}", self.read(0xFF44)); // LY
+        println!("{}", self.read(0xFF45)); // LYC
+        println!("{}", self.read(0xFF46)); // DMA
+        println!("{}", self.read(0xFF47)); // BGP
+        println!("{}", self.read(0xFF48)); // OBP0
+        println!("{}", self.read(0xFF49)); // OBP1
+        println!("{}", self.read(0xFF4A)); // WY
+        println!("{}", self.read(0xFF4B)); // WX
+        println!("{}", self.read(0xFFFF)); // IE
     }
 }

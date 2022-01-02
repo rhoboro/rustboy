@@ -39,14 +39,16 @@ impl MotherBoard {
     pub fn new(config: &Config) -> Self {
         let cartridge = Cartridge::new(&config.romfile);
         let bus = Box::new(DataBus { cartridge });
+        // TODO: 各種IOはMotherBoardが保持してCPUからは参照にしたい
         let timer = Box::new(Timer {});
-        let lcd = Box::new(Lcd {});
         let sound = Box::new(Sound {});
+        let lcd = Box::new(Lcd {});
         let cpu = CPU::new(bus, timer, sound, lcd);
         Self { cpu }
     }
 
     fn run(&mut self) -> Result<(), &str> {
+        self.cpu.reset();
         loop {
             self.cpu.tick();
             break;
