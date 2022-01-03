@@ -591,7 +591,7 @@ impl CPU {
             // 0xEF => self.rst_28h_0xef(),
             0xF0 => self.ldh_a_a8_0xf0(),
             // 0xF1 => self.pop_af_0xf1(),
-            // 0xF2 => self.ld_a_c_0xf2(),
+            0xF2 => self.ld_a_c_0xf2(),
             0xF3 => self.di_0xf3(),
             // 0xF4 => self.illegal_f4_0xf4(),
             // 0xF5 => self.push_af_0xf5(),
@@ -1768,7 +1768,10 @@ impl CPU {
     // bytes: 1 cycles: [12]
     fn pop_hl_0xe1(&mut self) {}
     // bytes: 1 cycles: [8]
-    fn ld_c_a_0xe2(&mut self) {}
+    fn ld_c_a_0xe2(&mut self) {
+        println!("LD (C), A");
+        self.write(0xFF00 + self.registers.c as u16, self.registers.a);
+    }
     // bytes: 1 cycles: [4]
     fn illegal_e3_0xe3(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1785,7 +1788,7 @@ impl CPU {
     fn jp_hl_0xe9(&mut self) {}
     // bytes: 3 cycles: [16]
     fn ld_a16_a_0xea(&mut self) {
-        println!("LD a16, A");
+        println!("LD (a16), A");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
@@ -1803,14 +1806,17 @@ impl CPU {
     fn rst_28h_0xef(&mut self) {}
     // bytes: 2 cycles: [12]
     fn ldh_a_a8_0xf0(&mut self) {
-        println!("LDH A, a8");
+        println!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
         self.registers.a = self.read(a8 + 0xFF00);
     }
     // bytes: 1 cycles: [12]
     fn pop_af_0xf1(&mut self) {}
     // bytes: 1 cycles: [8]
-    fn ld_a_c_0xf2(&mut self) {}
+    fn ld_a_c_0xf2(&mut self) {
+        println!("LD A, (C)");
+        self.registers.a = self.read(0xFF00 + self.registers.c as u16);
+    }
     // bytes: 1 cycles: [4]
     fn di_0xf3(&mut self) {
         println!("DI");
@@ -1830,7 +1836,7 @@ impl CPU {
     fn ld_sp_hl_0xf9(&mut self) {}
     // bytes: 3 cycles: [16]
     fn ld_a_a16_0xfa(&mut self) {
-        println!("LD A, a16");
+        println!("LD A, (a16)");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
