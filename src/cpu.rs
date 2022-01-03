@@ -149,6 +149,14 @@ impl Registers {
         self.sp = 0xFFFF;
         self.pc = 0x0100;
     }
+    fn af(&self) -> u16 {
+        let f: u8 = self.f.into();
+        ((self.a as u16) << 8) | f as u16
+    }
+    fn set_af(&mut self, v: u16) {
+        self.a = ((v & 0xFF00) >> 8) as u8;
+        self.f = Flags::from((v & 0x00FF) as u8);
+    }
     fn bc(&self) -> u16 {
         ((self.b as u16) << 8) | self.c as u16
     }
@@ -553,11 +561,11 @@ impl CPU {
             // 0xBE => self.cp_hl_0xbe(),
             // 0xBF => self.cp_a_0xbf(),
             // 0xC0 => self.ret_nz_0xc0(),
-            // 0xC1 => self.pop_bc_0xc1(),
+            0xC1 => self.pop_bc_0xc1(),
             // 0xC2 => self.jp_nz_a16_0xc2(),
             0xC3 => self.jp_a16_0xc3(),
             // 0xC4 => self.call_nz_a16_0xc4(),
-            // 0xC5 => self.push_bc_0xc5(),
+            0xC5 => self.push_bc_0xc5(),
             // 0xC6 => self.add_a_d8_0xc6(),
             // 0xC7 => self.rst_00h_0xc7(),
             // 0xC8 => self.ret_z_0xc8(),
@@ -569,11 +577,11 @@ impl CPU {
             // 0xCE => self.adc_a_d8_0xce(),
             // 0xCF => self.rst_08h_0xcf(),
             // 0xD0 => self.ret_nc_0xd0(),
-            // 0xD1 => self.pop_de_0xd1(),
+            0xD1 => self.pop_de_0xd1(),
             // 0xD2 => self.jp_nc_a16_0xd2(),
             // 0xD3 => self.illegal_d3_0xd3(),
             // 0xD4 => self.call_nc_a16_0xd4(),
-            // 0xD5 => self.push_de_0xd5(),
+            0xD5 => self.push_de_0xd5(),
             // 0xD6 => self.sub_d8_0xd6(),
             // 0xD7 => self.rst_10h_0xd7(),
             // 0xD8 => self.ret_c_0xd8(),
@@ -585,11 +593,11 @@ impl CPU {
             // 0xDE => self.sbc_a_d8_0xde(),
             // 0xDF => self.rst_18h_0xdf(),
             0xE0 => self.ldh_a8_a_0xe0(),
-            // 0xE1 => self.pop_hl_0xe1(),
+            0xE1 => self.pop_hl_0xe1(),
             0xE2 => self.ld_c_a_0xe2(),
             // 0xE3 => self.illegal_e3_0xe3(),
             // 0xE4 => self.illegal_e4_0xe4(),
-            // 0xE5 => self.push_hl_0xe5(),
+            0xE5 => self.push_hl_0xe5(),
             // 0xE6 => self.and_d8_0xe6(),
             // 0xE7 => self.rst_20h_0xe7(),
             // 0xE8 => self.add_sp_r8_0xe8(),
@@ -601,11 +609,11 @@ impl CPU {
             // 0xEE => self.xor_d8_0xee(),
             // 0xEF => self.rst_28h_0xef(),
             0xF0 => self.ldh_a_a8_0xf0(),
-            // 0xF1 => self.pop_af_0xf1(),
+            0xF1 => self.pop_af_0xf1(),
             0xF2 => self.ld_a_c_0xf2(),
             0xF3 => self.di_0xf3(),
             // 0xF4 => self.illegal_f4_0xf4(),
-            // 0xF5 => self.push_af_0xf5(),
+            0xF5 => self.push_af_0xf5(),
             // 0xF6 => self.or_d8_0xf6(),
             // 0xF7 => self.rst_30h_0xf7(),
             0xF8 => self.ld_hl_sp_r8_0xf8(),
@@ -1699,7 +1707,12 @@ impl CPU {
     // bytes: 1 cycles: [20, 8]
     fn ret_nz_0xc0(&mut self) {}
     // bytes: 1 cycles: [12]
-    fn pop_bc_0xc1(&mut self) {}
+    fn pop_bc_0xc1(&mut self) {
+        println!("POP BC");
+        self.registers.b = self.read(self.registers.sp + 1);
+        self.registers.c = self.read(self.registers.sp);
+        self.registers.sp += 2;
+    }
     // bytes: 3 cycles: [16, 12]
     fn jp_nz_a16_0xc2(&mut self) {
         println!("JP NZ, a16");
@@ -1721,7 +1734,12 @@ impl CPU {
     // bytes: 3 cycles: [24, 12]
     fn call_nz_a16_0xc4(&mut self) {}
     // bytes: 1 cycles: [16]
-    fn push_bc_0xc5(&mut self) {}
+    fn push_bc_0xc5(&mut self) {
+        println!("PUSH BC");
+        self.write(self.registers.sp - 1, self.registers.b);
+        self.write(self.registers.sp - 2, self.registers.c);
+        self.registers.sp -= 2;
+    }
     // bytes: 2 cycles: [8]
     fn add_a_d8_0xc6(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -1753,7 +1771,12 @@ impl CPU {
     // bytes: 1 cycles: [20, 8]
     fn ret_nc_0xd0(&mut self) {}
     // bytes: 1 cycles: [12]
-    fn pop_de_0xd1(&mut self) {}
+    fn pop_de_0xd1(&mut self) {
+        println!("POP DE");
+        self.registers.d = self.read(self.registers.sp + 1);
+        self.registers.e = self.read(self.registers.sp);
+        self.registers.sp += 2;
+    }
     // bytes: 3 cycles: [16, 12]
     fn jp_nc_a16_0xd2(&mut self) {
         println!("JP NC, a16");
@@ -1769,7 +1792,12 @@ impl CPU {
     // bytes: 3 cycles: [24, 12]
     fn call_nc_a16_0xd4(&mut self) {}
     // bytes: 1 cycles: [16]
-    fn push_de_0xd5(&mut self) {}
+    fn push_de_0xd5(&mut self) {
+        println!("PUSH DE");
+        self.write(self.registers.sp - 1, self.registers.d);
+        self.write(self.registers.sp - 2, self.registers.e);
+        self.registers.sp -= 2;
+    }
     // bytes: 2 cycles: [8]
     fn sub_d8_0xd6(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -1805,7 +1833,12 @@ impl CPU {
         self.write(0xFF00 + a8, self.registers.a);
     }
     // bytes: 1 cycles: [12]
-    fn pop_hl_0xe1(&mut self) {}
+    fn pop_hl_0xe1(&mut self) {
+        println!("POP HL");
+        self.registers.h = self.read(self.registers.sp + 1);
+        self.registers.l = self.read(self.registers.sp);
+        self.registers.sp += 2;
+    }
     // bytes: 1 cycles: [8]
     fn ld_c_a_0xe2(&mut self) {
         println!("LD (C), A");
@@ -1816,7 +1849,12 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_e4_0xe4(&mut self) {}
     // bytes: 1 cycles: [16]
-    fn push_hl_0xe5(&mut self) {}
+    fn push_hl_0xe5(&mut self) {
+        println!("PUSH HL");
+        self.write(self.registers.sp - 1, self.registers.h);
+        self.write(self.registers.sp - 2, self.registers.l);
+        self.registers.sp -= 2;
+    }
     // bytes: 2 cycles: [8]
     fn and_d8_0xe6(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -1850,7 +1888,12 @@ impl CPU {
         self.registers.a = self.read(a8 + 0xFF00);
     }
     // bytes: 1 cycles: [12]
-    fn pop_af_0xf1(&mut self) {}
+    fn pop_af_0xf1(&mut self) {
+        println!("POP AF");
+        self.registers.a = self.read(self.registers.sp + 1);
+        self.registers.f = Flags::from(self.read(self.registers.sp));
+        self.registers.sp += 2;
+    }
     // bytes: 1 cycles: [8]
     fn ld_a_c_0xf2(&mut self) {
         println!("LD A, (C)");
@@ -1864,7 +1907,12 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_f4_0xf4(&mut self) {}
     // bytes: 1 cycles: [16]
-    fn push_af_0xf5(&mut self) {}
+    fn push_af_0xf5(&mut self) {
+        println!("PUSH AF");
+        self.write(self.registers.sp - 1, self.registers.a);
+        self.write(self.registers.sp - 2, self.registers.f.into());
+        self.registers.sp -= 2;
+    }
     // bytes: 2 cycles: [8]
     fn or_d8_0xf6(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -1873,7 +1921,8 @@ impl CPU {
     fn ld_hl_sp_r8_0xf8(&mut self) {
         println!("LD HL, SP+r8");
         let r8: i8 = self.fetch() as i8;
-        self.registers.set_hl(self.registers.sp.wrapping_add(r8 as u16));
+        self.registers
+            .set_hl(self.registers.sp.wrapping_add(r8 as u16));
         self.registers.f.z = false;
         self.registers.f.n = false;
         self.registers.f.h = self.registers.sp.calc_half_carry(r8 as u16);
