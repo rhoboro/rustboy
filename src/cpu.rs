@@ -997,7 +997,7 @@ impl CPU {
     }
     // bytes: 3 cycles: [12]
     fn ld_bc_d16_0x01(&mut self) {
-        println!("ld BC d16");
+        println!("ld BC, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
@@ -1035,7 +1035,7 @@ impl CPU {
     fn stop_d8_0x10(&mut self) {}
     // bytes: 3 cycles: [12]
     fn ld_de_d16_0x11(&mut self) {
-        println!("ld DE d16");
+        println!("ld DE, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
@@ -1079,7 +1079,7 @@ impl CPU {
     }
     // bytes: 3 cycles: [12]
     fn ld_hl_d16_0x21(&mut self) {
-        println!("ld HL d16");
+        println!("ld HL, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
@@ -1129,7 +1129,7 @@ impl CPU {
     }
     // bytes: 3 cycles: [12]
     fn ld_sp_d16_0x31(&mut self) {
-        println!("ld SP d16");
+        println!("ld SP, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
@@ -1432,7 +1432,15 @@ impl CPU {
     // bytes: 1 cycles: [12]
     fn pop_bc_0xc1(&mut self) {}
     // bytes: 3 cycles: [16, 12]
-    fn jp_nz_a16_0xc2(&mut self) {}
+    fn jp_nz_a16_0xc2(&mut self) {
+        println!("JP NZ, a16");
+        let l: u16 = self.fetch().into();
+        let h: u16 = self.fetch().into();
+        let a16 = h << 8 | l;
+        if !self.registers.f.z {
+            self.registers.pc = a16;
+        }
+    }
     // bytes: 3 cycles: [16]
     fn jp_a16_0xc3(&mut self) {
         println!("JP a16");
@@ -1454,7 +1462,15 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn ret_0xc9(&mut self) {}
     // bytes: 3 cycles: [16, 12]
-    fn jp_z_a16_0xca(&mut self) {}
+    fn jp_z_a16_0xca(&mut self) {
+        println!("JP Z, a16");
+        let l: u16 = self.fetch().into();
+        let h: u16 = self.fetch().into();
+        let a16 = h << 8 | l;
+        if self.registers.f.z {
+            self.registers.pc = a16;
+        }
+    }
     // bytes: 1 cycles: [4]
     fn prefix_0xcb(&mut self) {}
     // bytes: 3 cycles: [24, 12]
@@ -1470,7 +1486,15 @@ impl CPU {
     // bytes: 1 cycles: [12]
     fn pop_de_0xd1(&mut self) {}
     // bytes: 3 cycles: [16, 12]
-    fn jp_nc_a16_0xd2(&mut self) {}
+    fn jp_nc_a16_0xd2(&mut self) {
+        println!("JP NC, a16");
+        let l: u16 = self.fetch().into();
+        let h: u16 = self.fetch().into();
+        let a16 = h << 8 | l;
+        if !self.registers.f.c {
+            self.registers.pc = a16;
+        }
+    }
     // bytes: 1 cycles: [4]
     fn illegal_d3_0xd3(&mut self) {}
     // bytes: 3 cycles: [24, 12]
@@ -1486,7 +1510,15 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn reti_0xd9(&mut self) {}
     // bytes: 3 cycles: [16, 12]
-    fn jp_c_a16_0xda(&mut self) {}
+    fn jp_c_a16_0xda(&mut self) {
+        println!("JP C, a16");
+        let l: u16 = self.fetch().into();
+        let h: u16 = self.fetch().into();
+        let a16 = h << 8 | l;
+        if self.registers.f.c {
+            self.registers.pc = a16;
+        }
+    }
     // bytes: 1 cycles: [4]
     fn illegal_db_0xdb(&mut self) {}
     // bytes: 3 cycles: [24, 12]
