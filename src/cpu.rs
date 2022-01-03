@@ -317,6 +317,7 @@ impl CPU {
             p1: 0,
             sb: 0,
             sc: 0,
+
             div: 0,
             ifg: InterruptFlags::default(),
             dma: 0,
@@ -402,7 +403,7 @@ impl CPU {
             // 0x33 => self.inc_sp_0x33(),
             // 0x34 => self.inc_hl_0x34(),
             // 0x35 => self.dec_hl_0x35(),
-            // 0x36 => self.ld_hl_d8_0x36(),
+            0x36 => self.ld_hl_d8_0x36(),
             // 0x37 => self.scf_0x37(),
             0x38 => self.jr_c_r8_0x38(),
             // 0x39 => self.add_hl_sp_0x39(),
@@ -412,70 +413,70 @@ impl CPU {
             // 0x3D => self.dec_a_0x3d(),
             // 0x3E => self.ld_a_d8_0x3e(),
             // 0x3F => self.ccf_0x3f(),
-            // 0x40 => self.ld_b_b_0x40(),
-            // 0x41 => self.ld_b_c_0x41(),
-            // 0x42 => self.ld_b_d_0x42(),
-            // 0x43 => self.ld_b_e_0x43(),
-            // 0x44 => self.ld_b_h_0x44(),
-            // 0x45 => self.ld_b_l_0x45(),
-            // 0x46 => self.ld_b_hl_0x46(),
+            0x40 => self.ld_b_b_0x40(),
+            0x41 => self.ld_b_c_0x41(),
+            0x42 => self.ld_b_d_0x42(),
+            0x43 => self.ld_b_e_0x43(),
+            0x44 => self.ld_b_h_0x44(),
+            0x45 => self.ld_b_l_0x45(),
+            0x46 => self.ld_b_hl_0x46(),
             // 0x47 => self.ld_b_a_0x47(),
-            // 0x48 => self.ld_c_b_0x48(),
-            // 0x49 => self.ld_c_c_0x49(),
-            // 0x4A => self.ld_c_d_0x4a(),
-            // 0x4B => self.ld_c_e_0x4b(),
-            // 0x4C => self.ld_c_h_0x4c(),
-            // 0x4D => self.ld_c_l_0x4d(),
-            // 0x4E => self.ld_c_hl_0x4e(),
+            0x48 => self.ld_c_b_0x48(),
+            0x49 => self.ld_c_c_0x49(),
+            0x4A => self.ld_c_d_0x4a(),
+            0x4B => self.ld_c_e_0x4b(),
+            0x4C => self.ld_c_h_0x4c(),
+            0x4D => self.ld_c_l_0x4d(),
+            0x4E => self.ld_c_hl_0x4e(),
             // 0x4F => self.ld_c_a_0x4f(),
-            // 0x50 => self.ld_d_b_0x50(),
-            // 0x51 => self.ld_d_c_0x51(),
-            // 0x52 => self.ld_d_d_0x52(),
-            // 0x53 => self.ld_d_e_0x53(),
-            // 0x54 => self.ld_d_h_0x54(),
-            // 0x55 => self.ld_d_l_0x55(),
-            // 0x56 => self.ld_d_hl_0x56(),
+            0x50 => self.ld_d_b_0x50(),
+            0x51 => self.ld_d_c_0x51(),
+            0x52 => self.ld_d_d_0x52(),
+            0x53 => self.ld_d_e_0x53(),
+            0x54 => self.ld_d_h_0x54(),
+            0x55 => self.ld_d_l_0x55(),
+            0x56 => self.ld_d_hl_0x56(),
             // 0x57 => self.ld_d_a_0x57(),
-            // 0x58 => self.ld_e_b_0x58(),
-            // 0x59 => self.ld_e_c_0x59(),
-            // 0x5A => self.ld_e_d_0x5a(),
-            // 0x5B => self.ld_e_e_0x5b(),
-            // 0x5C => self.ld_e_h_0x5c(),
-            // 0x5D => self.ld_e_l_0x5d(),
-            // 0x5E => self.ld_e_hl_0x5e(),
+            0x58 => self.ld_e_b_0x58(),
+            0x59 => self.ld_e_c_0x59(),
+            0x5A => self.ld_e_d_0x5a(),
+            0x5B => self.ld_e_e_0x5b(),
+            0x5C => self.ld_e_h_0x5c(),
+            0x5D => self.ld_e_l_0x5d(),
+            0x5E => self.ld_e_hl_0x5e(),
             // 0x5F => self.ld_e_a_0x5f(),
-            // 0x60 => self.ld_h_b_0x60(),
-            // 0x61 => self.ld_h_c_0x61(),
-            // 0x62 => self.ld_h_d_0x62(),
-            // 0x63 => self.ld_h_e_0x63(),
-            // 0x64 => self.ld_h_h_0x64(),
-            // 0x65 => self.ld_h_l_0x65(),
-            // 0x66 => self.ld_h_hl_0x66(),
+            0x60 => self.ld_h_b_0x60(),
+            0x61 => self.ld_h_c_0x61(),
+            0x62 => self.ld_h_d_0x62(),
+            0x63 => self.ld_h_e_0x63(),
+            0x64 => self.ld_h_h_0x64(),
+            0x65 => self.ld_h_l_0x65(),
+            0x66 => self.ld_h_hl_0x66(),
             // 0x67 => self.ld_h_a_0x67(),
-            // 0x68 => self.ld_l_b_0x68(),
-            // 0x69 => self.ld_l_c_0x69(),
-            // 0x6A => self.ld_l_d_0x6a(),
-            // 0x6B => self.ld_l_e_0x6b(),
-            // 0x6C => self.ld_l_h_0x6c(),
-            // 0x6D => self.ld_l_l_0x6d(),
-            // 0x6E => self.ld_l_hl_0x6e(),
+            0x68 => self.ld_l_b_0x68(),
+            0x69 => self.ld_l_c_0x69(),
+            0x6A => self.ld_l_d_0x6a(),
+            0x6B => self.ld_l_e_0x6b(),
+            0x6C => self.ld_l_h_0x6c(),
+            0x6D => self.ld_l_l_0x6d(),
+            0x6E => self.ld_l_hl_0x6e(),
             // 0x6F => self.ld_l_a_0x6f(),
-            // 0x70 => self.ld_hl_b_0x70(),
-            // 0x71 => self.ld_hl_c_0x71(),
-            // 0x72 => self.ld_hl_d_0x72(),
-            // 0x73 => self.ld_hl_e_0x73(),
-            // 0x74 => self.ld_hl_h_0x74(),
-            // 0x75 => self.ld_hl_l_0x75(),
+            0x70 => self.ld_hl_b_0x70(),
+            0x71 => self.ld_hl_c_0x71(),
+            0x72 => self.ld_hl_d_0x72(),
+            0x73 => self.ld_hl_e_0x73(),
+            0x74 => self.ld_hl_h_0x74(),
+            0x75 => self.ld_hl_l_0x75(),
             // 0x76 => self.halt_0x76(),
             // 0x77 => self.ld_hl_a_0x77(),
-            // 0x78 => self.ld_a_b_0x78(),
-            // 0x79 => self.ld_a_c_0x79(),
-            // 0x7A => self.ld_a_d_0x7a(),
-            // 0x7B => self.ld_a_e_0x7b(),
-            // 0x7C => self.ld_a_h_0x7c(),
-            // 0x7D => self.ld_a_l_0x7d(),
-            // 0x7E => self.ld_a_hl_0x7e(),
-            // 0x7F => self.ld_a_a_0x7f(),
+            0x78 => self.ld_a_b_0x78(),
+            0x79 => self.ld_a_c_0x79(),
+            0x7A => self.ld_a_d_0x7a(),
+            0x7B => self.ld_a_e_0x7b(),
+            0x7C => self.ld_a_h_0x7c(),
+            0x7D => self.ld_a_l_0x7d(),
+            0x7E => self.ld_a_hl_0x7e(),
+            0x7F => self.ld_a_a_0x7f(),
             // 0x80 => self.add_a_b_0x80(),
             // 0x81 => self.add_a_c_0x81(),
             // 0x82 => self.add_a_d_0x82(),
@@ -1168,7 +1169,11 @@ impl CPU {
     // bytes: 1 cycles: [12]
     fn dec_hl_0x35(&mut self) {}
     // bytes: 2 cycles: [12]
-    fn ld_hl_d8_0x36(&mut self) {}
+    fn ld_hl_d8_0x36(&mut self) {
+        println!("LD (HL), n");
+        let d8 = self.fetch();
+        self.write(self.registers.hl(), d8);
+    }
     // bytes: 1 cycles: [4]
     fn scf_0x37(&mut self) {}
     // bytes: 2 cycles: [12, 8]
@@ -1194,113 +1199,257 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn ccf_0x3f(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_b_b_0x40(&mut self) {}
+    fn ld_b_b_0x40(&mut self) {
+        println!("LD B, B");
+        self.registers.b = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_b_c_0x41(&mut self) {}
+    fn ld_b_c_0x41(&mut self) {
+        println!("LD B, C");
+        self.registers.b = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_b_d_0x42(&mut self) {}
+    fn ld_b_d_0x42(&mut self) {
+        println!("LD B, D");
+        self.registers.b = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_b_e_0x43(&mut self) {}
+    fn ld_b_e_0x43(&mut self) {
+        println!("LD B, E");
+        self.registers.b = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_b_h_0x44(&mut self) {}
+    fn ld_b_h_0x44(&mut self) {
+        println!("LD B, H");
+        self.registers.b = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_b_l_0x45(&mut self) {}
+    fn ld_b_l_0x45(&mut self) {
+        println!("LD B, L");
+        self.registers.b = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_b_hl_0x46(&mut self) {}
+    fn ld_b_hl_0x46(&mut self) {
+        println!("LD B, (HL)");
+        self.registers.b = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
     fn ld_b_a_0x47(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_c_b_0x48(&mut self) {}
+    fn ld_c_b_0x48(&mut self) {
+        println!("LD C, B");
+        self.registers.c = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_c_c_0x49(&mut self) {}
+    fn ld_c_c_0x49(&mut self) {
+        println!("LD C, C");
+        self.registers.c = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_c_d_0x4a(&mut self) {}
+    fn ld_c_d_0x4a(&mut self) {
+        println!("LD C, D");
+        self.registers.c = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_c_e_0x4b(&mut self) {}
+    fn ld_c_e_0x4b(&mut self) {
+        println!("LD C, E");
+        self.registers.c = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_c_h_0x4c(&mut self) {}
+    fn ld_c_h_0x4c(&mut self) {
+        println!("LD C, H");
+        self.registers.c = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_c_l_0x4d(&mut self) {}
+    fn ld_c_l_0x4d(&mut self) {
+        println!("LD C, B");
+        self.registers.c = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_c_hl_0x4e(&mut self) {}
+    fn ld_c_hl_0x4e(&mut self) {
+        println!("LD C, (HL)");
+        self.registers.c = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
     fn ld_c_a_0x4f(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_d_b_0x50(&mut self) {}
+    fn ld_d_b_0x50(&mut self) {
+        println!("LD D, B");
+        self.registers.d = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_d_c_0x51(&mut self) {}
+    fn ld_d_c_0x51(&mut self) {
+        println!("LD D, C");
+        self.registers.d = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_d_d_0x52(&mut self) {}
+    fn ld_d_d_0x52(&mut self) {
+        println!("LD D, D");
+        self.registers.d = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_d_e_0x53(&mut self) {}
+    fn ld_d_e_0x53(&mut self) {
+        println!("LD D, E");
+        self.registers.d = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_d_h_0x54(&mut self) {}
+    fn ld_d_h_0x54(&mut self) {
+        println!("LD D, H");
+        self.registers.d = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_d_l_0x55(&mut self) {}
+    fn ld_d_l_0x55(&mut self) {
+        println!("LD D, L");
+        self.registers.d = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_d_hl_0x56(&mut self) {}
+    fn ld_d_hl_0x56(&mut self) {
+        println!("LD D, (HL)");
+        self.registers.d = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
     fn ld_d_a_0x57(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_e_b_0x58(&mut self) {}
+    fn ld_e_b_0x58(&mut self) {
+        println!("LD E, B");
+        self.registers.e = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_e_c_0x59(&mut self) {}
+    fn ld_e_c_0x59(&mut self) {
+        println!("LD E, C");
+        self.registers.e = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_e_d_0x5a(&mut self) {}
+    fn ld_e_d_0x5a(&mut self) {
+        println!("LD E, D");
+        self.registers.e = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_e_e_0x5b(&mut self) {}
+    fn ld_e_e_0x5b(&mut self) {
+        println!("LD E, E");
+        self.registers.e = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_e_h_0x5c(&mut self) {}
+    fn ld_e_h_0x5c(&mut self) {
+        println!("LD E, H");
+        self.registers.e = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_e_l_0x5d(&mut self) {}
+    fn ld_e_l_0x5d(&mut self) {
+        println!("LD E, L");
+        self.registers.e = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_e_hl_0x5e(&mut self) {}
+    fn ld_e_hl_0x5e(&mut self) {
+        println!("LD E, (HL)");
+        self.registers.e = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
     fn ld_e_a_0x5f(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_h_b_0x60(&mut self) {}
+    fn ld_h_b_0x60(&mut self) {
+        println!("LD H, B");
+        self.registers.h = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_h_c_0x61(&mut self) {}
+    fn ld_h_c_0x61(&mut self) {
+        println!("LD H, C");
+        self.registers.h = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_h_d_0x62(&mut self) {}
+    fn ld_h_d_0x62(&mut self) {
+        println!("LD H, D");
+        self.registers.h = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_h_e_0x63(&mut self) {}
+    fn ld_h_e_0x63(&mut self) {
+        println!("LD H, E");
+        self.registers.h = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_h_h_0x64(&mut self) {}
+    fn ld_h_h_0x64(&mut self) {
+        println!("LD H, H");
+        self.registers.h = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_h_l_0x65(&mut self) {}
+    fn ld_h_l_0x65(&mut self) {
+        println!("LD H, L");
+        self.registers.h = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_h_hl_0x66(&mut self) {}
+    fn ld_h_hl_0x66(&mut self) {
+        println!("LD H, (HL)");
+        self.registers.h = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
     fn ld_h_a_0x67(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_l_b_0x68(&mut self) {}
+    fn ld_l_b_0x68(&mut self) {
+        println!("LD L, B");
+        self.registers.l = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_l_c_0x69(&mut self) {}
+    fn ld_l_c_0x69(&mut self) {
+        println!("LD L, C");
+        self.registers.l = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_l_d_0x6a(&mut self) {}
+    fn ld_l_d_0x6a(&mut self) {
+        println!("LD L, D");
+        self.registers.l = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_l_e_0x6b(&mut self) {}
+    fn ld_l_e_0x6b(&mut self) {
+        println!("LD L, E");
+        self.registers.l = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_l_h_0x6c(&mut self) {}
+    fn ld_l_h_0x6c(&mut self) {
+        println!("LD L, H");
+        self.registers.l = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_l_l_0x6d(&mut self) {}
+    fn ld_l_l_0x6d(&mut self) {
+        println!("LD L, L");
+        self.registers.l = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_l_hl_0x6e(&mut self) {}
+    fn ld_l_hl_0x6e(&mut self) {
+        println!("LD L, (HL)");
+        self.registers.l = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
     fn ld_l_a_0x6f(&mut self) {}
     // bytes: 1 cycles: [8]
-    fn ld_hl_b_0x70(&mut self) {}
+    fn ld_hl_b_0x70(&mut self) {
+        println!("LD (HL), B");
+        self.write(self.registers.hl(), self.registers.b);
+    }
     // bytes: 1 cycles: [8]
-    fn ld_hl_c_0x71(&mut self) {}
+    fn ld_hl_c_0x71(&mut self) {
+        println!("LD (HL), C");
+        self.write(self.registers.hl(), self.registers.c);
+    }
     // bytes: 1 cycles: [8]
-    fn ld_hl_d_0x72(&mut self) {}
+    fn ld_hl_d_0x72(&mut self) {
+        println!("LD (HL), D");
+        self.write(self.registers.hl(), self.registers.d);
+    }
     // bytes: 1 cycles: [8]
-    fn ld_hl_e_0x73(&mut self) {}
+    fn ld_hl_e_0x73(&mut self) {
+        println!("LD (HL), E");
+        self.write(self.registers.hl(), self.registers.e);
+    }
     // bytes: 1 cycles: [8]
-    fn ld_hl_h_0x74(&mut self) {}
+    fn ld_hl_h_0x74(&mut self) {
+        println!("LD (HL), H");
+        self.write(self.registers.hl(), self.registers.h);
+    }
     // bytes: 1 cycles: [8]
-    fn ld_hl_l_0x75(&mut self) {}
+    fn ld_hl_l_0x75(&mut self) {
+        println!("LD (HL), L");
+        self.write(self.registers.hl(), self.registers.l);
+    }
     // bytes: 1 cycles: [4]
     fn halt_0x76(&mut self) {
         println!("HALT");
@@ -1308,21 +1457,45 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn ld_hl_a_0x77(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn ld_a_b_0x78(&mut self) {}
+    fn ld_a_b_0x78(&mut self) {
+        println!("LD A, B");
+        self.registers.a = self.registers.b;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_a_c_0x79(&mut self) {}
+    fn ld_a_c_0x79(&mut self) {
+        println!("LD A, C");
+        self.registers.a = self.registers.c;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_a_d_0x7a(&mut self) {}
+    fn ld_a_d_0x7a(&mut self) {
+        println!("LD A, D");
+        self.registers.a = self.registers.d;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_a_e_0x7b(&mut self) {}
+    fn ld_a_e_0x7b(&mut self) {
+        println!("LD A, E");
+        self.registers.a = self.registers.e;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_a_h_0x7c(&mut self) {}
+    fn ld_a_h_0x7c(&mut self) {
+        println!("LD A, H");
+        self.registers.a = self.registers.h;
+    }
     // bytes: 1 cycles: [4]
-    fn ld_a_l_0x7d(&mut self) {}
+    fn ld_a_l_0x7d(&mut self) {
+        println!("LD A, L");
+        self.registers.a = self.registers.l;
+    }
     // bytes: 1 cycles: [8]
-    fn ld_a_hl_0x7e(&mut self) {}
+    fn ld_a_hl_0x7e(&mut self) {
+        println!("LD A, (HL)");
+        self.registers.a = self.read(self.registers.hl());
+    }
     // bytes: 1 cycles: [4]
-    fn ld_a_a_0x7f(&mut self) {}
+    fn ld_a_a_0x7f(&mut self) {
+        println!("LD A, A");
+        self.registers.a = self.registers.a;
+    }
     // bytes: 1 cycles: [4]
     fn add_a_b_0x80(&mut self) {}
     // bytes: 1 cycles: [4]
