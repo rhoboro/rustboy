@@ -8,16 +8,27 @@ use std::fmt::Formatter;
 // &, + 演算子をサポートする型にデフォルト実装を自動で付与したい
 trait ArithmeticUtil<RHS = Self> {
     fn calc_half_carry(&self, rhs: RHS) -> bool;
+    fn calc_carry(&self, rhs: RHS) -> bool;
 }
 
 impl ArithmeticUtil<u8> for u8 {
+    // TODO: 正しいか自信ないのでテスト書く
     fn calc_half_carry(&self, rhs: u8) -> bool {
         ((self & 0x0F) + (rhs & 0x0F)) & 0x10 == 0x10
     }
+    // TODO: 正しいか自信ないのでテスト書く
+    fn calc_carry(&self, rhs: u8) -> bool {
+        ((self.clone() as u16 & 0x00FF) + (rhs as u16 & 0x00FF)) & 0x0100 == 0x0100
+    }
 }
 impl ArithmeticUtil<u16> for u16 {
+    // TODO: 正しいか自信ないのでテスト書く
     fn calc_half_carry(&self, rhs: u16) -> bool {
         ((self & 0x000F) + (rhs & 0x000F)) & 0x0010 == 0x0010
+    }
+    // TODO: 正しいか自信ないのでテスト書く
+    fn calc_carry(&self, rhs: u16) -> bool {
+        ((self.clone() as u32 & 0x0000FFFF) + (rhs as u32 & 0x0000FFFF)) & 0x00010000 == 0x00010000
     }
 }
 
@@ -357,7 +368,7 @@ impl CPU {
             // 0x05 => self.dec_b_0x05(),
             0x06 => self.ld_b_d8_0x06(),
             // 0x07 => self.rlca_0x07(),
-            // 0x08 => self.ld_a16_sp_0x08(),
+            0x08 => self.ld_a16_sp_0x08(),
             // 0x09 => self.add_hl_bc_0x09(),
             0x0A => self.ld_a_bc_0x0a(),
             // 0x0B => self.dec_bc_0x0b(),
@@ -597,8 +608,8 @@ impl CPU {
             // 0xF5 => self.push_af_0xf5(),
             // 0xF6 => self.or_d8_0xf6(),
             // 0xF7 => self.rst_30h_0xf7(),
-            // 0xF8 => self.ld_hl_sp_r8_0xf8(),
-            // 0xF9 => self.ld_sp_hl_0xf9(),
+            0xF8 => self.ld_hl_sp_r8_0xf8(),
+            0xF9 => self.ld_sp_hl_0xf9(),
             0xFA => self.ld_a_a16_0xfa(),
             // 0xFB => self.ei_0xfb(),
             // 0xFC => self.illegal_fc_0xfc(),
@@ -998,7 +1009,7 @@ impl CPU {
     }
     // bytes: 3 cycles: [12]
     fn ld_bc_d16_0x01(&mut self) {
-        println!("ld BC, d16");
+        println!("LD BC, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
@@ -1017,14 +1028,20 @@ impl CPU {
     fn dec_b_0x05(&mut self) {}
     // bytes: 2 cycles: [8]
     fn ld_b_d8_0x06(&mut self) {
-        println!("ld B, d8");
+        println!("LD B, d8");
         let d8 = self.fetch();
         self.registers.b = d8;
     }
     // bytes: 1 cycles: [4]
     fn rlca_0x07(&mut self) {}
     // bytes: 3 cycles: [20]
-    fn ld_a16_sp_0x08(&mut self) {}
+    fn ld_a16_sp_0x08(&mut self) {
+        println!("LD (a16), SP");
+        let l: u16 = self.fetch().into();
+        let h: u16 = self.fetch().into();
+        let a16 = h << 8 | l;
+        self.write(a16, self.read(self.registers.sp));
+    }
     // bytes: 1 cycles: [8]
     fn add_hl_bc_0x09(&mut self) {}
     // bytes: 1 cycles: [8]
@@ -1853,9 +1870,20 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn rst_30h_0xf7(&mut self) {}
     // bytes: 2 cycles: [12]
-    fn ld_hl_sp_r8_0xf8(&mut self) {}
+    fn ld_hl_sp_r8_0xf8(&mut self) {
+        println!("LD HL, SP+r8");
+        let r8: i8 = self.fetch() as i8;
+        self.registers.set_hl(self.registers.sp.wrapping_add(r8 as u16));
+        self.registers.f.z = false;
+        self.registers.f.n = false;
+        self.registers.f.h = self.registers.sp.calc_half_carry(r8 as u16);
+        self.registers.f.c = self.registers.sp.calc_carry(r8 as u16);
+    }
     // bytes: 1 cycles: [8]
-    fn ld_sp_hl_0xf9(&mut self) {}
+    fn ld_sp_hl_0xf9(&mut self) {
+        println!("LD SP, HL");
+        self.registers.sp = self.registers.hl();
+    }
     // bytes: 3 cycles: [16]
     fn ld_a_a16_0xfa(&mut self) {
         println!("LD A, (a16)");
@@ -1877,8 +1905,7 @@ impl CPU {
         self.registers.f.z = self.registers.a == d8;
         self.registers.f.n = true;
         self.registers.f.h = self.registers.a.calc_half_carry(d8);
-        let (_, borrow) = self.registers.a.overflowing_sub(d8);
-        self.registers.f.c = borrow;
+        self.registers.f.c = self.registers.a.calc_carry(d8);
     }
     // bytes: 1 cycles: [16]
     fn rst_38h_0xff(&mut self) {}
