@@ -383,7 +383,7 @@ impl CPU {
             // 0x1F => self.rra_0x1f(),
             0x20 => self.jr_nz_r8_0x20(),
             0x21 => self.ld_hl_d16_0x21(),
-            // 0x22 => self.ld_hl_a_0x22(),
+            0x22 => self.ld_hl_a_0x22(),
             // 0x23 => self.inc_hl_0x23(),
             // 0x24 => self.inc_h_0x24(),
             // 0x25 => self.dec_h_0x25(),
@@ -391,7 +391,7 @@ impl CPU {
             // 0x27 => self.daa_0x27(),
             0x28 => self.jr_z_r8_0x28(),
             // 0x29 => self.add_hl_hl_0x29(),
-            // 0x2A => self.ld_a_hl_0x2a(),
+            0x2A => self.ld_a_hl_0x2a(),
             // 0x2B => self.dec_hl_0x2b(),
             // 0x2C => self.inc_l_0x2c(),
             // 0x2D => self.dec_l_0x2d(),
@@ -399,7 +399,7 @@ impl CPU {
             // 0x2F => self.cpl_0x2f(),
             0x30 => self.jr_nc_r8_0x30(),
             0x31 => self.ld_sp_d16_0x31(),
-            // 0x32 => self.ld_hl_a_0x32(),
+            0x32 => self.ld_hl_a_0x32(),
             // 0x33 => self.inc_sp_0x33(),
             // 0x34 => self.inc_hl_0x34(),
             // 0x35 => self.dec_hl_0x35(),
@@ -407,7 +407,7 @@ impl CPU {
             // 0x37 => self.scf_0x37(),
             0x38 => self.jr_c_r8_0x38(),
             // 0x39 => self.add_hl_sp_0x39(),
-            // 0x3A => self.ld_a_hl_0x3a(),
+            0x3A => self.ld_a_hl_0x3a(),
             // 0x3B => self.dec_sp_0x3b(),
             // 0x3C => self.inc_a_0x3c(),
             // 0x3D => self.dec_a_0x3d(),
@@ -573,9 +573,9 @@ impl CPU {
             // 0xDD => self.illegal_dd_0xdd(),
             // 0xDE => self.sbc_a_d8_0xde(),
             // 0xDF => self.rst_18h_0xdf(),
-            // 0xE0 => self.ldh_a8_a_0xe0(),
+            0xE0 => self.ldh_a8_a_0xe0(),
             // 0xE1 => self.pop_hl_0xe1(),
-            // 0xE2 => self.ld_c_a_0xe2(),
+            0xE2 => self.ld_c_a_0xe2(),
             // 0xE3 => self.illegal_e3_0xe3(),
             // 0xE4 => self.illegal_e4_0xe4(),
             // 0xE5 => self.push_hl_0xe5(),
@@ -1115,7 +1115,12 @@ impl CPU {
         self.registers.set_hl(d16);
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_a_0x22(&mut self) {}
+    fn ld_hl_a_0x22(&mut self) {
+        println!("LD (HL+), A");
+        self.write(self.registers.hl(), self.registers.a);
+        self.registers.a = self.read(self.registers.hl());
+        self.registers.set_hl(self.registers.hl() + 1);
+    }
     // bytes: 1 cycles: [8]
     fn inc_hl_0x23(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1141,7 +1146,11 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn add_hl_hl_0x29(&mut self) {}
     // bytes: 1 cycles: [8]
-    fn ld_a_hl_0x2a(&mut self) {}
+    fn ld_a_hl_0x2a(&mut self) {
+        println!("LD A, (HL+)");
+        self.registers.a = self.read(self.registers.hl());
+        self.registers.set_hl(self.registers.hl() + 1);
+    }
     // bytes: 1 cycles: [8]
     fn dec_hl_0x2b(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1173,7 +1182,12 @@ impl CPU {
         self.registers.sp = d16;
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_a_0x32(&mut self) {}
+    fn ld_hl_a_0x32(&mut self) {
+        println!("LD (HL-), A");
+        self.write(self.registers.hl(), self.registers.a);
+        self.registers.a = self.read(self.registers.hl());
+        self.registers.set_hl(self.registers.hl() - 1);
+    }
     // bytes: 1 cycles: [8]
     fn inc_sp_0x33(&mut self) {}
     // bytes: 1 cycles: [12]
@@ -1199,7 +1213,11 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn add_hl_sp_0x39(&mut self) {}
     // bytes: 1 cycles: [8]
-    fn ld_a_hl_0x3a(&mut self) {}
+    fn ld_a_hl_0x3a(&mut self) {
+        println!("LD A, (HL-)");
+        self.registers.a = self.read(self.registers.hl());
+        self.registers.set_hl(self.registers.hl() - 1);
+    }
     // bytes: 1 cycles: [8]
     fn dec_sp_0x3b(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1764,7 +1782,11 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn rst_18h_0xdf(&mut self) {}
     // bytes: 2 cycles: [12]
-    fn ldh_a8_a_0xe0(&mut self) {}
+    fn ldh_a8_a_0xe0(&mut self) {
+        println!("LD (a8), A");
+        let a8: u16 = self.fetch().into();
+        self.write(0xFF00 + a8, self.registers.a);
+    }
     // bytes: 1 cycles: [12]
     fn pop_hl_0xe1(&mut self) {}
     // bytes: 1 cycles: [8]
