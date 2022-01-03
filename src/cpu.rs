@@ -351,7 +351,7 @@ impl CPU {
         match opcode {
             0x00 => self.nop_0x00(),
             0x01 => self.ld_bc_d16_0x01(),
-            // 0x02 => self.ld_bc_a_0x02(),
+            0x02 => self.ld_bc_a_0x02(),
             // 0x03 => self.inc_bc_0x03(),
             // 0x04 => self.inc_b_0x04(),
             // 0x05 => self.dec_b_0x05(),
@@ -367,7 +367,7 @@ impl CPU {
             // 0x0F => self.rrca_0x0f(),
             // 0x10 => self.stop_d8_0x10(),
             0x11 => self.ld_de_d16_0x11(),
-            // 0x12 => self.ld_de_a_0x12(),
+            0x12 => self.ld_de_a_0x12(),
             // 0x13 => self.inc_de_0x13(),
             // 0x14 => self.inc_d_0x14(),
             // 0x15 => self.dec_d_0x15(),
@@ -420,7 +420,7 @@ impl CPU {
             0x44 => self.ld_b_h_0x44(),
             0x45 => self.ld_b_l_0x45(),
             0x46 => self.ld_b_hl_0x46(),
-            // 0x47 => self.ld_b_a_0x47(),
+            0x47 => self.ld_b_a_0x47(),
             0x48 => self.ld_c_b_0x48(),
             0x49 => self.ld_c_c_0x49(),
             0x4A => self.ld_c_d_0x4a(),
@@ -428,7 +428,7 @@ impl CPU {
             0x4C => self.ld_c_h_0x4c(),
             0x4D => self.ld_c_l_0x4d(),
             0x4E => self.ld_c_hl_0x4e(),
-            // 0x4F => self.ld_c_a_0x4f(),
+            0x4F => self.ld_c_a_0x4f(),
             0x50 => self.ld_d_b_0x50(),
             0x51 => self.ld_d_c_0x51(),
             0x52 => self.ld_d_d_0x52(),
@@ -436,7 +436,7 @@ impl CPU {
             0x54 => self.ld_d_h_0x54(),
             0x55 => self.ld_d_l_0x55(),
             0x56 => self.ld_d_hl_0x56(),
-            // 0x57 => self.ld_d_a_0x57(),
+            0x57 => self.ld_d_a_0x57(),
             0x58 => self.ld_e_b_0x58(),
             0x59 => self.ld_e_c_0x59(),
             0x5A => self.ld_e_d_0x5a(),
@@ -444,7 +444,7 @@ impl CPU {
             0x5C => self.ld_e_h_0x5c(),
             0x5D => self.ld_e_l_0x5d(),
             0x5E => self.ld_e_hl_0x5e(),
-            // 0x5F => self.ld_e_a_0x5f(),
+            0x5F => self.ld_e_a_0x5f(),
             0x60 => self.ld_h_b_0x60(),
             0x61 => self.ld_h_c_0x61(),
             0x62 => self.ld_h_d_0x62(),
@@ -452,7 +452,7 @@ impl CPU {
             0x64 => self.ld_h_h_0x64(),
             0x65 => self.ld_h_l_0x65(),
             0x66 => self.ld_h_hl_0x66(),
-            // 0x67 => self.ld_h_a_0x67(),
+            0x67 => self.ld_h_a_0x67(),
             0x68 => self.ld_l_b_0x68(),
             0x69 => self.ld_l_c_0x69(),
             0x6A => self.ld_l_d_0x6a(),
@@ -460,7 +460,7 @@ impl CPU {
             0x6C => self.ld_l_h_0x6c(),
             0x6D => self.ld_l_l_0x6d(),
             0x6E => self.ld_l_hl_0x6e(),
-            // 0x6F => self.ld_l_a_0x6f(),
+            0x6F => self.ld_l_a_0x6f(),
             0x70 => self.ld_hl_b_0x70(),
             0x71 => self.ld_hl_c_0x71(),
             0x72 => self.ld_hl_d_0x72(),
@@ -468,7 +468,7 @@ impl CPU {
             0x74 => self.ld_hl_h_0x74(),
             0x75 => self.ld_hl_l_0x75(),
             // 0x76 => self.halt_0x76(),
-            // 0x77 => self.ld_hl_a_0x77(),
+            0x77 => self.ld_hl_a_0x77(),
             0x78 => self.ld_a_b_0x78(),
             0x79 => self.ld_a_c_0x79(),
             0x7A => self.ld_a_d_0x7a(),
@@ -583,7 +583,7 @@ impl CPU {
             // 0xE7 => self.rst_20h_0xe7(),
             // 0xE8 => self.add_sp_r8_0xe8(),
             // 0xE9 => self.jp_hl_0xe9(),
-            // 0xEA => self.ld_a16_a_0xea(),
+            0xEA => self.ld_a16_a_0xea(),
             // 0xEB => self.illegal_eb_0xeb(),
             // 0xEC => self.illegal_ec_0xec(),
             // 0xED => self.illegal_ed_0xed(),
@@ -1005,7 +1005,10 @@ impl CPU {
         self.registers.set_bc(d16);
     }
     // bytes: 1 cycles: [8]
-    fn ld_bc_a_0x02(&mut self) {}
+    fn ld_bc_a_0x02(&mut self) {
+        println!("LD (BC), A");
+        self.write(self.registers.bc(), self.registers.a);
+    }
     // bytes: 1 cycles: [8]
     fn inc_bc_0x03(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1054,7 +1057,10 @@ impl CPU {
         self.registers.set_de(d16);
     }
     // bytes: 1 cycles: [8]
-    fn ld_de_a_0x12(&mut self) {}
+    fn ld_de_a_0x12(&mut self) {
+        println!("LD (DE), A");
+        self.write(self.registers.de(), self.registers.a);
+    }
     // bytes: 1 cycles: [8]
     fn inc_de_0x13(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1244,7 +1250,10 @@ impl CPU {
         self.registers.b = self.read(self.registers.hl());
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_a_0x47(&mut self) {}
+    fn ld_b_a_0x47(&mut self) {
+        println!("LD B, A");
+        self.registers.b = self.registers.a;
+    }
     // bytes: 1 cycles: [4]
     fn ld_c_b_0x48(&mut self) {
         println!("LD C, B");
@@ -1281,7 +1290,10 @@ impl CPU {
         self.registers.c = self.read(self.registers.hl());
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_a_0x4f(&mut self) {}
+    fn ld_c_a_0x4f(&mut self) {
+        println!("LD C, A");
+        self.registers.c = self.registers.a;
+    }
     // bytes: 1 cycles: [4]
     fn ld_d_b_0x50(&mut self) {
         println!("LD D, B");
@@ -1318,7 +1330,10 @@ impl CPU {
         self.registers.d = self.read(self.registers.hl());
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_a_0x57(&mut self) {}
+    fn ld_d_a_0x57(&mut self) {
+        println!("LD D, A");
+        self.registers.d = self.registers.a;
+    }
     // bytes: 1 cycles: [4]
     fn ld_e_b_0x58(&mut self) {
         println!("LD E, B");
@@ -1355,7 +1370,10 @@ impl CPU {
         self.registers.e = self.read(self.registers.hl());
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_a_0x5f(&mut self) {}
+    fn ld_e_a_0x5f(&mut self) {
+        println!("LD E, A");
+        self.registers.e = self.registers.a;
+    }
     // bytes: 1 cycles: [4]
     fn ld_h_b_0x60(&mut self) {
         println!("LD H, B");
@@ -1392,7 +1410,10 @@ impl CPU {
         self.registers.h = self.read(self.registers.hl());
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_a_0x67(&mut self) {}
+    fn ld_h_a_0x67(&mut self) {
+        println!("LD H, A");
+        self.registers.h = self.registers.a;
+    }
     // bytes: 1 cycles: [4]
     fn ld_l_b_0x68(&mut self) {
         println!("LD L, B");
@@ -1429,7 +1450,10 @@ impl CPU {
         self.registers.l = self.read(self.registers.hl());
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_a_0x6f(&mut self) {}
+    fn ld_l_a_0x6f(&mut self) {
+        println!("LD L, A");
+        self.registers.l = self.registers.a;
+    }
     // bytes: 1 cycles: [8]
     fn ld_hl_b_0x70(&mut self) {
         println!("LD (HL), B");
@@ -1465,7 +1489,10 @@ impl CPU {
         println!("HALT");
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_a_0x77(&mut self) {}
+    fn ld_hl_a_0x77(&mut self) {
+        println!("LD (HL), A");
+        self.write(self.registers.hl(), self.registers.a);
+    }
     // bytes: 1 cycles: [4]
     fn ld_a_b_0x78(&mut self) {
         println!("LD A, B");
@@ -1757,7 +1784,13 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn jp_hl_0xe9(&mut self) {}
     // bytes: 3 cycles: [16]
-    fn ld_a16_a_0xea(&mut self) {}
+    fn ld_a16_a_0xea(&mut self) {
+        println!("LD a16, A");
+        let l: u16 = self.fetch().into();
+        let h: u16 = self.fetch().into();
+        let a16 = h << 8 | l;
+        self.write(a16, self.registers.a);
+    }
     // bytes: 1 cycles: [4]
     fn illegal_eb_0xeb(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1797,7 +1830,7 @@ impl CPU {
     fn ld_sp_hl_0xf9(&mut self) {}
     // bytes: 3 cycles: [16]
     fn ld_a_a16_0xfa(&mut self) {
-        println!("LD A, (nn)");
+        println!("LD A, a16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
