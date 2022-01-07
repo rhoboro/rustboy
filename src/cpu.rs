@@ -390,7 +390,7 @@ impl CPU {
             0x06 => self.ld_b_d8_0x06(),
             // 0x07 => self.rlca_0x07(),
             0x08 => self.ld_a16_sp_0x08(),
-            // 0x09 => self.add_hl_bc_0x09(),
+            0x09 => self.add_hl_bc_0x09(),
             0x0A => self.ld_a_bc_0x0a(),
             // 0x0B => self.dec_bc_0x0b(),
             0x0C => self.inc_c_0x0c(),
@@ -406,7 +406,7 @@ impl CPU {
             0x16 => self.ld_d_d8_0x16(),
             // 0x17 => self.rla_0x17(),
             // 0x18 => self.jr_r8_0x18(),
-            // 0x19 => self.add_hl_de_0x19(),
+            0x19 => self.add_hl_de_0x19(),
             0x1A => self.ld_a_de_0x1a(),
             // 0x1B => self.dec_de_0x1b(),
             0x1C => self.inc_e_0x1c(),
@@ -422,7 +422,7 @@ impl CPU {
             0x26 => self.ld_h_d8_0x26(),
             // 0x27 => self.daa_0x27(),
             0x28 => self.jr_z_r8_0x28(),
-            // 0x29 => self.add_hl_hl_0x29(),
+            0x29 => self.add_hl_hl_0x29(),
             0x2A => self.ld_a_hl_0x2a(),
             // 0x2B => self.dec_hl_0x2b(),
             0x2C => self.inc_l_0x2c(),
@@ -438,7 +438,7 @@ impl CPU {
             0x36 => self.ld_hl_d8_0x36(),
             // 0x37 => self.scf_0x37(),
             0x38 => self.jr_c_r8_0x38(),
-            // 0x39 => self.add_hl_sp_0x39(),
+            0x39 => self.add_hl_sp_0x39(),
             0x3A => self.ld_a_hl_0x3a(),
             // 0x3B => self.dec_sp_0x3b(),
             0x3C => self.inc_a_0x3c(),
@@ -1076,7 +1076,15 @@ impl CPU {
         self.write(a16, self.read(self.registers.sp));
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_bc_0x09(&mut self) {}
+    fn add_hl_bc_0x09(&mut self) {
+        println!("ADD HL, BC");
+        self.registers.f.c = self.registers.hl().calc_carry(self.registers.bc());
+        // ここのハーフキャリーは変則的
+        self.registers.f.h =
+            ((self.registers.hl() & 0x3FF) + (self.registers.bc() & 0x3FF)) & 0x400 == 0x400;
+        self.registers.set_hl(self.registers.bc());
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
     fn ld_a_bc_0x0a(&mut self) {
         println!("LD A, (BC)");
@@ -1152,7 +1160,15 @@ impl CPU {
     // bytes: 2 cycles: [12]
     fn jr_r8_0x18(&mut self) {}
     // bytes: 1 cycles: [8]
-    fn add_hl_de_0x19(&mut self) {}
+    fn add_hl_de_0x19(&mut self) {
+        println!("ADD HL, DE");
+        self.registers.f.c = self.registers.hl().calc_carry(self.registers.de());
+        // ここのハーフキャリーは変則的
+        self.registers.f.h =
+            ((self.registers.hl() & 0x3FF) + (self.registers.de() & 0x3FF)) & 0x400 == 0x400;
+        self.registers.set_hl(self.registers.de());
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
     fn ld_a_de_0x1a(&mut self) {
         println!("LD A, (DE)");
@@ -1242,7 +1258,15 @@ impl CPU {
         }
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_hl_0x29(&mut self) {}
+    fn add_hl_hl_0x29(&mut self) {
+        println!("ADD HL, HL");
+        self.registers.f.c = self.registers.hl().calc_carry(self.registers.hl());
+        // ここのハーフキャリーは変則的
+        self.registers.f.h =
+            ((self.registers.hl() & 0x3FF) + (self.registers.hl() & 0x3FF)) & 0x400 == 0x400;
+        self.registers.set_hl(self.registers.hl());
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
     fn ld_a_hl_0x2a(&mut self) {
         println!("LD A, (HL+)");
@@ -1335,7 +1359,15 @@ impl CPU {
         }
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_sp_0x39(&mut self) {}
+    fn add_hl_sp_0x39(&mut self) {
+        println!("ADD HL, SP");
+        self.registers.f.c = self.registers.hl().calc_carry(self.registers.sp);
+        // ここのハーフキャリーは変則的
+        self.registers.f.h =
+            ((self.registers.hl() & 0x3FF) + (self.registers.sp & 0x3FF)) & 0x400 == 0x400;
+        self.registers.set_hl(self.registers.sp);
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
     fn ld_a_hl_0x3a(&mut self) {
         println!("LD A, (HL-)");
