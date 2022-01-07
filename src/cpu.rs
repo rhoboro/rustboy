@@ -7,6 +7,7 @@ use std::fmt::Formatter;
 
 // &, + 演算子をサポートする型にデフォルト実装を自動で付与したい
 trait ArithmeticUtil<RHS = Self> {
+    // TODO: 加算しつつ結果を返したほうが良さそう
     fn calc_half_carry(&self, rhs: RHS) -> bool;
     fn calc_carry(&self, rhs: RHS) -> bool;
 }
@@ -496,14 +497,14 @@ impl CPU {
             0x7D => self.ld_a_l_0x7d(),
             0x7E => self.ld_a_hl_0x7e(),
             0x7F => self.ld_a_a_0x7f(),
-            // 0x80 => self.add_a_b_0x80(),
-            // 0x81 => self.add_a_c_0x81(),
-            // 0x82 => self.add_a_d_0x82(),
-            // 0x83 => self.add_a_e_0x83(),
-            // 0x84 => self.add_a_h_0x84(),
-            // 0x85 => self.add_a_l_0x85(),
-            // 0x86 => self.add_a_hl_0x86(),
-            // 0x87 => self.add_a_a_0x87(),
+            0x80 => self.add_a_b_0x80(),
+            0x81 => self.add_a_c_0x81(),
+            0x82 => self.add_a_d_0x82(),
+            0x83 => self.add_a_e_0x83(),
+            0x84 => self.add_a_h_0x84(),
+            0x85 => self.add_a_l_0x85(),
+            0x86 => self.add_a_hl_0x86(),
+            0x87 => self.add_a_a_0x87(),
             // 0x88 => self.adc_a_b_0x88(),
             // 0x89 => self.adc_a_c_0x89(),
             // 0x8A => self.adc_a_d_0x8a(),
@@ -566,7 +567,7 @@ impl CPU {
             0xC3 => self.jp_a16_0xc3(),
             // 0xC4 => self.call_nz_a16_0xc4(),
             0xC5 => self.push_bc_0xc5(),
-            // 0xC6 => self.add_a_d8_0xc6(),
+            0xC6 => self.add_a_d8_0xc6(),
             // 0xC7 => self.rst_00h_0xc7(),
             // 0xC8 => self.ret_z_0xc8(),
             // 0xC9 => self.ret_0xc9(),
@@ -1577,21 +1578,78 @@ impl CPU {
         self.registers.a = self.registers.a;
     }
     // bytes: 1 cycles: [4]
-    fn add_a_b_0x80(&mut self) {}
+    fn add_a_b_0x80(&mut self) {
+        println!("ADD A, B");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.b);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.b);
+        self.registers.a += self.registers.b;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn add_a_c_0x81(&mut self) {}
+    fn add_a_c_0x81(&mut self) {
+        println!("ADD A, C");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.c);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.c);
+        self.registers.a += self.registers.c;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn add_a_d_0x82(&mut self) {}
+    fn add_a_d_0x82(&mut self) {
+        println!("ADD A, D");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.d);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.d);
+        self.registers.a += self.registers.d;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn add_a_e_0x83(&mut self) {}
+    fn add_a_e_0x83(&mut self) {
+        println!("ADD A, E");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.e);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.e);
+        self.registers.a += self.registers.e;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn add_a_h_0x84(&mut self) {}
+    fn add_a_h_0x84(&mut self) {
+        println!("ADD A, H");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.h);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.h);
+        self.registers.a += self.registers.h;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn add_a_l_0x85(&mut self) {}
+    fn add_a_l_0x85(&mut self) {
+        println!("ADD A, L");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.l);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.l);
+        self.registers.a += self.registers.l;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
-    fn add_a_hl_0x86(&mut self) {}
+    fn add_a_hl_0x86(&mut self) {
+        println!("ADD A, (HL)");
+        let hl = self.read(self.registers.hl());
+        self.registers.f.h = self.registers.a.calc_half_carry(hl);
+        self.registers.f.c = self.registers.a.calc_carry(hl);
+        self.registers.a += hl;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn add_a_a_0x87(&mut self) {}
+    fn add_a_a_0x87(&mut self) {
+        println!("ADD A, A");
+        self.registers.f.h = self.registers.a.calc_half_carry(self.registers.a);
+        self.registers.f.c = self.registers.a.calc_carry(self.registers.a);
+        self.registers.a += self.registers.a;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
     fn adc_a_b_0x88(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1741,7 +1799,15 @@ impl CPU {
         self.registers.sp -= 2;
     }
     // bytes: 2 cycles: [8]
-    fn add_a_d8_0xc6(&mut self) {}
+    fn add_a_d8_0xc6(&mut self) {
+        println!("ADD A, d8");
+        let d8: u8 = self.fetch();
+        self.registers.f.h = self.registers.a.calc_half_carry(d8);
+        self.registers.f.c = self.registers.a.calc_carry(d8);
+        self.registers.a += d8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [16]
     fn rst_00h_0xc7(&mut self) {}
     // bytes: 1 cycles: [20, 8]
