@@ -386,7 +386,7 @@ impl CPU {
             0x02 => self.ld_bc_a_0x02(),
             // 0x03 => self.inc_bc_0x03(),
             0x04 => self.inc_b_0x04(),
-            // 0x05 => self.dec_b_0x05(),
+            0x05 => self.dec_b_0x05(),
             0x06 => self.ld_b_d8_0x06(),
             // 0x07 => self.rlca_0x07(),
             0x08 => self.ld_a16_sp_0x08(),
@@ -394,7 +394,7 @@ impl CPU {
             0x0A => self.ld_a_bc_0x0a(),
             // 0x0B => self.dec_bc_0x0b(),
             0x0C => self.inc_c_0x0c(),
-            // 0x0D => self.dec_c_0x0d(),
+            0x0D => self.dec_c_0x0d(),
             0x0E => self.ld_c_d8_0x0e(),
             // 0x0F => self.rrca_0x0f(),
             // 0x10 => self.stop_d8_0x10(),
@@ -402,7 +402,7 @@ impl CPU {
             0x12 => self.ld_de_a_0x12(),
             // 0x13 => self.inc_de_0x13(),
             0x14 => self.inc_d_0x14(),
-            // 0x15 => self.dec_d_0x15(),
+            0x15 => self.dec_d_0x15(),
             0x16 => self.ld_d_d8_0x16(),
             // 0x17 => self.rla_0x17(),
             // 0x18 => self.jr_r8_0x18(),
@@ -410,7 +410,7 @@ impl CPU {
             0x1A => self.ld_a_de_0x1a(),
             // 0x1B => self.dec_de_0x1b(),
             0x1C => self.inc_e_0x1c(),
-            // 0x1D => self.dec_e_0x1d(),
+            0x1D => self.dec_e_0x1d(),
             0x1E => self.ld_e_d8_0x1e(),
             // 0x1F => self.rra_0x1f(),
             0x20 => self.jr_nz_r8_0x20(),
@@ -418,7 +418,7 @@ impl CPU {
             0x22 => self.ld_hl_a_0x22(),
             // 0x23 => self.inc_hl_0x23(),
             0x24 => self.inc_h_0x24(),
-            // 0x25 => self.dec_h_0x25(),
+            0x25 => self.dec_h_0x25(),
             0x26 => self.ld_h_d8_0x26(),
             // 0x27 => self.daa_0x27(),
             0x28 => self.jr_z_r8_0x28(),
@@ -426,7 +426,7 @@ impl CPU {
             0x2A => self.ld_a_hl_0x2a(),
             // 0x2B => self.dec_hl_0x2b(),
             0x2C => self.inc_l_0x2c(),
-            // 0x2D => self.dec_l_0x2d(),
+            0x2D => self.dec_l_0x2d(),
             0x2E => self.ld_l_d8_0x2e(),
             // 0x2F => self.cpl_0x2f(),
             0x30 => self.jr_nc_r8_0x30(),
@@ -434,7 +434,7 @@ impl CPU {
             0x32 => self.ld_hl_a_0x32(),
             // 0x33 => self.inc_sp_0x33(),
             0x34 => self.inc_hl_0x34(),
-            // 0x35 => self.dec_hl_0x35(),
+            0x35 => self.dec_hl_0x35(),
             0x36 => self.ld_hl_d8_0x36(),
             // 0x37 => self.scf_0x37(),
             0x38 => self.jr_c_r8_0x38(),
@@ -442,7 +442,7 @@ impl CPU {
             0x3A => self.ld_a_hl_0x3a(),
             // 0x3B => self.dec_sp_0x3b(),
             0x3C => self.inc_a_0x3c(),
-            // 0x3D => self.dec_a_0x3d(),
+            0x3D => self.dec_a_0x3d(),
             0x3E => self.ld_a_d8_0x3e(),
             // 0x3F => self.ccf_0x3f(),
             0x40 => self.ld_b_b_0x40(),
@@ -1052,7 +1052,13 @@ impl CPU {
         self.registers.f.z = self.registers.b == 0;
     }
     // bytes: 1 cycles: [4]
-    fn dec_b_0x05(&mut self) {}
+    fn dec_b_0x05(&mut self) {
+        println!("DEC B");
+        self.registers.f.h = self.registers.b.calc_half_borrow(1);
+        self.registers.b -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.b == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_b_d8_0x06(&mut self) {
         println!("LD B, d8");
@@ -1087,7 +1093,13 @@ impl CPU {
         self.registers.f.z = self.registers.c == 0;
     }
     // bytes: 1 cycles: [4]
-    fn dec_c_0x0d(&mut self) {}
+    fn dec_c_0x0d(&mut self) {
+        println!("DEC C");
+        self.registers.f.h = self.registers.c.calc_half_borrow(1);
+        self.registers.c -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.c == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_c_d8_0x0e(&mut self) {
         println!("ld C, d8");
@@ -1122,7 +1134,13 @@ impl CPU {
         self.registers.f.z = self.registers.d == 0;
     }
     // bytes: 1 cycles: [4]
-    fn dec_d_0x15(&mut self) {}
+    fn dec_d_0x15(&mut self) {
+        println!("DEC D");
+        self.registers.f.h = self.registers.d.calc_half_borrow(1);
+        self.registers.d -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.d == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_d_d8_0x16(&mut self) {
         println!("ld D, d8");
@@ -1151,7 +1169,13 @@ impl CPU {
         self.registers.f.z = self.registers.e == 0;
     }
     // bytes: 1 cycles: [4]
-    fn dec_e_0x1d(&mut self) {}
+    fn dec_e_0x1d(&mut self) {
+        println!("DEC E");
+        self.registers.f.h = self.registers.e.calc_half_borrow(1);
+        self.registers.e -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.e == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_e_d8_0x1e(&mut self) {
         println!("ld E, d8");
@@ -1194,7 +1218,13 @@ impl CPU {
         self.registers.f.z = self.registers.h == 0;
     }
     // bytes: 1 cycles: [4]
-    fn dec_h_0x25(&mut self) {}
+    fn dec_h_0x25(&mut self) {
+        println!("DEC H");
+        self.registers.f.h = self.registers.h.calc_half_borrow(1);
+        self.registers.h -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.h == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_h_d8_0x26(&mut self) {
         println!("ld H, d8");
@@ -1230,7 +1260,13 @@ impl CPU {
         self.registers.f.z = self.registers.l == 0;
     }
     // bytes: 1 cycles: [4]
-    fn dec_l_0x2d(&mut self) {}
+    fn dec_l_0x2d(&mut self) {
+        println!("DEC L");
+        self.registers.f.h = self.registers.l.calc_half_borrow(1);
+        self.registers.l -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.l == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_l_d8_0x2e(&mut self) {
         println!("ld L, d8");
@@ -1274,7 +1310,14 @@ impl CPU {
         self.registers.f.z = (hl + 1) == 0;
     }
     // bytes: 1 cycles: [12]
-    fn dec_hl_0x35(&mut self) {}
+    fn dec_hl_0x35(&mut self) {
+        println!("DEC (HL)");
+        let hl = self.read(self.registers.hl());
+        self.registers.f.h = hl.calc_half_borrow(1);
+        self.write(self.registers.hl(), hl - 1);
+        self.registers.f.n = true;
+        self.registers.f.z = (hl - 1) == 0;
+    }
     // bytes: 2 cycles: [12]
     fn ld_hl_d8_0x36(&mut self) {
         println!("LD (HL), n");
@@ -1304,7 +1347,13 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn inc_a_0x3c(&mut self) {}
     // bytes: 1 cycles: [4]
-    fn dec_a_0x3d(&mut self) {}
+    fn dec_a_0x3d(&mut self) {
+        println!("DEC A");
+        self.registers.f.h = self.registers.a.calc_half_borrow(1);
+        self.registers.a -= 1;
+        self.registers.f.n = true;
+        self.registers.f.z = self.registers.a == 0;
+    }
     // bytes: 2 cycles: [8]
     fn ld_a_d8_0x3e(&mut self) {
         println!("LD A, d8");
