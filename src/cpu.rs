@@ -505,14 +505,14 @@ impl CPU {
             0x85 => self.add_a_l_0x85(),
             0x86 => self.add_a_hl_0x86(),
             0x87 => self.add_a_a_0x87(),
-            // 0x88 => self.adc_a_b_0x88(),
-            // 0x89 => self.adc_a_c_0x89(),
-            // 0x8A => self.adc_a_d_0x8a(),
-            // 0x8B => self.adc_a_e_0x8b(),
-            // 0x8C => self.adc_a_h_0x8c(),
-            // 0x8D => self.adc_a_l_0x8d(),
-            // 0x8E => self.adc_a_hl_0x8e(),
-            // 0x8F => self.adc_a_a_0x8f(),
+            0x88 => self.adc_a_b_0x88(),
+            0x89 => self.adc_a_c_0x89(),
+            0x8A => self.adc_a_d_0x8a(),
+            0x8B => self.adc_a_e_0x8b(),
+            0x8C => self.adc_a_h_0x8c(),
+            0x8D => self.adc_a_l_0x8d(),
+            0x8E => self.adc_a_hl_0x8e(),
+            0x8F => self.adc_a_a_0x8f(),
             // 0x90 => self.sub_b_0x90(),
             // 0x91 => self.sub_c_0x91(),
             // 0x92 => self.sub_d_0x92(),
@@ -575,7 +575,7 @@ impl CPU {
             // 0xCB => self.prefix_0xcb(),
             // 0xCC => self.call_z_a16_0xcc(),
             // 0xCD => self.call_a16_0xcd(),
-            // 0xCE => self.adc_a_d8_0xce(),
+            0xCE => self.adc_a_d8_0xce(),
             // 0xCF => self.rst_08h_0xcf(),
             // 0xD0 => self.ret_nc_0xd0(),
             0xD1 => self.pop_de_0xd1(),
@@ -1651,21 +1651,85 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_b_0x88(&mut self) {}
+    fn adc_a_b_0x88(&mut self) {
+        println!("ADC A, B");
+        let rhs: u8 = self.registers.b + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn adc_a_c_0x89(&mut self) {}
+    fn adc_a_c_0x89(&mut self) {
+        println!("ADC A, C");
+        let rhs: u8 = self.registers.c + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn adc_a_d_0x8a(&mut self) {}
+    fn adc_a_d_0x8a(&mut self) {
+        println!("ADC A, D");
+        let rhs: u8 = self.registers.d + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn adc_a_e_0x8b(&mut self) {}
+    fn adc_a_e_0x8b(&mut self) {
+        println!("ADC A, E");
+        let rhs: u8 = self.registers.e + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn adc_a_h_0x8c(&mut self) {}
+    fn adc_a_h_0x8c(&mut self) {
+        println!("ADC A, H");
+        let rhs: u8 = self.registers.h + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn adc_a_l_0x8d(&mut self) {}
+    fn adc_a_l_0x8d(&mut self) {
+        println!("ADC A, L");
+        let rhs: u8 = self.registers.l + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
-    fn adc_a_hl_0x8e(&mut self) {}
+    fn adc_a_hl_0x8e(&mut self) {
+        println!("ADC A, (HL)");
+        let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn adc_a_a_0x8f(&mut self) {}
+    fn adc_a_a_0x8f(&mut self) {
+        println!("ADC A, A");
+        let rhs: u8 = self.registers.a + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
     fn sub_b_0x90(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -1831,7 +1895,15 @@ impl CPU {
     // bytes: 3 cycles: [24]
     fn call_a16_0xcd(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn adc_a_d8_0xce(&mut self) {}
+    fn adc_a_d8_0xce(&mut self) {
+        println!("ADC A, d8");
+        let rhs: u8 = self.fetch() + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
+        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        self.registers.a += rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [16]
     fn rst_08h_0xcf(&mut self) {}
     // bytes: 1 cycles: [20, 8]
