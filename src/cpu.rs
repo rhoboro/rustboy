@@ -533,14 +533,14 @@ impl CPU {
             0x95 => self.sub_l_0x95(),
             0x96 => self.sub_hl_0x96(),
             0x97 => self.sub_a_0x97(),
-            // 0x98 => self.sbc_a_b_0x98(),
-            // 0x99 => self.sbc_a_c_0x99(),
-            // 0x9A => self.sbc_a_d_0x9a(),
-            // 0x9B => self.sbc_a_e_0x9b(),
-            // 0x9C => self.sbc_a_h_0x9c(),
-            // 0x9D => self.sbc_a_l_0x9d(),
-            // 0x9E => self.sbc_a_hl_0x9e(),
-            // 0x9F => self.sbc_a_a_0x9f(),
+            0x98 => self.sbc_a_b_0x98(),
+            0x99 => self.sbc_a_c_0x99(),
+            0x9A => self.sbc_a_d_0x9a(),
+            0x9B => self.sbc_a_e_0x9b(),
+            0x9C => self.sbc_a_h_0x9c(),
+            0x9D => self.sbc_a_l_0x9d(),
+            0x9E => self.sbc_a_hl_0x9e(),
+            0x9F => self.sbc_a_a_0x9f(),
             // 0xA0 => self.and_b_0xa0(),
             // 0xA1 => self.and_c_0xa1(),
             // 0xA2 => self.and_d_0xa2(),
@@ -1816,21 +1816,85 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_b_0x98(&mut self) {}
+    fn sbc_a_b_0x98(&mut self) {
+        println!("SUB A, B");
+        let rhs: u8 = self.registers.b + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn sbc_a_c_0x99(&mut self) {}
+    fn sbc_a_c_0x99(&mut self) {
+        println!("SUB A, C");
+        let rhs: u8 = self.registers.c + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn sbc_a_d_0x9a(&mut self) {}
+    fn sbc_a_d_0x9a(&mut self) {
+        println!("SUB A, D");
+        let rhs: u8 = self.registers.d + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn sbc_a_e_0x9b(&mut self) {}
+    fn sbc_a_e_0x9b(&mut self) {
+        println!("SUB A, E");
+        let rhs: u8 = self.registers.e + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn sbc_a_h_0x9c(&mut self) {}
+    fn sbc_a_h_0x9c(&mut self) {
+        println!("SUB A, H");
+        let rhs: u8 = self.registers.h + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn sbc_a_l_0x9d(&mut self) {}
+    fn sbc_a_l_0x9d(&mut self) {
+        println!("SUB A, L");
+        let rhs: u8 = self.registers.l + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [8]
-    fn sbc_a_hl_0x9e(&mut self) {}
+    fn sbc_a_hl_0x9e(&mut self) {
+        println!("SUB A, (HL)");
+        let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
-    fn sbc_a_a_0x9f(&mut self) {}
+    fn sbc_a_a_0x9f(&mut self) {
+        println!("SUB A, A");
+        let rhs: u8 = self.registers.a + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
     fn and_b_0xa0(&mut self) {}
     // bytes: 1 cycles: [4]
