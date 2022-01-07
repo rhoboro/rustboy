@@ -549,14 +549,14 @@ impl CPU {
             0xA5 => self.and_l_0xa5(),
             0xA6 => self.and_hl_0xa6(),
             0xA7 => self.and_a_0xa7(),
-            // 0xA8 => self.xor_b_0xa8(),
-            // 0xA9 => self.xor_c_0xa9(),
-            // 0xAA => self.xor_d_0xaa(),
-            // 0xAB => self.xor_e_0xab(),
-            // 0xAC => self.xor_h_0xac(),
-            // 0xAD => self.xor_l_0xad(),
-            // 0xAE => self.xor_hl_0xae(),
-            // 0xAF => self.xor_a_0xaf(),
+            0xA8 => self.xor_b_0xa8(),
+            0xA9 => self.xor_c_0xa9(),
+            0xAA => self.xor_d_0xaa(),
+            0xAB => self.xor_e_0xab(),
+            0xAC => self.xor_h_0xac(),
+            0xAD => self.xor_l_0xad(),
+            0xAE => self.xor_hl_0xae(),
+            0xAF => self.xor_a_0xaf(),
             0xB0 => self.or_b_0xb0(),
             0xB1 => self.or_c_0xb1(),
             0xB2 => self.or_d_0xb2(),
@@ -619,7 +619,7 @@ impl CPU {
             // 0xEB => self.illegal_eb_0xeb(),
             // 0xEC => self.illegal_ec_0xec(),
             // 0xED => self.illegal_ed_0xed(),
-            // 0xEE => self.xor_d8_0xee(),
+            0xEE => self.xor_d8_0xee(),
             // 0xEF => self.rst_28h_0xef(),
             0xF0 => self.ldh_a_a8_0xf0(),
             0xF1 => self.pop_af_0xf1(),
@@ -1968,21 +1968,77 @@ impl CPU {
         self.registers.f.c = false;
     }
     // bytes: 1 cycles: [4]
-    fn xor_b_0xa8(&mut self) {}
+    fn xor_b_0xa8(&mut self) {
+        println!("XOR B");
+        self.registers.a ^= self.registers.b;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn xor_c_0xa9(&mut self) {}
+    fn xor_c_0xa9(&mut self) {
+        println!("XOR C");
+        self.registers.a ^= self.registers.c;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn xor_d_0xaa(&mut self) {}
+    fn xor_d_0xaa(&mut self) {
+        println!("XOR D");
+        self.registers.a ^= self.registers.d;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn xor_e_0xab(&mut self) {}
+    fn xor_e_0xab(&mut self) {
+        println!("XOR E");
+        self.registers.a ^= self.registers.e;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn xor_h_0xac(&mut self) {}
+    fn xor_h_0xac(&mut self) {
+        println!("XOR H");
+        self.registers.a ^= self.registers.h;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn xor_l_0xad(&mut self) {}
+    fn xor_l_0xad(&mut self) {
+        println!("XOR L");
+        self.registers.a ^= self.registers.l;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [8]
-    fn xor_hl_0xae(&mut self) {}
+    fn xor_hl_0xae(&mut self) {
+        println!("XOR (HL)");
+        self.registers.a ^= self.read(self.registers.hl());
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn xor_a_0xaf(&mut self) {}
+    fn xor_a_0xaf(&mut self) {
+        println!("XOR A");
+        self.registers.a ^= self.registers.a;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
     fn or_b_0xb0(&mut self) {
         println!("OR B");
@@ -2276,7 +2332,14 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_ed_0xed(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn xor_d8_0xee(&mut self) {}
+    fn xor_d8_0xee(&mut self) {
+        println!("XOR d8");
+        self.registers.a ^= self.fetch();
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [16]
     fn rst_28h_0xef(&mut self) {}
     // bytes: 2 cycles: [12]
