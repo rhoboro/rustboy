@@ -565,14 +565,14 @@ impl CPU {
             0xB5 => self.or_l_0xb5(),
             0xB6 => self.or_hl_0xb6(),
             0xB7 => self.or_a_0xb7(),
-            // 0xB8 => self.cp_b_0xb8(),
-            // 0xB9 => self.cp_c_0xb9(),
-            // 0xBA => self.cp_d_0xba(),
-            // 0xBB => self.cp_e_0xbb(),
-            // 0xBC => self.cp_h_0xbc(),
-            // 0xBD => self.cp_l_0xbd(),
-            // 0xBE => self.cp_hl_0xbe(),
-            // 0xBF => self.cp_a_0xbf(),
+            0xB8 => self.cp_b_0xb8(),
+            0xB9 => self.cp_c_0xb9(),
+            0xBA => self.cp_d_0xba(),
+            0xBB => self.cp_e_0xbb(),
+            0xBC => self.cp_h_0xbc(),
+            0xBD => self.cp_l_0xbd(),
+            0xBE => self.cp_hl_0xbe(),
+            0xBF => self.cp_a_0xbf(),
             // 0xC0 => self.ret_nz_0xc0(),
             0xC1 => self.pop_bc_0xc1(),
             // 0xC2 => self.jp_nz_a16_0xc2(),
@@ -2112,21 +2112,85 @@ impl CPU {
         self.registers.f.c = false;
     }
     // bytes: 1 cycles: [4]
-    fn cp_b_0xb8(&mut self) {}
+    fn cp_b_0xb8(&mut self) {
+        println!("CP B");
+        let rhs = self.registers.b;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [4]
-    fn cp_c_0xb9(&mut self) {}
+    fn cp_c_0xb9(&mut self) {
+        println!("CP C");
+        let rhs = self.registers.c;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [4]
-    fn cp_d_0xba(&mut self) {}
+    fn cp_d_0xba(&mut self) {
+        println!("CP D");
+        let rhs = self.registers.d;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [4]
-    fn cp_e_0xbb(&mut self) {}
+    fn cp_e_0xbb(&mut self) {
+        println!("CP E");
+        let rhs = self.registers.e;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [4]
-    fn cp_h_0xbc(&mut self) {}
+    fn cp_h_0xbc(&mut self) {
+        println!("CP H");
+        let rhs = self.registers.h;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [4]
-    fn cp_l_0xbd(&mut self) {}
+    fn cp_l_0xbd(&mut self) {
+        println!("CP L");
+        let rhs = self.registers.l;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [8]
-    fn cp_hl_0xbe(&mut self) {}
+    fn cp_hl_0xbe(&mut self) {
+        println!("CP (HL)");
+        let rhs = self.read(self.registers.hl());
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [4]
-    fn cp_a_0xbf(&mut self) {}
+    fn cp_a_0xbf(&mut self) {
+        println!("CP A");
+        let rhs = self.registers.a;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = true;
+    }
     // bytes: 1 cycles: [20, 8]
     fn ret_nz_0xc0(&mut self) {}
     // bytes: 1 cycles: [12]
@@ -2418,11 +2482,12 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn cp_d8_0xfe(&mut self) {
         println!("CP d8");
-        let d8 = self.fetch();
-        self.registers.f.z = self.registers.a == d8;
+        let rhs = self.fetch();
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a = (self.registers.a > rhs) as u8;
+        self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
-        self.registers.f.h = self.registers.a.calc_half_carry(d8);
-        self.registers.f.c = self.registers.a.calc_carry(d8);
     }
     // bytes: 1 cycles: [16]
     fn rst_38h_0xff(&mut self) {}
