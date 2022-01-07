@@ -541,14 +541,14 @@ impl CPU {
             0x9D => self.sbc_a_l_0x9d(),
             0x9E => self.sbc_a_hl_0x9e(),
             0x9F => self.sbc_a_a_0x9f(),
-            // 0xA0 => self.and_b_0xa0(),
-            // 0xA1 => self.and_c_0xa1(),
-            // 0xA2 => self.and_d_0xa2(),
-            // 0xA3 => self.and_e_0xa3(),
-            // 0xA4 => self.and_h_0xa4(),
-            // 0xA5 => self.and_l_0xa5(),
-            // 0xA6 => self.and_hl_0xa6(),
-            // 0xA7 => self.and_a_0xa7(),
+            0xA0 => self.and_b_0xa0(),
+            0xA1 => self.and_c_0xa1(),
+            0xA2 => self.and_d_0xa2(),
+            0xA3 => self.and_e_0xa3(),
+            0xA4 => self.and_h_0xa4(),
+            0xA5 => self.and_l_0xa5(),
+            0xA6 => self.and_hl_0xa6(),
+            0xA7 => self.and_a_0xa7(),
             // 0xA8 => self.xor_b_0xa8(),
             // 0xA9 => self.xor_c_0xa9(),
             // 0xAA => self.xor_d_0xaa(),
@@ -611,7 +611,7 @@ impl CPU {
             // 0xE3 => self.illegal_e3_0xe3(),
             // 0xE4 => self.illegal_e4_0xe4(),
             0xE5 => self.push_hl_0xe5(),
-            // 0xE6 => self.and_d8_0xe6(),
+            0xE6 => self.and_d8_0xe6(),
             // 0xE7 => self.rst_20h_0xe7(),
             // 0xE8 => self.add_sp_r8_0xe8(),
             // 0xE9 => self.jp_hl_0xe9(),
@@ -1896,21 +1896,77 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [4]
-    fn and_b_0xa0(&mut self) {}
+    fn and_b_0xa0(&mut self) {
+        println!("AND B");
+        self.registers.a &= self.registers.b;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn and_c_0xa1(&mut self) {}
+    fn and_c_0xa1(&mut self) {
+        println!("AND C");
+        self.registers.a &= self.registers.c;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn and_d_0xa2(&mut self) {}
+    fn and_d_0xa2(&mut self) {
+        println!("AND D");
+        self.registers.a &= self.registers.d;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn and_e_0xa3(&mut self) {}
+    fn and_e_0xa3(&mut self) {
+        println!("AND E");
+        self.registers.a &= self.registers.e;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn and_h_0xa4(&mut self) {}
+    fn and_h_0xa4(&mut self) {
+        println!("AND H");
+        self.registers.a &= self.registers.h;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn and_l_0xa5(&mut self) {}
+    fn and_l_0xa5(&mut self) {
+        println!("AND L");
+        self.registers.a &= self.registers.l;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [8]
-    fn and_hl_0xa6(&mut self) {}
+    fn and_hl_0xa6(&mut self) {
+        println!("AND (HL)");
+        self.registers.a &= self.read(self.registers.hl());
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
-    fn and_a_0xa7(&mut self) {}
+    fn and_a_0xa7(&mut self) {
+        println!("AND A");
+        self.registers.a &= self.registers.a;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [4]
     fn xor_b_0xa8(&mut self) {}
     // bytes: 1 cycles: [4]
@@ -2135,7 +2191,14 @@ impl CPU {
         self.registers.sp -= 2;
     }
     // bytes: 2 cycles: [8]
-    fn and_d8_0xe6(&mut self) {}
+    fn and_d8_0xe6(&mut self) {
+        println!("AND d8");
+        self.registers.a &= self.fetch();
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+        self.registers.f.c = false;
+    }
     // bytes: 1 cycles: [16]
     fn rst_20h_0xe7(&mut self) {}
     // bytes: 2 cycles: [16]
