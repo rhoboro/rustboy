@@ -392,7 +392,7 @@ impl CPU {
             0x08 => self.ld_a16_sp_0x08(),
             0x09 => self.add_hl_bc_0x09(),
             0x0A => self.ld_a_bc_0x0a(),
-            // 0x0B => self.dec_bc_0x0b(),
+            0x0B => self.dec_bc_0x0b(),
             0x0C => self.inc_c_0x0c(),
             0x0D => self.dec_c_0x0d(),
             0x0E => self.ld_c_d8_0x0e(),
@@ -408,7 +408,7 @@ impl CPU {
             // 0x18 => self.jr_r8_0x18(),
             0x19 => self.add_hl_de_0x19(),
             0x1A => self.ld_a_de_0x1a(),
-            // 0x1B => self.dec_de_0x1b(),
+            0x1B => self.dec_de_0x1b(),
             0x1C => self.inc_e_0x1c(),
             0x1D => self.dec_e_0x1d(),
             0x1E => self.ld_e_d8_0x1e(),
@@ -424,7 +424,7 @@ impl CPU {
             0x28 => self.jr_z_r8_0x28(),
             0x29 => self.add_hl_hl_0x29(),
             0x2A => self.ld_a_hl_0x2a(),
-            // 0x2B => self.dec_hl_0x2b(),
+            0x2B => self.dec_hl_0x2b(),
             0x2C => self.inc_l_0x2c(),
             0x2D => self.dec_l_0x2d(),
             0x2E => self.ld_l_d8_0x2e(),
@@ -440,7 +440,7 @@ impl CPU {
             0x38 => self.jr_c_r8_0x38(),
             0x39 => self.add_hl_sp_0x39(),
             0x3A => self.ld_a_hl_0x3a(),
-            // 0x3B => self.dec_sp_0x3b(),
+            0x3B => self.dec_sp_0x3b(),
             0x3C => self.inc_a_0x3c(),
             0x3D => self.dec_a_0x3d(),
             0x3E => self.ld_a_d8_0x3e(),
@@ -1094,7 +1094,10 @@ impl CPU {
         self.registers.a = self.read(self.registers.bc());
     }
     // bytes: 1 cycles: [8]
-    fn dec_bc_0x0b(&mut self) {}
+    fn dec_bc_0x0b(&mut self) {
+        println!("DEC BC");
+        self.registers.set_bc(self.registers.bc() - 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_c_0x0c(&mut self) {
         println!("INC C");
@@ -1181,7 +1184,10 @@ impl CPU {
         self.registers.a = self.read(self.registers.de());
     }
     // bytes: 1 cycles: [8]
-    fn dec_de_0x1b(&mut self) {}
+    fn dec_de_0x1b(&mut self) {
+        println!("DEC DE");
+        self.registers.set_de(self.registers.de() - 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_e_0x1c(&mut self) {
         println!("INC E");
@@ -1283,7 +1289,10 @@ impl CPU {
         self.registers.set_hl(self.registers.hl() + 1);
     }
     // bytes: 1 cycles: [8]
-    fn dec_hl_0x2b(&mut self) {}
+    fn dec_hl_0x2b(&mut self) {
+        println!("DEC HL");
+        self.registers.set_hl(self.registers.hl() - 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_l_0x2c(&mut self) {
         println!("INC L");
@@ -1388,7 +1397,11 @@ impl CPU {
         self.registers.set_hl(self.registers.hl() - 1);
     }
     // bytes: 1 cycles: [8]
-    fn dec_sp_0x3b(&mut self) {}
+    fn dec_sp_0x3b(&mut self) {
+        println!("DEC SP");
+        let spv = self.read(self.registers.sp);
+        self.write(self.registers.sp, spv - 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_a_0x3c(&mut self) {}
     // bytes: 1 cycles: [4]
