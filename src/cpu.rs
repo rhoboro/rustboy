@@ -436,7 +436,7 @@ impl CPU {
             0x34 => self.inc_hl_0x34(),
             0x35 => self.dec_hl_0x35(),
             0x36 => self.ld_hl_d8_0x36(),
-            // 0x37 => self.scf_0x37(),
+            0x37 => self.scf_0x37(),
             0x38 => self.jr_c_r8_0x38(),
             0x39 => self.add_hl_sp_0x39(),
             0x3A => self.ld_a_hl_0x3a(),
@@ -1379,7 +1379,11 @@ impl CPU {
         self.write(self.registers.hl(), d8);
     }
     // bytes: 1 cycles: [4]
-    fn scf_0x37(&mut self) {}
+    fn scf_0x37(&mut self) {
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = true;
+    }
     // bytes: 2 cycles: [12, 8]
     fn jr_c_r8_0x38(&mut self) {
         println!("JR C, r8");
