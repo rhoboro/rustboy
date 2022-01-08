@@ -444,7 +444,7 @@ impl CPU {
             0x3C => self.inc_a_0x3c(),
             0x3D => self.dec_a_0x3d(),
             0x3E => self.ld_a_d8_0x3e(),
-            // 0x3F => self.ccf_0x3f(),
+            0x3F => self.ccf_0x3f(),
             0x40 => self.ld_b_b_0x40(),
             0x41 => self.ld_b_c_0x41(),
             0x42 => self.ld_b_d_0x42(),
@@ -1427,7 +1427,12 @@ impl CPU {
         self.registers.a = self.read(d8);
     }
     // bytes: 1 cycles: [4]
-    fn ccf_0x3f(&mut self) {}
+    fn ccf_0x3f(&mut self) {
+        println!("CCF");
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = !self.registers.f.c;
+    }
     // bytes: 1 cycles: [4]
     fn ld_b_b_0x40(&mut self) {
         println!("LD B, B");
