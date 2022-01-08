@@ -388,7 +388,7 @@ impl CPU {
             0x04 => self.inc_b_0x04(),
             0x05 => self.dec_b_0x05(),
             0x06 => self.ld_b_d8_0x06(),
-            // 0x07 => self.rlca_0x07(),
+            0x07 => self.rlca_0x07(),
             0x08 => self.ld_a16_sp_0x08(),
             0x09 => self.add_hl_bc_0x09(),
             0x0A => self.ld_a_bc_0x0a(),
@@ -396,7 +396,7 @@ impl CPU {
             0x0C => self.inc_c_0x0c(),
             0x0D => self.dec_c_0x0d(),
             0x0E => self.ld_c_d8_0x0e(),
-            // 0x0F => self.rrca_0x0f(),
+            0x0F => self.rrca_0x0f(),
             0x10 => self.stop_d8_0x10(),
             0x11 => self.ld_de_d16_0x11(),
             0x12 => self.ld_de_a_0x12(),
@@ -404,7 +404,7 @@ impl CPU {
             0x14 => self.inc_d_0x14(),
             0x15 => self.dec_d_0x15(),
             0x16 => self.ld_d_d8_0x16(),
-            // 0x17 => self.rla_0x17(),
+            0x17 => self.rla_0x17(),
             // 0x18 => self.jr_r8_0x18(),
             0x19 => self.add_hl_de_0x19(),
             0x1A => self.ld_a_de_0x1a(),
@@ -412,7 +412,7 @@ impl CPU {
             0x1C => self.inc_e_0x1c(),
             0x1D => self.dec_e_0x1d(),
             0x1E => self.ld_e_d8_0x1e(),
-            // 0x1F => self.rra_0x1f(),
+            0x1F => self.rra_0x1f(),
             0x20 => self.jr_nz_r8_0x20(),
             0x21 => self.ld_hl_d16_0x21(),
             0x22 => self.ld_hl_a_0x22(),
@@ -1069,7 +1069,14 @@ impl CPU {
         self.registers.b = d8;
     }
     // bytes: 1 cycles: [4]
-    fn rlca_0x07(&mut self) {}
+    fn rlca_0x07(&mut self) {
+        println!("RLCA");
+        self.registers.f.c = (self.registers.a >> 7) == 1;
+        self.registers.a = self.registers.a << 1;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 3 cycles: [20]
     fn ld_a16_sp_0x08(&mut self) {
         println!("LD (a16), SP");
@@ -1121,7 +1128,14 @@ impl CPU {
         self.registers.c = d8;
     }
     // bytes: 1 cycles: [4]
-    fn rrca_0x0f(&mut self) {}
+    fn rrca_0x0f(&mut self) {
+        println!("RRCA");
+        self.registers.f.c = (self.registers.a & 0x1) == 1;
+        self.registers.a = self.registers.a >> 1;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [4]
     fn stop_d8_0x10(&mut self) {
         println!("STOP");
@@ -1170,7 +1184,15 @@ impl CPU {
         self.registers.d = d8;
     }
     // bytes: 1 cycles: [4]
-    fn rla_0x17(&mut self) {}
+    fn rla_0x17(&mut self) {
+        println!("RLA");
+        let c = (self.registers.a >> 7) == 1;
+        self.registers.a = (self.registers.a << 1) | self.registers.f.c as u8;
+        self.registers.f.c = c;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [12]
     fn jr_r8_0x18(&mut self) {}
     // bytes: 1 cycles: [8]
@@ -1216,7 +1238,15 @@ impl CPU {
         self.registers.e = d8;
     }
     // bytes: 1 cycles: [4]
-    fn rra_0x1f(&mut self) {}
+    fn rra_0x1f(&mut self) {
+        println!("RRA");
+        let c = (self.registers.a & 0x1) == 1;
+        self.registers.a = ((self.registers.f.c as u8) << 7) | (self.registers.a >> 1);
+        self.registers.f.c = c;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [12, 8]
     fn jr_nz_r8_0x20(&mut self) {
         println!("JR NZ, r8");
@@ -2778,7 +2808,7 @@ impl CPU {
     fn swap_b_0xcb30(&mut self) {
         println!("SWAP B");
         let upper = (self.registers.b & 0xF0) >> 4;
-        let lower = (self.registers.b & 0x0F);
+        let lower = self.registers.b & 0x0F;
         self.registers.b = (lower << 4) | upper;
         self.registers.f.z = self.registers.b == 0;
         self.registers.f.n = false;
@@ -2789,7 +2819,7 @@ impl CPU {
     fn swap_c_0xcb31(&mut self) {
         println!("SWAP C");
         let upper = (self.registers.c & 0xF0) >> 4;
-        let lower = (self.registers.c & 0x0F);
+        let lower = self.registers.c & 0x0F;
         self.registers.c = (lower << 4) | upper;
         self.registers.f.z = self.registers.c == 0;
         self.registers.f.n = false;
@@ -2800,7 +2830,7 @@ impl CPU {
     fn swap_d_0xcb32(&mut self) {
         println!("SWAP D");
         let upper = (self.registers.d & 0xF0) >> 4;
-        let lower = (self.registers.d & 0x0F);
+        let lower = self.registers.d & 0x0F;
         self.registers.d = (lower << 4) | upper;
         self.registers.f.z = self.registers.d == 0;
         self.registers.f.n = false;
@@ -2811,7 +2841,7 @@ impl CPU {
     fn swap_e_0xcb33(&mut self) {
         println!("SWAP E");
         let upper = (self.registers.e & 0xF0) >> 4;
-        let lower = (self.registers.e & 0x0F);
+        let lower = self.registers.e & 0x0F;
         self.registers.e = (lower << 4) | upper;
         self.registers.f.z = self.registers.e == 0;
         self.registers.f.n = false;
@@ -2822,7 +2852,7 @@ impl CPU {
     fn swap_h_0xcb34(&mut self) {
         println!("SWAP H");
         let upper = (self.registers.h & 0xF0) >> 4;
-        let lower = (self.registers.h & 0x0F);
+        let lower = self.registers.h & 0x0F;
         self.registers.h = (lower << 4) | upper;
         self.registers.f.z = self.registers.h == 0;
         self.registers.f.n = false;
@@ -2833,7 +2863,7 @@ impl CPU {
     fn swap_l_0xcb35(&mut self) {
         println!("SWAP L");
         let upper = (self.registers.l & 0xF0) >> 4;
-        let lower = (self.registers.l & 0x0F);
+        let lower = self.registers.l & 0x0F;
         self.registers.l = (lower << 4) | upper;
         self.registers.f.z = self.registers.l == 0;
         self.registers.f.n = false;
@@ -2844,7 +2874,7 @@ impl CPU {
     fn swap_hl_0xcb36(&mut self) {
         println!("SWAP (HL)");
         let upper = (self.registers.hl() & 0xF0) >> 4;
-        let lower = (self.registers.hl() & 0x0F);
+        let lower = self.registers.hl() & 0x0F;
         self.registers.set_hl((lower << 4) | upper);
         self.registers.f.z = self.registers.hl() == 0;
         self.registers.f.n = false;
@@ -2855,7 +2885,7 @@ impl CPU {
     fn swap_a_0xcb37(&mut self) {
         println!("SWAP A");
         let upper = (self.registers.a & 0xF0) >> 4;
-        let lower = (self.registers.a & 0x0F);
+        let lower = self.registers.a & 0x0F;
         self.registers.a = (lower << 4) | upper;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
