@@ -420,7 +420,7 @@ impl CPU {
             0x24 => self.inc_h_0x24(),
             0x25 => self.dec_h_0x25(),
             0x26 => self.ld_h_d8_0x26(),
-            // 0x27 => self.daa_0x27(),
+            0x27 => self.daa_0x27(),
             0x28 => self.jr_z_r8_0x28(),
             0x29 => self.add_hl_hl_0x29(),
             0x2A => self.ld_a_hl_0x2a(),
@@ -428,7 +428,7 @@ impl CPU {
             0x2C => self.inc_l_0x2c(),
             0x2D => self.dec_l_0x2d(),
             0x2E => self.ld_l_d8_0x2e(),
-            // 0x2F => self.cpl_0x2f(),
+            0x2F => self.cpl_0x2f(),
             0x30 => self.jr_nc_r8_0x30(),
             0x31 => self.ld_sp_d16_0x31(),
             0x32 => self.ld_hl_a_0x32(),
@@ -1263,7 +1263,10 @@ impl CPU {
         self.registers.h = d8;
     }
     // bytes: 1 cycles: [4]
-    fn daa_0x27(&mut self) {}
+    fn daa_0x27(&mut self) {
+        // ややこしいので一旦飛ばす
+        todo!();
+    }
     // bytes: 2 cycles: [12, 8]
     fn jr_z_r8_0x28(&mut self) {
         println!("JR Z, r8");
@@ -1316,7 +1319,12 @@ impl CPU {
         self.registers.l = d8;
     }
     // bytes: 1 cycles: [4]
-    fn cpl_0x2f(&mut self) {}
+    fn cpl_0x2f(&mut self) {
+        println!("CPL");
+        self.registers.a = !self.registers.a;
+        self.registers.f.n = true;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12, 8]
     fn jr_nc_r8_0x30(&mut self) {
         println!("JR NC, r8");
