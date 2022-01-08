@@ -682,14 +682,14 @@ impl CPU {
             0x25 => self.sla_l_0xcb25(),
             0x26 => self.sla_hl_0xcb26(),
             0x27 => self.sla_a_0xcb27(),
-            // 0x28 => self.sra_b_0xcb28(),
-            // 0x29 => self.sra_c_0xcb29(),
-            // 0x2A => self.sra_d_0xcb2a(),
-            // 0x2B => self.sra_e_0xcb2b(),
-            // 0x2C => self.sra_h_0xcb2c(),
-            // 0x2D => self.sra_l_0xcb2d(),
-            // 0x2E => self.sra_hl_0xcb2e(),
-            // 0x2F => self.sra_a_0xcb2f(),
+            0x28 => self.sra_b_0xcb28(),
+            0x29 => self.sra_c_0xcb29(),
+            0x2A => self.sra_d_0xcb2a(),
+            0x2B => self.sra_e_0xcb2b(),
+            0x2C => self.sra_h_0xcb2c(),
+            0x2D => self.sra_l_0xcb2d(),
+            0x2E => self.sra_hl_0xcb2e(),
+            0x2F => self.sra_a_0xcb2f(),
             0x30 => self.swap_b_0xcb30(),
             0x31 => self.swap_c_0xcb31(),
             0x32 => self.swap_d_0xcb32(),
@@ -2774,7 +2774,10 @@ impl CPU {
     fn rlc_hl_0xcb06(&mut self) {
         println!("RLC (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 0x1;
-        self.write(self.registers.hl(), self.read(self.registers.hl()) << 1 | c as u8);
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) << 1 | c as u8,
+        );
         self.registers.f.z = self.registers.hl() == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -2854,7 +2857,10 @@ impl CPU {
     fn rrc_hl_0xcb0e(&mut self) {
         println!("RRC (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 1;
-        self.write(self.registers.hl(), (c as u8) << 7 | self.read(self.registers.hl()) >> 1);
+        self.write(
+            self.registers.hl(),
+            (c as u8) << 7 | self.read(self.registers.hl()) >> 1,
+        );
         self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3109,21 +3115,96 @@ impl CPU {
         self.registers.f.h = false;
     }
     // bytes: 2 cycles: [8]
-    fn sra_b_0xcb28(&mut self) {}
+    fn sra_b_0xcb28(&mut self) {
+        println!("SRA B");
+        let c = self.registers.b & 0x1 == 0x1;
+        let smb = self.registers.b & 0x80;
+        self.registers.b = smb | (self.registers.b >> 1);
+        self.registers.f.z = self.registers.b == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
-    fn sra_c_0xcb29(&mut self) {}
+    fn sra_c_0xcb29(&mut self) {
+        println!("SRA C");
+        let c = self.registers.c & 0x1 == 0x1;
+        let smb = self.registers.c & 0x80;
+        self.registers.c = smb | (self.registers.c >> 1);
+        self.registers.f.z = self.registers.c == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
-    fn sra_d_0xcb2a(&mut self) {}
+    fn sra_d_0xcb2a(&mut self) {
+        println!("SRA D");
+        let c = self.registers.d & 0x1 == 0x1;
+        let smd = self.registers.d & 0x80;
+        self.registers.d = smd | (self.registers.d >> 1);
+        self.registers.f.z = self.registers.d == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
-    fn sra_e_0xcb2b(&mut self) {}
+    fn sra_e_0xcb2b(&mut self) {
+        println!("SRA E");
+        let c = self.registers.e & 0x1 == 0x1;
+        let smd = self.registers.e & 0x80;
+        self.registers.e = smd | (self.registers.e >> 1);
+        self.registers.f.z = self.registers.e == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
-    fn sra_h_0xcb2c(&mut self) {}
+    fn sra_h_0xcb2c(&mut self) {
+        println!("SRA H");
+        let c = self.registers.h & 0x1 == 0x1;
+        let smb = self.registers.h & 0x80;
+        self.registers.h = smb | (self.registers.h >> 1);
+        self.registers.f.z = self.registers.h == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
-    fn sra_l_0xcb2d(&mut self) {}
+    fn sra_l_0xcb2d(&mut self) {
+        println!("SRA L");
+        let c = self.registers.b & 0x1 == 0x1;
+        let smb = self.registers.b & 0x80;
+        self.registers.b = smb | (self.registers.b >> 1);
+        self.registers.f.z = self.registers.b == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [16]
-    fn sra_hl_0xcb2e(&mut self) {}
+    fn sra_hl_0xcb2e(&mut self) {
+        println!("SRA (HL)");
+        let c = self.read(self.registers.hl()) & 0x1 == 0x1;
+        let smb = self.read(self.registers.hl()) & 0x80;
+        self.write(
+            self.registers.hl(),
+            smb | (self.read(self.registers.hl()) >> 1),
+        );
+        self.registers.f.z = self.registers.b == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
-    fn sra_a_0xcb2f(&mut self) {}
+    fn sra_a_0xcb2f(&mut self) {
+        println!("SRA A");
+        let c = self.registers.a & 0x1 == 0x1;
+        let smb = self.registers.a & 0x80;
+        self.registers.a = smb | (self.registers.a >> 1);
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = c;
+    }
     // bytes: 2 cycles: [8]
     fn swap_b_0xcb30(&mut self) {
         println!("SWAP B");
