@@ -397,7 +397,7 @@ impl CPU {
             0x0D => self.dec_c_0x0d(),
             0x0E => self.ld_c_d8_0x0e(),
             // 0x0F => self.rrca_0x0f(),
-            // 0x10 => self.stop_d8_0x10(),
+            0x10 => self.stop_d8_0x10(),
             0x11 => self.ld_de_d16_0x11(),
             0x12 => self.ld_de_a_0x12(),
             0x13 => self.inc_de_0x13(),
@@ -499,7 +499,7 @@ impl CPU {
             0x73 => self.ld_hl_e_0x73(),
             0x74 => self.ld_hl_h_0x74(),
             0x75 => self.ld_hl_l_0x75(),
-            // 0x76 => self.halt_0x76(),
+            0x76 => self.halt_0x76(),
             0x77 => self.ld_hl_a_0x77(),
             0x78 => self.ld_a_b_0x78(),
             0x79 => self.ld_a_c_0x79(),
@@ -632,7 +632,7 @@ impl CPU {
             0xF8 => self.ld_hl_sp_r8_0xf8(),
             0xF9 => self.ld_sp_hl_0xf9(),
             0xFA => self.ld_a_a16_0xfa(),
-            // 0xFB => self.ei_0xfb(),
+            0xFB => self.ei_0xfb(),
             // 0xFC => self.illegal_fc_0xfc(),
             // 0xFD => self.illegal_fd_0xfd(),
             0xFE => self.cp_d8_0xfe(),
@@ -1123,7 +1123,12 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn rrca_0x0f(&mut self) {}
     // bytes: 2 cycles: [4]
-    fn stop_d8_0x10(&mut self) {}
+    fn stop_d8_0x10(&mut self) {
+        println!("STOP");
+        // ボタンが押されるまでCPUとLCDをHALT
+        let _ = self.fetch();
+        todo!();
+    }
     // bytes: 3 cycles: [12]
     fn ld_de_d16_0x11(&mut self) {
         println!("ld DE, d16");
@@ -1710,6 +1715,8 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn halt_0x76(&mut self) {
         println!("HALT");
+        // 割り込みが来るまで待機
+        todo!()
     }
     // bytes: 1 cycles: [8]
     fn ld_hl_a_0x77(&mut self) {
@@ -2651,7 +2658,10 @@ impl CPU {
         self.registers.a = self.read(a16);
     }
     // bytes: 1 cycles: [4]
-    fn ei_0xfb(&mut self) {}
+    fn ei_0xfb(&mut self) {
+        println!("EI");
+        self.ime = true;
+    }
     // bytes: 1 cycles: [4]
     fn illegal_fc_0xfc(&mut self) {}
     // bytes: 1 cycles: [4]
