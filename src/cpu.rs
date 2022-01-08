@@ -642,14 +642,14 @@ impl CPU {
     }
     fn execute_cb(&mut self, opcode: u8) {
         match opcode {
-            // 0x00 => self.rlc_b_0xcb00(),
-            // 0x01 => self.rlc_c_0xcb01(),
-            // 0x02 => self.rlc_d_0xcb02(),
-            // 0x03 => self.rlc_e_0xcb03(),
-            // 0x04 => self.rlc_h_0xcb04(),
-            // 0x05 => self.rlc_l_0xcb05(),
-            // 0x06 => self.rlc_hl_0xcb06(),
-            // 0x07 => self.rlc_a_0xcb07(),
+            0x00 => self.rlc_b_0xcb00(),
+            0x01 => self.rlc_c_0xcb01(),
+            0x02 => self.rlc_d_0xcb02(),
+            0x03 => self.rlc_e_0xcb03(),
+            0x04 => self.rlc_h_0xcb04(),
+            0x05 => self.rlc_l_0xcb05(),
+            0x06 => self.rlc_hl_0xcb06(),
+            0x07 => self.rlc_a_0xcb07(),
             // 0x08 => self.rrc_b_0xcb08(),
             // 0x09 => self.rrc_c_0xcb09(),
             // 0x0A => self.rrc_d_0xcb0a(),
@@ -2709,21 +2709,77 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn rst_38h_0xff(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn rlc_b_0xcb00(&mut self) {}
+    fn rlc_b_0xcb00(&mut self) {
+        println!("RLC B");
+        self.registers.f.c = (self.registers.b >> 7) == 0x1;
+        self.registers.b = self.registers.b << 1;
+        self.registers.f.z = self.registers.b == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
-    fn rlc_c_0xcb01(&mut self) {}
+    fn rlc_c_0xcb01(&mut self) {
+        println!("RLC C");
+        self.registers.f.c = (self.registers.c >> 7) == 0x1;
+        self.registers.c = self.registers.c << 1;
+        self.registers.f.z = self.registers.c == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
-    fn rlc_d_0xcb02(&mut self) {}
+    fn rlc_d_0xcb02(&mut self) {
+        println!("RLC D");
+        self.registers.f.c = (self.registers.d >> 7) == 0x1;
+        self.registers.d = self.registers.d << 1;
+        self.registers.f.z = self.registers.d == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
-    fn rlc_e_0xcb03(&mut self) {}
+    fn rlc_e_0xcb03(&mut self) {
+        println!("RLC E");
+        self.registers.f.c = (self.registers.e >> 7) == 0x1;
+        self.registers.e = self.registers.e << 1;
+        self.registers.f.z = self.registers.e == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
-    fn rlc_h_0xcb04(&mut self) {}
+    fn rlc_h_0xcb04(&mut self) {
+        println!("RLC H");
+        self.registers.f.c = (self.registers.h >> 7) == 0x1;
+        self.registers.h = self.registers.h << 1;
+        self.registers.f.z = self.registers.h == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
-    fn rlc_l_0xcb05(&mut self) {}
+    fn rlc_l_0xcb05(&mut self) {
+        println!("RLC L");
+        self.registers.f.c = (self.registers.l >> 7) == 0x1;
+        self.registers.l = self.registers.l << 1;
+        self.registers.f.z = self.registers.l == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [16]
-    fn rlc_hl_0xcb06(&mut self) {}
+    fn rlc_hl_0xcb06(&mut self) {
+        println!("RLC (HL)");
+        self.registers.f.c = (self.registers.hl() >> 7) == 0x1;
+        self.registers.set_hl(self.registers.hl() << 1);
+        self.registers.f.z = self.registers.hl() == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
-    fn rlc_a_0xcb07(&mut self) {}
+    fn rlc_a_0xcb07(&mut self) {
+        println!("RLC A");
+        self.registers.f.c = (self.registers.a >> 7) == 0x1;
+        self.registers.a = self.registers.a << 1;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+    }
     // bytes: 2 cycles: [8]
     fn rrc_b_0xcb08(&mut self) {}
     // bytes: 2 cycles: [8]
