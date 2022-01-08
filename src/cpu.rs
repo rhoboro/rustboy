@@ -613,7 +613,7 @@ impl CPU {
             0xE5 => self.push_hl_0xe5(),
             0xE6 => self.and_d8_0xe6(),
             // 0xE7 => self.rst_20h_0xe7(),
-            // 0xE8 => self.add_sp_r8_0xe8(),
+            0xE8 => self.add_sp_r8_0xe8(),
             // 0xE9 => self.jp_hl_0xe9(),
             0xEA => self.ld_a16_a_0xea(),
             // 0xEB => self.illegal_eb_0xeb(),
@@ -2502,7 +2502,16 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn rst_20h_0xe7(&mut self) {}
     // bytes: 2 cycles: [16]
-    fn add_sp_r8_0xe8(&mut self) {}
+    fn add_sp_r8_0xe8(&mut self) {
+        // TODO: 符号周り要確認
+        let r8 = self.fetch() as i8;
+        let spv = self.read(self.registers.sp);
+        self.registers.f.h = spv.calc_half_carry(r8 as u8);
+        self.registers.f.c = spv.calc_carry(r8 as u8);
+        self.write(self.registers.sp, spv.wrapping_add(r8 as u8));
+        self.registers.f.z = false;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [4]
     fn jp_hl_0xe9(&mut self) {}
     // bytes: 3 cycles: [16]
