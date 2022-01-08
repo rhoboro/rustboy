@@ -1452,7 +1452,13 @@ impl CPU {
         self.write(self.registers.sp, spv - 1);
     }
     // bytes: 1 cycles: [4]
-    fn inc_a_0x3c(&mut self) {}
+    fn inc_a_0x3c(&mut self) {
+        println!("INC A");
+        self.registers.f.h = self.registers.a.calc_half_carry(1);
+        self.registers.a += 1;
+        self.registers.f.n = false;
+        self.registers.f.z = self.registers.a == 0;
+    }
     // bytes: 1 cycles: [4]
     fn dec_a_0x3d(&mut self) {
         println!("DEC A");
