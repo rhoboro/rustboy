@@ -834,70 +834,70 @@ impl CPU {
             // 0xBD => self.res_7_l_0xcbbd(),
             // 0xBE => self.res_7_hl_0xcbbe(),
             // 0xBF => self.res_7_a_0xcbbf(),
-            // 0xC0 => self.set_0_b_0xcbc0(),
-            // 0xC1 => self.set_0_c_0xcbc1(),
-            // 0xC2 => self.set_0_d_0xcbc2(),
-            // 0xC3 => self.set_0_e_0xcbc3(),
-            // 0xC4 => self.set_0_h_0xcbc4(),
-            // 0xC5 => self.set_0_l_0xcbc5(),
-            // 0xC6 => self.set_0_hl_0xcbc6(),
-            // 0xC7 => self.set_0_a_0xcbc7(),
-            // 0xC8 => self.set_1_b_0xcbc8(),
-            // 0xC9 => self.set_1_c_0xcbc9(),
-            // 0xCA => self.set_1_d_0xcbca(),
-            // 0xCB => self.set_1_e_0xcbcb(),
-            // 0xCC => self.set_1_h_0xcbcc(),
-            // 0xCD => self.set_1_l_0xcbcd(),
-            // 0xCE => self.set_1_hl_0xcbce(),
-            // 0xCF => self.set_1_a_0xcbcf(),
-            // 0xD0 => self.set_2_b_0xcbd0(),
-            // 0xD1 => self.set_2_c_0xcbd1(),
-            // 0xD2 => self.set_2_d_0xcbd2(),
-            // 0xD3 => self.set_2_e_0xcbd3(),
-            // 0xD4 => self.set_2_h_0xcbd4(),
-            // 0xD5 => self.set_2_l_0xcbd5(),
-            // 0xD6 => self.set_2_hl_0xcbd6(),
-            // 0xD7 => self.set_2_a_0xcbd7(),
-            // 0xD8 => self.set_3_b_0xcbd8(),
-            // 0xD9 => self.set_3_c_0xcbd9(),
-            // 0xDA => self.set_3_d_0xcbda(),
-            // 0xDB => self.set_3_e_0xcbdb(),
-            // 0xDC => self.set_3_h_0xcbdc(),
-            // 0xDD => self.set_3_l_0xcbdd(),
-            // 0xDE => self.set_3_hl_0xcbde(),
-            // 0xDF => self.set_3_a_0xcbdf(),
-            // 0xE0 => self.set_4_b_0xcbe0(),
-            // 0xE1 => self.set_4_c_0xcbe1(),
-            // 0xE2 => self.set_4_d_0xcbe2(),
-            // 0xE3 => self.set_4_e_0xcbe3(),
-            // 0xE4 => self.set_4_h_0xcbe4(),
-            // 0xE5 => self.set_4_l_0xcbe5(),
-            // 0xE6 => self.set_4_hl_0xcbe6(),
-            // 0xE7 => self.set_4_a_0xcbe7(),
-            // 0xE8 => self.set_5_b_0xcbe8(),
-            // 0xE9 => self.set_5_c_0xcbe9(),
-            // 0xEA => self.set_5_d_0xcbea(),
-            // 0xEB => self.set_5_e_0xcbeb(),
-            // 0xEC => self.set_5_h_0xcbec(),
-            // 0xED => self.set_5_l_0xcbed(),
-            // 0xEE => self.set_5_hl_0xcbee(),
-            // 0xEF => self.set_5_a_0xcbef(),
-            // 0xF0 => self.set_6_b_0xcbf0(),
-            // 0xF1 => self.set_6_c_0xcbf1(),
-            // 0xF2 => self.set_6_d_0xcbf2(),
-            // 0xF3 => self.set_6_e_0xcbf3(),
-            // 0xF4 => self.set_6_h_0xcbf4(),
-            // 0xF5 => self.set_6_l_0xcbf5(),
-            // 0xF6 => self.set_6_hl_0xcbf6(),
-            // 0xF7 => self.set_6_a_0xcbf7(),
-            // 0xF8 => self.set_7_b_0xcbf8(),
-            // 0xF9 => self.set_7_c_0xcbf9(),
-            // 0xFA => self.set_7_d_0xcbfa(),
-            // 0xFB => self.set_7_e_0xcbfb(),
-            // 0xFC => self.set_7_h_0xcbfc(),
-            // 0xFD => self.set_7_l_0xcbfd(),
-            // 0xFE => self.set_7_hl_0xcbfe(),
-            // 0xFF => self.set_7_a_0xcbff(),
+            0xC0 => self.set_0_b_0xcbc0(),
+            0xC1 => self.set_0_c_0xcbc1(),
+            0xC2 => self.set_0_d_0xcbc2(),
+            0xC3 => self.set_0_e_0xcbc3(),
+            0xC4 => self.set_0_h_0xcbc4(),
+            0xC5 => self.set_0_l_0xcbc5(),
+            0xC6 => self.set_0_hl_0xcbc6(),
+            0xC7 => self.set_0_a_0xcbc7(),
+            0xC8 => self.set_1_b_0xcbc8(),
+            0xC9 => self.set_1_c_0xcbc9(),
+            0xCA => self.set_1_d_0xcbca(),
+            0xCB => self.set_1_e_0xcbcb(),
+            0xCC => self.set_1_h_0xcbcc(),
+            0xCD => self.set_1_l_0xcbcd(),
+            0xCE => self.set_1_hl_0xcbce(),
+            0xCF => self.set_1_a_0xcbcf(),
+            0xD0 => self.set_2_b_0xcbd0(),
+            0xD1 => self.set_2_c_0xcbd1(),
+            0xD2 => self.set_2_d_0xcbd2(),
+            0xD3 => self.set_2_e_0xcbd3(),
+            0xD4 => self.set_2_h_0xcbd4(),
+            0xD5 => self.set_2_l_0xcbd5(),
+            0xD6 => self.set_2_hl_0xcbd6(),
+            0xD7 => self.set_2_a_0xcbd7(),
+            0xD8 => self.set_3_b_0xcbd8(),
+            0xD9 => self.set_3_c_0xcbd9(),
+            0xDA => self.set_3_d_0xcbda(),
+            0xDB => self.set_3_e_0xcbdb(),
+            0xDC => self.set_3_h_0xcbdc(),
+            0xDD => self.set_3_l_0xcbdd(),
+            0xDE => self.set_3_hl_0xcbde(),
+            0xDF => self.set_3_a_0xcbdf(),
+            0xE0 => self.set_4_b_0xcbe0(),
+            0xE1 => self.set_4_c_0xcbe1(),
+            0xE2 => self.set_4_d_0xcbe2(),
+            0xE3 => self.set_4_e_0xcbe3(),
+            0xE4 => self.set_4_h_0xcbe4(),
+            0xE5 => self.set_4_l_0xcbe5(),
+            0xE6 => self.set_4_hl_0xcbe6(),
+            0xE7 => self.set_4_a_0xcbe7(),
+            0xE8 => self.set_5_b_0xcbe8(),
+            0xE9 => self.set_5_c_0xcbe9(),
+            0xEA => self.set_5_d_0xcbea(),
+            0xEB => self.set_5_e_0xcbeb(),
+            0xEC => self.set_5_h_0xcbec(),
+            0xED => self.set_5_l_0xcbed(),
+            0xEE => self.set_5_hl_0xcbee(),
+            0xEF => self.set_5_a_0xcbef(),
+            0xF0 => self.set_6_b_0xcbf0(),
+            0xF1 => self.set_6_c_0xcbf1(),
+            0xF2 => self.set_6_d_0xcbf2(),
+            0xF3 => self.set_6_e_0xcbf3(),
+            0xF4 => self.set_6_h_0xcbf4(),
+            0xF5 => self.set_6_l_0xcbf5(),
+            0xF6 => self.set_6_hl_0xcbf6(),
+            0xF7 => self.set_6_a_0xcbf7(),
+            0xF8 => self.set_7_b_0xcbf8(),
+            0xF9 => self.set_7_c_0xcbf9(),
+            0xFA => self.set_7_d_0xcbfa(),
+            0xFB => self.set_7_e_0xcbfb(),
+            0xFC => self.set_7_h_0xcbfc(),
+            0xFD => self.set_7_l_0xcbfd(),
+            0xFE => self.set_7_hl_0xcbfe(),
+            0xFF => self.set_7_a_0xcbff(),
             _ => println!("not implemented opcode: 0xcb{:x?}", opcode),
         }
     }
@@ -3961,131 +3961,347 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn res_7_a_0xcbbf(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn set_0_b_0xcbc0(&mut self) {}
+    fn set_0_b_0xcbc0(&mut self) {
+        println!("SET 0, B");
+        self.registers.b = self.registers.b | (0b1 << 0)
+    }
     // bytes: 2 cycles: [8]
-    fn set_0_c_0xcbc1(&mut self) {}
+    fn set_0_c_0xcbc1(&mut self) {
+        println!("SET 0, C");
+        self.registers.c = self.registers.c | (0b1 << 0)
+    }
     // bytes: 2 cycles: [8]
-    fn set_0_d_0xcbc2(&mut self) {}
+    fn set_0_d_0xcbc2(&mut self) {
+        println!("SET 0, D");
+        self.registers.d = self.registers.d | (0b1 << 0)
+    }
     // bytes: 2 cycles: [8]
-    fn set_0_e_0xcbc3(&mut self) {}
+    fn set_0_e_0xcbc3(&mut self) {
+        println!("SET 0, E");
+        self.registers.e = self.registers.e | (0b1 << 0)
+    }
     // bytes: 2 cycles: [8]
-    fn set_0_h_0xcbc4(&mut self) {}
+    fn set_0_h_0xcbc4(&mut self) {
+        println!("SET 0, H");
+        self.registers.h = self.registers.h | (0b1 << 0)
+    }
     // bytes: 2 cycles: [8]
-    fn set_0_l_0xcbc5(&mut self) {}
+    fn set_0_l_0xcbc5(&mut self) {
+        println!("SET 0, L");
+        self.registers.l = self.registers.l | (0b1 << 0)
+    }
     // bytes: 2 cycles: [16]
-    fn set_0_hl_0xcbc6(&mut self) {}
+    fn set_0_hl_0xcbc6(&mut self) {
+        println!("SET 0, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 0),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_0_a_0xcbc7(&mut self) {}
+    fn set_0_a_0xcbc7(&mut self) {
+        println!("SET 0, A");
+        self.registers.a = self.registers.a | (0b1 << 0)
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_b_0xcbc8(&mut self) {}
+    fn set_1_b_0xcbc8(&mut self) {
+        println!("SET 1, B");
+        self.registers.b = self.registers.b | (0b1 << 1)
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_c_0xcbc9(&mut self) {}
+    fn set_1_c_0xcbc9(&mut self) {
+        println!("SET 1, C");
+        self.registers.c = self.registers.c | (0b1 << 1)
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_d_0xcbca(&mut self) {}
+    fn set_1_d_0xcbca(&mut self) {
+        println!("SET 1, D");
+        self.registers.d = self.registers.d | (0b1 << 1)
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_e_0xcbcb(&mut self) {}
+    fn set_1_e_0xcbcb(&mut self) {
+        println!("SET 1, E");
+        self.registers.e = self.registers.e | (0b1 << 1)
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_h_0xcbcc(&mut self) {}
+    fn set_1_h_0xcbcc(&mut self) {
+        println!("SET 1, H");
+        self.registers.h = self.registers.h | (0b1 << 1)
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_l_0xcbcd(&mut self) {}
+    fn set_1_l_0xcbcd(&mut self) {
+        println!("SET 1, L");
+        self.registers.l = self.registers.l | (0b1 << 1)
+    }
     // bytes: 2 cycles: [16]
-    fn set_1_hl_0xcbce(&mut self) {}
+    fn set_1_hl_0xcbce(&mut self) {
+        println!("SET 1, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 1),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_1_a_0xcbcf(&mut self) {}
+    fn set_1_a_0xcbcf(&mut self) {
+        println!("SET 1, A");
+        self.registers.a = self.registers.a | (0b1 << 1)
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_b_0xcbd0(&mut self) {}
+    fn set_2_b_0xcbd0(&mut self) {
+        println!("SET 2, B");
+        self.registers.b = self.registers.b | (0b1 << 2)
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_c_0xcbd1(&mut self) {}
+    fn set_2_c_0xcbd1(&mut self) {
+        println!("SET 2, C");
+        self.registers.c = self.registers.c | (0b1 << 2)
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_d_0xcbd2(&mut self) {}
+    fn set_2_d_0xcbd2(&mut self) {
+        println!("SET 2, D");
+        self.registers.d = self.registers.d | (0b1 << 2)
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_e_0xcbd3(&mut self) {}
+    fn set_2_e_0xcbd3(&mut self) {
+        println!("SET 2, E");
+        self.registers.e = self.registers.e | (0b1 << 2)
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_h_0xcbd4(&mut self) {}
+    fn set_2_h_0xcbd4(&mut self) {
+        println!("SET 2, H");
+        self.registers.h = self.registers.h | (0b1 << 2)
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_l_0xcbd5(&mut self) {}
+    fn set_2_l_0xcbd5(&mut self) {
+        println!("SET 2, L");
+        self.registers.l = self.registers.l | (0b1 << 2)
+    }
     // bytes: 2 cycles: [16]
-    fn set_2_hl_0xcbd6(&mut self) {}
+    fn set_2_hl_0xcbd6(&mut self) {
+        println!("SET 2, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 2),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_2_a_0xcbd7(&mut self) {}
+    fn set_2_a_0xcbd7(&mut self) {
+        println!("SET 2, A");
+        self.registers.a = self.registers.a | (0b1 << 2)
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_b_0xcbd8(&mut self) {}
+    fn set_3_b_0xcbd8(&mut self) {
+        println!("SET 3, B");
+        self.registers.b = self.registers.b | (0b1 << 3)
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_c_0xcbd9(&mut self) {}
+    fn set_3_c_0xcbd9(&mut self) {
+        println!("SET 3, C");
+        self.registers.c = self.registers.c | (0b1 << 3)
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_d_0xcbda(&mut self) {}
+    fn set_3_d_0xcbda(&mut self) {
+        println!("SET 3, D");
+        self.registers.d = self.registers.d | (0b1 << 3)
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_e_0xcbdb(&mut self) {}
+    fn set_3_e_0xcbdb(&mut self) {
+        println!("SET 3, E");
+        self.registers.e = self.registers.e | (0b1 << 3)
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_h_0xcbdc(&mut self) {}
+    fn set_3_h_0xcbdc(&mut self) {
+        println!("SET 3, H");
+        self.registers.h = self.registers.h | (0b1 << 3)
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_l_0xcbdd(&mut self) {}
+    fn set_3_l_0xcbdd(&mut self) {
+        println!("SET 3, L");
+        self.registers.l = self.registers.l | (0b1 << 3)
+    }
     // bytes: 2 cycles: [16]
-    fn set_3_hl_0xcbde(&mut self) {}
+    fn set_3_hl_0xcbde(&mut self) {
+        println!("SET 3, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 3),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_3_a_0xcbdf(&mut self) {}
+    fn set_3_a_0xcbdf(&mut self) {
+        println!("SET 3, A");
+        self.registers.a = self.registers.a | (0b1 << 3)
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_b_0xcbe0(&mut self) {}
+    fn set_4_b_0xcbe0(&mut self) {
+        println!("SET 4, B");
+        self.registers.b = self.registers.b | (0b1 << 4)
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_c_0xcbe1(&mut self) {}
+    fn set_4_c_0xcbe1(&mut self) {
+        println!("SET 4, C");
+        self.registers.c = self.registers.c | (0b1 << 4)
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_d_0xcbe2(&mut self) {}
+    fn set_4_d_0xcbe2(&mut self) {
+        println!("SET 4, D");
+        self.registers.d = self.registers.d | (0b1 << 4)
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_e_0xcbe3(&mut self) {}
+    fn set_4_e_0xcbe3(&mut self) {
+        println!("SET 4, E");
+        self.registers.e = self.registers.e | (0b1 << 4)
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_h_0xcbe4(&mut self) {}
+    fn set_4_h_0xcbe4(&mut self) {
+        println!("SET 4, H");
+        self.registers.h = self.registers.h | (0b1 << 4)
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_l_0xcbe5(&mut self) {}
+    fn set_4_l_0xcbe5(&mut self) {
+        println!("SET 4, L");
+        self.registers.l = self.registers.l | (0b1 << 4)
+    }
     // bytes: 2 cycles: [16]
-    fn set_4_hl_0xcbe6(&mut self) {}
+    fn set_4_hl_0xcbe6(&mut self) {
+        println!("SET 4, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 4),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_4_a_0xcbe7(&mut self) {}
+    fn set_4_a_0xcbe7(&mut self) {
+        println!("SET 4, A");
+        self.registers.a = self.registers.a | (0b1 << 4)
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_b_0xcbe8(&mut self) {}
+    fn set_5_b_0xcbe8(&mut self) {
+        println!("SET 5, B");
+        self.registers.b = self.registers.b | (0b1 << 5)
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_c_0xcbe9(&mut self) {}
+    fn set_5_c_0xcbe9(&mut self) {
+        println!("SET 5, C");
+        self.registers.c = self.registers.c | (0b1 << 5)
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_d_0xcbea(&mut self) {}
+    fn set_5_d_0xcbea(&mut self) {
+        println!("SET 5, D");
+        self.registers.d = self.registers.d | (0b1 << 5)
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_e_0xcbeb(&mut self) {}
+    fn set_5_e_0xcbeb(&mut self) {
+        println!("SET 5, E");
+        self.registers.e = self.registers.e | (0b1 << 5)
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_h_0xcbec(&mut self) {}
+    fn set_5_h_0xcbec(&mut self) {
+        println!("SET 5, H");
+        self.registers.h = self.registers.h | (0b1 << 5)
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_l_0xcbed(&mut self) {}
+    fn set_5_l_0xcbed(&mut self) {
+        println!("SET 5, L");
+        self.registers.l = self.registers.l | (0b1 << 5)
+    }
     // bytes: 2 cycles: [16]
-    fn set_5_hl_0xcbee(&mut self) {}
+    fn set_5_hl_0xcbee(&mut self) {
+        println!("SET 5, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 5),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_5_a_0xcbef(&mut self) {}
+    fn set_5_a_0xcbef(&mut self) {
+        println!("SET 5, A");
+        self.registers.a = self.registers.a | (0b1 << 5)
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_b_0xcbf0(&mut self) {}
+    fn set_6_b_0xcbf0(&mut self) {
+        println!("SET 6, B");
+        self.registers.b = self.registers.b | (0b1 << 6)
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_c_0xcbf1(&mut self) {}
+    fn set_6_c_0xcbf1(&mut self) {
+        println!("SET 6, C");
+        self.registers.c = self.registers.c | (0b1 << 6)
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_d_0xcbf2(&mut self) {}
+    fn set_6_d_0xcbf2(&mut self) {
+        println!("SET 6, D");
+        self.registers.d = self.registers.d | (0b1 << 6)
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_e_0xcbf3(&mut self) {}
+    fn set_6_e_0xcbf3(&mut self) {
+        println!("SET 6, E");
+        self.registers.e = self.registers.e | (0b1 << 6)
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_h_0xcbf4(&mut self) {}
+    fn set_6_h_0xcbf4(&mut self) {
+        println!("SET 6, H");
+        self.registers.h = self.registers.h | (0b1 << 6)
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_l_0xcbf5(&mut self) {}
+    fn set_6_l_0xcbf5(&mut self) {
+        println!("SET 6, L");
+        self.registers.l = self.registers.l | (0b1 << 6)
+    }
     // bytes: 2 cycles: [16]
-    fn set_6_hl_0xcbf6(&mut self) {}
+    fn set_6_hl_0xcbf6(&mut self) {
+        println!("SET 6, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 6),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_6_a_0xcbf7(&mut self) {}
+    fn set_6_a_0xcbf7(&mut self) {
+        println!("SET 6, A");
+        self.registers.a = self.registers.a | (0b1 << 6)
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_b_0xcbf8(&mut self) {}
+    fn set_7_b_0xcbf8(&mut self) {
+        println!("SET 7, B");
+        self.registers.b = self.registers.b | (0b1 << 7)
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_c_0xcbf9(&mut self) {}
+    fn set_7_c_0xcbf9(&mut self) {
+        println!("SET 7, C");
+        self.registers.c = self.registers.c | (0b1 << 7)
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_d_0xcbfa(&mut self) {}
+    fn set_7_d_0xcbfa(&mut self) {
+        println!("SET 7, D");
+        self.registers.d = self.registers.d | (0b1 << 7)
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_e_0xcbfb(&mut self) {}
+    fn set_7_e_0xcbfb(&mut self) {
+        println!("SET 7, E");
+        self.registers.e = self.registers.e | (0b1 << 7)
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_h_0xcbfc(&mut self) {}
+    fn set_7_h_0xcbfc(&mut self) {
+        println!("SET 7, H");
+        self.registers.h = self.registers.h | (0b1 << 7)
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_l_0xcbfd(&mut self) {}
+    fn set_7_l_0xcbfd(&mut self) {
+        println!("SET 7, L");
+        self.registers.l = self.registers.l | (0b1 << 7)
+    }
     // bytes: 2 cycles: [16]
-    fn set_7_hl_0xcbfe(&mut self) {}
+    fn set_7_hl_0xcbfe(&mut self) {
+        println!("SET 7, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) | (0b1 << 7),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn set_7_a_0xcbff(&mut self) {}
+    fn set_7_a_0xcbff(&mut self) {
+        println!("SET 7, A");
+        self.registers.a = self.registers.a | (0b1 << 7)
+    }
 }
