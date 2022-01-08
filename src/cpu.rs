@@ -706,70 +706,70 @@ impl CPU {
             0x3D => self.srl_l_0xcb3d(),
             0x3E => self.srl_hl_0xcb3e(),
             0x3F => self.srl_a_0xcb3f(),
-            // 0x40 => self.bit_0_b_0xcb40(),
-            // 0x41 => self.bit_0_c_0xcb41(),
-            // 0x42 => self.bit_0_d_0xcb42(),
-            // 0x43 => self.bit_0_e_0xcb43(),
-            // 0x44 => self.bit_0_h_0xcb44(),
-            // 0x45 => self.bit_0_l_0xcb45(),
-            // 0x46 => self.bit_0_hl_0xcb46(),
-            // 0x47 => self.bit_0_a_0xcb47(),
-            // 0x48 => self.bit_1_b_0xcb48(),
-            // 0x49 => self.bit_1_c_0xcb49(),
-            // 0x4A => self.bit_1_d_0xcb4a(),
-            // 0x4B => self.bit_1_e_0xcb4b(),
-            // 0x4C => self.bit_1_h_0xcb4c(),
-            // 0x4D => self.bit_1_l_0xcb4d(),
-            // 0x4E => self.bit_1_hl_0xcb4e(),
-            // 0x4F => self.bit_1_a_0xcb4f(),
-            // 0x50 => self.bit_2_b_0xcb50(),
-            // 0x51 => self.bit_2_c_0xcb51(),
-            // 0x52 => self.bit_2_d_0xcb52(),
-            // 0x53 => self.bit_2_e_0xcb53(),
-            // 0x54 => self.bit_2_h_0xcb54(),
-            // 0x55 => self.bit_2_l_0xcb55(),
-            // 0x56 => self.bit_2_hl_0xcb56(),
-            // 0x57 => self.bit_2_a_0xcb57(),
-            // 0x58 => self.bit_3_b_0xcb58(),
-            // 0x59 => self.bit_3_c_0xcb59(),
-            // 0x5A => self.bit_3_d_0xcb5a(),
-            // 0x5B => self.bit_3_e_0xcb5b(),
-            // 0x5C => self.bit_3_h_0xcb5c(),
-            // 0x5D => self.bit_3_l_0xcb5d(),
-            // 0x5E => self.bit_3_hl_0xcb5e(),
-            // 0x5F => self.bit_3_a_0xcb5f(),
-            // 0x60 => self.bit_4_b_0xcb60(),
-            // 0x61 => self.bit_4_c_0xcb61(),
-            // 0x62 => self.bit_4_d_0xcb62(),
-            // 0x63 => self.bit_4_e_0xcb63(),
-            // 0x64 => self.bit_4_h_0xcb64(),
-            // 0x65 => self.bit_4_l_0xcb65(),
-            // 0x66 => self.bit_4_hl_0xcb66(),
-            // 0x67 => self.bit_4_a_0xcb67(),
-            // 0x68 => self.bit_5_b_0xcb68(),
-            // 0x69 => self.bit_5_c_0xcb69(),
-            // 0x6A => self.bit_5_d_0xcb6a(),
-            // 0x6B => self.bit_5_e_0xcb6b(),
-            // 0x6C => self.bit_5_h_0xcb6c(),
-            // 0x6D => self.bit_5_l_0xcb6d(),
-            // 0x6E => self.bit_5_hl_0xcb6e(),
-            // 0x6F => self.bit_5_a_0xcb6f(),
-            // 0x70 => self.bit_6_b_0xcb70(),
-            // 0x71 => self.bit_6_c_0xcb71(),
-            // 0x72 => self.bit_6_d_0xcb72(),
-            // 0x73 => self.bit_6_e_0xcb73(),
-            // 0x74 => self.bit_6_h_0xcb74(),
-            // 0x75 => self.bit_6_l_0xcb75(),
-            // 0x76 => self.bit_6_hl_0xcb76(),
-            // 0x77 => self.bit_6_a_0xcb77(),
-            // 0x78 => self.bit_7_b_0xcb78(),
-            // 0x79 => self.bit_7_c_0xcb79(),
-            // 0x7A => self.bit_7_d_0xcb7a(),
-            // 0x7B => self.bit_7_e_0xcb7b(),
-            // 0x7C => self.bit_7_h_0xcb7c(),
-            // 0x7D => self.bit_7_l_0xcb7d(),
-            // 0x7E => self.bit_7_hl_0xcb7e(),
-            // 0x7F => self.bit_7_a_0xcb7f(),
+            0x40 => self.bit_0_b_0xcb40(),
+            0x41 => self.bit_0_c_0xcb41(),
+            0x42 => self.bit_0_d_0xcb42(),
+            0x43 => self.bit_0_e_0xcb43(),
+            0x44 => self.bit_0_h_0xcb44(),
+            0x45 => self.bit_0_l_0xcb45(),
+            0x46 => self.bit_0_hl_0xcb46(),
+            0x47 => self.bit_0_a_0xcb47(),
+            0x48 => self.bit_1_b_0xcb48(),
+            0x49 => self.bit_1_c_0xcb49(),
+            0x4A => self.bit_1_d_0xcb4a(),
+            0x4B => self.bit_1_e_0xcb4b(),
+            0x4C => self.bit_1_h_0xcb4c(),
+            0x4D => self.bit_1_l_0xcb4d(),
+            0x4E => self.bit_1_hl_0xcb4e(),
+            0x4F => self.bit_1_a_0xcb4f(),
+            0x50 => self.bit_2_b_0xcb50(),
+            0x51 => self.bit_2_c_0xcb51(),
+            0x52 => self.bit_2_d_0xcb52(),
+            0x53 => self.bit_2_e_0xcb53(),
+            0x54 => self.bit_2_h_0xcb54(),
+            0x55 => self.bit_2_l_0xcb55(),
+            0x56 => self.bit_2_hl_0xcb56(),
+            0x57 => self.bit_2_a_0xcb57(),
+            0x58 => self.bit_3_b_0xcb58(),
+            0x59 => self.bit_3_c_0xcb59(),
+            0x5A => self.bit_3_d_0xcb5a(),
+            0x5B => self.bit_3_e_0xcb5b(),
+            0x5C => self.bit_3_h_0xcb5c(),
+            0x5D => self.bit_3_l_0xcb5d(),
+            0x5E => self.bit_3_hl_0xcb5e(),
+            0x5F => self.bit_3_a_0xcb5f(),
+            0x60 => self.bit_4_b_0xcb60(),
+            0x61 => self.bit_4_c_0xcb61(),
+            0x62 => self.bit_4_d_0xcb62(),
+            0x63 => self.bit_4_e_0xcb63(),
+            0x64 => self.bit_4_h_0xcb64(),
+            0x65 => self.bit_4_l_0xcb65(),
+            0x66 => self.bit_4_hl_0xcb66(),
+            0x67 => self.bit_4_a_0xcb67(),
+            0x68 => self.bit_5_b_0xcb68(),
+            0x69 => self.bit_5_c_0xcb69(),
+            0x6A => self.bit_5_d_0xcb6a(),
+            0x6B => self.bit_5_e_0xcb6b(),
+            0x6C => self.bit_5_h_0xcb6c(),
+            0x6D => self.bit_5_l_0xcb6d(),
+            0x6E => self.bit_5_hl_0xcb6e(),
+            0x6F => self.bit_5_a_0xcb6f(),
+            0x70 => self.bit_6_b_0xcb70(),
+            0x71 => self.bit_6_c_0xcb71(),
+            0x72 => self.bit_6_d_0xcb72(),
+            0x73 => self.bit_6_e_0xcb73(),
+            0x74 => self.bit_6_h_0xcb74(),
+            0x75 => self.bit_6_l_0xcb75(),
+            0x76 => self.bit_6_hl_0xcb76(),
+            0x77 => self.bit_6_a_0xcb77(),
+            0x78 => self.bit_7_b_0xcb78(),
+            0x79 => self.bit_7_c_0xcb79(),
+            0x7A => self.bit_7_d_0xcb7a(),
+            0x7B => self.bit_7_e_0xcb7b(),
+            0x7C => self.bit_7_h_0xcb7c(),
+            0x7D => self.bit_7_l_0xcb7d(),
+            0x7E => self.bit_7_hl_0xcb7e(),
+            0x7F => self.bit_7_a_0xcb7f(),
             // 0x80 => self.res_0_b_0xcb80(),
             // 0x81 => self.res_0_c_0xcb81(),
             // 0x82 => self.res_0_d_0xcb82(),
@@ -3385,133 +3385,453 @@ impl CPU {
         self.registers.f.c = c;
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_b_0xcb40(&mut self) {}
+    fn bit_0_b_0xcb40(&mut self) {
+        println!("BIT 0, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_0_c_0xcb41(&mut self) {}
+    fn bit_0_c_0xcb41(&mut self) {
+        println!("BIT 0, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_0_d_0xcb42(&mut self) {}
+    fn bit_0_d_0xcb42(&mut self) {
+        println!("BIT 0, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_0_e_0xcb43(&mut self) {}
+    fn bit_0_e_0xcb43(&mut self) {
+        println!("BIT 0, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_0_h_0xcb44(&mut self) {}
+    fn bit_0_h_0xcb44(&mut self) {
+        println!("BIT 0, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_0_l_0xcb45(&mut self) {}
+    fn bit_0_l_0xcb45(&mut self) {
+        println!("BIT 0, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_0_hl_0xcb46(&mut self) {}
+    fn bit_0_hl_0xcb46(&mut self) {
+        println!("BIT 0, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_0_a_0xcb47(&mut self) {}
+    fn bit_0_a_0xcb47(&mut self) {
+        println!("BIT 0, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 0) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_b_0xcb48(&mut self) {}
+    fn bit_1_b_0xcb48(&mut self) {
+        println!("BIT 1, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_c_0xcb49(&mut self) {}
+    fn bit_1_c_0xcb49(&mut self) {
+        println!("BIT 1, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_d_0xcb4a(&mut self) {}
+    fn bit_1_d_0xcb4a(&mut self) {
+        println!("BIT 1, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_e_0xcb4b(&mut self) {}
+    fn bit_1_e_0xcb4b(&mut self) {
+        println!("BIT 1, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_h_0xcb4c(&mut self) {}
+    fn bit_1_h_0xcb4c(&mut self) {
+        println!("BIT 1, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_l_0xcb4d(&mut self) {}
+    fn bit_1_l_0xcb4d(&mut self) {
+        println!("BIT 1, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_1_hl_0xcb4e(&mut self) {}
+    fn bit_1_hl_0xcb4e(&mut self) {
+        println!("BIT 1, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_1_a_0xcb4f(&mut self) {}
+    fn bit_1_a_0xcb4f(&mut self) {
+        println!("BIT 1, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 1) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_b_0xcb50(&mut self) {}
+    fn bit_2_b_0xcb50(&mut self) {
+        println!("BIT 2, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_c_0xcb51(&mut self) {}
+    fn bit_2_c_0xcb51(&mut self) {
+        println!("BIT 2, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_d_0xcb52(&mut self) {}
+    fn bit_2_d_0xcb52(&mut self) {
+        println!("BIT 2, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_e_0xcb53(&mut self) {}
+    fn bit_2_e_0xcb53(&mut self) {
+        println!("BIT 2, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_h_0xcb54(&mut self) {}
+    fn bit_2_h_0xcb54(&mut self) {
+        println!("BIT 2, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_l_0xcb55(&mut self) {}
+    fn bit_2_l_0xcb55(&mut self) {
+        println!("BIT 2, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_2_hl_0xcb56(&mut self) {}
+    fn bit_2_hl_0xcb56(&mut self) {
+        println!("BIT 2, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_2_a_0xcb57(&mut self) {}
+    fn bit_2_a_0xcb57(&mut self) {
+        println!("BIT 2, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 2) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_b_0xcb58(&mut self) {}
+    fn bit_3_b_0xcb58(&mut self) {
+        println!("BIT 3, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_c_0xcb59(&mut self) {}
+    fn bit_3_c_0xcb59(&mut self) {
+        println!("BIT 3, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_d_0xcb5a(&mut self) {}
+    fn bit_3_d_0xcb5a(&mut self) {
+        println!("BIT 3, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_e_0xcb5b(&mut self) {}
+    fn bit_3_e_0xcb5b(&mut self) {
+        println!("BIT 3, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_h_0xcb5c(&mut self) {}
+    fn bit_3_h_0xcb5c(&mut self) {
+        println!("BIT 3, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_l_0xcb5d(&mut self) {}
+    fn bit_3_l_0xcb5d(&mut self) {
+        println!("BIT 3, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_3_hl_0xcb5e(&mut self) {}
+    fn bit_3_hl_0xcb5e(&mut self) {
+        println!("BIT 3, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_3_a_0xcb5f(&mut self) {}
+    fn bit_3_a_0xcb5f(&mut self) {
+        println!("BIT 3, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 3) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_b_0xcb60(&mut self) {}
+    fn bit_4_b_0xcb60(&mut self) {
+        println!("BIT 4, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_c_0xcb61(&mut self) {}
+    fn bit_4_c_0xcb61(&mut self) {
+        println!("BIT 4, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_d_0xcb62(&mut self) {}
+    fn bit_4_d_0xcb62(&mut self) {
+        println!("BIT 4, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_e_0xcb63(&mut self) {}
+    fn bit_4_e_0xcb63(&mut self) {
+        println!("BIT 4, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_h_0xcb64(&mut self) {}
+    fn bit_4_h_0xcb64(&mut self) {
+        println!("BIT 4, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_l_0xcb65(&mut self) {}
+    fn bit_4_l_0xcb65(&mut self) {
+        println!("BIT 4, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_4_hl_0xcb66(&mut self) {}
+    fn bit_4_hl_0xcb66(&mut self) {
+        println!("BIT 4, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_4_a_0xcb67(&mut self) {}
+    fn bit_4_a_0xcb67(&mut self) {
+        println!("BIT 4, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 4) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_b_0xcb68(&mut self) {}
+    fn bit_5_b_0xcb68(&mut self) {
+        println!("BIT 5, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_c_0xcb69(&mut self) {}
+    fn bit_5_c_0xcb69(&mut self) {
+        println!("BIT 5, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_d_0xcb6a(&mut self) {}
+    fn bit_5_d_0xcb6a(&mut self) {
+        println!("BIT 5, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_e_0xcb6b(&mut self) {}
+    fn bit_5_e_0xcb6b(&mut self) {
+        println!("BIT 5, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_h_0xcb6c(&mut self) {}
+    fn bit_5_h_0xcb6c(&mut self) {
+        println!("BIT 5, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_l_0xcb6d(&mut self) {}
+    fn bit_5_l_0xcb6d(&mut self) {
+        println!("BIT 5, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_5_hl_0xcb6e(&mut self) {}
+    fn bit_5_hl_0xcb6e(&mut self) {
+        println!("BIT 5, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_5_a_0xcb6f(&mut self) {}
+    fn bit_5_a_0xcb6f(&mut self) {
+        println!("BIT 5, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 5) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_b_0xcb70(&mut self) {}
+    fn bit_6_b_0xcb70(&mut self) {
+        println!("BIT 6, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_c_0xcb71(&mut self) {}
+    fn bit_6_c_0xcb71(&mut self) {
+        println!("BIT 6, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_d_0xcb72(&mut self) {}
+    fn bit_6_d_0xcb72(&mut self) {
+        println!("BIT 6, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_e_0xcb73(&mut self) {}
+    fn bit_6_e_0xcb73(&mut self) {
+        println!("BIT 6, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_h_0xcb74(&mut self) {}
+    fn bit_6_h_0xcb74(&mut self) {
+        println!("BIT 6, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_l_0xcb75(&mut self) {}
+    fn bit_6_l_0xcb75(&mut self) {
+        println!("BIT 6, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_6_hl_0xcb76(&mut self) {}
+    fn bit_6_hl_0xcb76(&mut self) {
+        println!("BIT 6, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_6_a_0xcb77(&mut self) {}
+    fn bit_6_a_0xcb77(&mut self) {
+        println!("BIT 6, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 6) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_b_0xcb78(&mut self) {}
+    fn bit_7_b_0xcb78(&mut self) {
+        println!("BIT 7, B");
+        self.registers.f.z = (self.registers.b & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_c_0xcb79(&mut self) {}
+    fn bit_7_c_0xcb79(&mut self) {
+        println!("BIT 7, C");
+        self.registers.f.z = (self.registers.c & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_d_0xcb7a(&mut self) {}
+    fn bit_7_d_0xcb7a(&mut self) {
+        println!("BIT 7, D");
+        self.registers.f.z = (self.registers.d & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_e_0xcb7b(&mut self) {}
+    fn bit_7_e_0xcb7b(&mut self) {
+        println!("BIT 7, E");
+        self.registers.f.z = (self.registers.e & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_h_0xcb7c(&mut self) {}
+    fn bit_7_h_0xcb7c(&mut self) {
+        println!("BIT 7, H");
+        self.registers.f.z = (self.registers.h & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_l_0xcb7d(&mut self) {}
+    fn bit_7_l_0xcb7d(&mut self) {
+        println!("BIT 7, L");
+        self.registers.f.z = (self.registers.l & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [12]
-    fn bit_7_hl_0xcb7e(&mut self) {}
+    fn bit_7_hl_0xcb7e(&mut self) {
+        println!("BIT 7, (HL)");
+        self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
-    fn bit_7_a_0xcb7f(&mut self) {}
+    fn bit_7_a_0xcb7f(&mut self) {
+        println!("BIT 7, A");
+        self.registers.f.z = (self.registers.a & 0b1 << 7) == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = true;
+    }
     // bytes: 2 cycles: [8]
     fn res_0_b_0xcb80(&mut self) {}
     // bytes: 2 cycles: [8]
