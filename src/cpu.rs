@@ -384,7 +384,7 @@ impl CPU {
             0x00 => self.nop_0x00(),
             0x01 => self.ld_bc_d16_0x01(),
             0x02 => self.ld_bc_a_0x02(),
-            // 0x03 => self.inc_bc_0x03(),
+            0x03 => self.inc_bc_0x03(),
             0x04 => self.inc_b_0x04(),
             0x05 => self.dec_b_0x05(),
             0x06 => self.ld_b_d8_0x06(),
@@ -400,7 +400,7 @@ impl CPU {
             // 0x10 => self.stop_d8_0x10(),
             0x11 => self.ld_de_d16_0x11(),
             0x12 => self.ld_de_a_0x12(),
-            // 0x13 => self.inc_de_0x13(),
+            0x13 => self.inc_de_0x13(),
             0x14 => self.inc_d_0x14(),
             0x15 => self.dec_d_0x15(),
             0x16 => self.ld_d_d8_0x16(),
@@ -416,7 +416,7 @@ impl CPU {
             0x20 => self.jr_nz_r8_0x20(),
             0x21 => self.ld_hl_d16_0x21(),
             0x22 => self.ld_hl_a_0x22(),
-            // 0x23 => self.inc_hl_0x23(),
+            0x23 => self.inc_hl_0x23(),
             0x24 => self.inc_h_0x24(),
             0x25 => self.dec_h_0x25(),
             0x26 => self.ld_h_d8_0x26(),
@@ -432,7 +432,7 @@ impl CPU {
             0x30 => self.jr_nc_r8_0x30(),
             0x31 => self.ld_sp_d16_0x31(),
             0x32 => self.ld_hl_a_0x32(),
-            // 0x33 => self.inc_sp_0x33(),
+            0x33 => self.inc_sp_0x33(),
             0x34 => self.inc_hl_0x34(),
             0x35 => self.dec_hl_0x35(),
             0x36 => self.ld_hl_d8_0x36(),
@@ -1042,7 +1042,10 @@ impl CPU {
         self.write(self.registers.bc(), self.registers.a);
     }
     // bytes: 1 cycles: [8]
-    fn inc_bc_0x03(&mut self) {}
+    fn inc_bc_0x03(&mut self) {
+        println!("INC BC");
+        self.registers.set_bc(self.registers.bc() + 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_b_0x04(&mut self) {
         println!("INC B");
@@ -1132,7 +1135,10 @@ impl CPU {
         self.write(self.registers.de(), self.registers.a);
     }
     // bytes: 1 cycles: [8]
-    fn inc_de_0x13(&mut self) {}
+    fn inc_de_0x13(&mut self) {
+        println!("INC DE");
+        self.registers.set_de(self.registers.de() + 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_d_0x14(&mut self) {
         println!("INC D");
@@ -1224,7 +1230,10 @@ impl CPU {
         self.registers.set_hl(self.registers.hl() + 1);
     }
     // bytes: 1 cycles: [8]
-    fn inc_hl_0x23(&mut self) {}
+    fn inc_hl_0x23(&mut self) {
+        println!("INC HL");
+        self.registers.set_hl(self.registers.hl() + 1);
+    }
     // bytes: 1 cycles: [4]
     fn inc_h_0x24(&mut self) {
         println!("INC H");
@@ -1323,7 +1332,11 @@ impl CPU {
         self.registers.set_hl(self.registers.hl() - 1);
     }
     // bytes: 1 cycles: [8]
-    fn inc_sp_0x33(&mut self) {}
+    fn inc_sp_0x33(&mut self) {
+        println!("INC SP");
+        let spv = self.read(self.registers.sp);
+        self.write(self.registers.sp, spv + 1);
+    }
     // bytes: 1 cycles: [12]
     fn inc_hl_0x34(&mut self) {
         println!("INC (HL)");
@@ -2504,6 +2517,7 @@ impl CPU {
     // bytes: 2 cycles: [16]
     fn add_sp_r8_0xe8(&mut self) {
         // TODO: 符号周り要確認
+        println!("ADD SP, r8");
         let r8 = self.fetch() as i8;
         let spv = self.read(self.registers.sp);
         self.registers.f.h = spv.calc_half_carry(r8 as u8);
