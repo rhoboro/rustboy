@@ -770,70 +770,70 @@ impl CPU {
             0x7D => self.bit_7_l_0xcb7d(),
             0x7E => self.bit_7_hl_0xcb7e(),
             0x7F => self.bit_7_a_0xcb7f(),
-            // 0x80 => self.res_0_b_0xcb80(),
-            // 0x81 => self.res_0_c_0xcb81(),
-            // 0x82 => self.res_0_d_0xcb82(),
-            // 0x83 => self.res_0_e_0xcb83(),
-            // 0x84 => self.res_0_h_0xcb84(),
-            // 0x85 => self.res_0_l_0xcb85(),
-            // 0x86 => self.res_0_hl_0xcb86(),
-            // 0x87 => self.res_0_a_0xcb87(),
-            // 0x88 => self.res_1_b_0xcb88(),
-            // 0x89 => self.res_1_c_0xcb89(),
-            // 0x8A => self.res_1_d_0xcb8a(),
-            // 0x8B => self.res_1_e_0xcb8b(),
-            // 0x8C => self.res_1_h_0xcb8c(),
-            // 0x8D => self.res_1_l_0xcb8d(),
-            // 0x8E => self.res_1_hl_0xcb8e(),
-            // 0x8F => self.res_1_a_0xcb8f(),
-            // 0x90 => self.res_2_b_0xcb90(),
-            // 0x91 => self.res_2_c_0xcb91(),
-            // 0x92 => self.res_2_d_0xcb92(),
-            // 0x93 => self.res_2_e_0xcb93(),
-            // 0x94 => self.res_2_h_0xcb94(),
-            // 0x95 => self.res_2_l_0xcb95(),
-            // 0x96 => self.res_2_hl_0xcb96(),
-            // 0x97 => self.res_2_a_0xcb97(),
-            // 0x98 => self.res_3_b_0xcb98(),
-            // 0x99 => self.res_3_c_0xcb99(),
-            // 0x9A => self.res_3_d_0xcb9a(),
-            // 0x9B => self.res_3_e_0xcb9b(),
-            // 0x9C => self.res_3_h_0xcb9c(),
-            // 0x9D => self.res_3_l_0xcb9d(),
-            // 0x9E => self.res_3_hl_0xcb9e(),
-            // 0x9F => self.res_3_a_0xcb9f(),
-            // 0xA0 => self.res_4_b_0xcba0(),
-            // 0xA1 => self.res_4_c_0xcba1(),
-            // 0xA2 => self.res_4_d_0xcba2(),
-            // 0xA3 => self.res_4_e_0xcba3(),
-            // 0xA4 => self.res_4_h_0xcba4(),
-            // 0xA5 => self.res_4_l_0xcba5(),
-            // 0xA6 => self.res_4_hl_0xcba6(),
-            // 0xA7 => self.res_4_a_0xcba7(),
-            // 0xA8 => self.res_5_b_0xcba8(),
-            // 0xA9 => self.res_5_c_0xcba9(),
-            // 0xAA => self.res_5_d_0xcbaa(),
-            // 0xAB => self.res_5_e_0xcbab(),
-            // 0xAC => self.res_5_h_0xcbac(),
-            // 0xAD => self.res_5_l_0xcbad(),
-            // 0xAE => self.res_5_hl_0xcbae(),
-            // 0xAF => self.res_5_a_0xcbaf(),
-            // 0xB0 => self.res_6_b_0xcbb0(),
-            // 0xB1 => self.res_6_c_0xcbb1(),
-            // 0xB2 => self.res_6_d_0xcbb2(),
-            // 0xB3 => self.res_6_e_0xcbb3(),
-            // 0xB4 => self.res_6_h_0xcbb4(),
-            // 0xB5 => self.res_6_l_0xcbb5(),
-            // 0xB6 => self.res_6_hl_0xcbb6(),
-            // 0xB7 => self.res_6_a_0xcbb7(),
-            // 0xB8 => self.res_7_b_0xcbb8(),
-            // 0xB9 => self.res_7_c_0xcbb9(),
-            // 0xBA => self.res_7_d_0xcbba(),
-            // 0xBB => self.res_7_e_0xcbbb(),
-            // 0xBC => self.res_7_h_0xcbbc(),
-            // 0xBD => self.res_7_l_0xcbbd(),
-            // 0xBE => self.res_7_hl_0xcbbe(),
-            // 0xBF => self.res_7_a_0xcbbf(),
+            0x80 => self.res_0_b_0xcb80(),
+            0x81 => self.res_0_c_0xcb81(),
+            0x82 => self.res_0_d_0xcb82(),
+            0x83 => self.res_0_e_0xcb83(),
+            0x84 => self.res_0_h_0xcb84(),
+            0x85 => self.res_0_l_0xcb85(),
+            0x86 => self.res_0_hl_0xcb86(),
+            0x87 => self.res_0_a_0xcb87(),
+            0x88 => self.res_1_b_0xcb88(),
+            0x89 => self.res_1_c_0xcb89(),
+            0x8A => self.res_1_d_0xcb8a(),
+            0x8B => self.res_1_e_0xcb8b(),
+            0x8C => self.res_1_h_0xcb8c(),
+            0x8D => self.res_1_l_0xcb8d(),
+            0x8E => self.res_1_hl_0xcb8e(),
+            0x8F => self.res_1_a_0xcb8f(),
+            0x90 => self.res_2_b_0xcb90(),
+            0x91 => self.res_2_c_0xcb91(),
+            0x92 => self.res_2_d_0xcb92(),
+            0x93 => self.res_2_e_0xcb93(),
+            0x94 => self.res_2_h_0xcb94(),
+            0x95 => self.res_2_l_0xcb95(),
+            0x96 => self.res_2_hl_0xcb96(),
+            0x97 => self.res_2_a_0xcb97(),
+            0x98 => self.res_3_b_0xcb98(),
+            0x99 => self.res_3_c_0xcb99(),
+            0x9A => self.res_3_d_0xcb9a(),
+            0x9B => self.res_3_e_0xcb9b(),
+            0x9C => self.res_3_h_0xcb9c(),
+            0x9D => self.res_3_l_0xcb9d(),
+            0x9E => self.res_3_hl_0xcb9e(),
+            0x9F => self.res_3_a_0xcb9f(),
+            0xA0 => self.res_4_b_0xcba0(),
+            0xA1 => self.res_4_c_0xcba1(),
+            0xA2 => self.res_4_d_0xcba2(),
+            0xA3 => self.res_4_e_0xcba3(),
+            0xA4 => self.res_4_h_0xcba4(),
+            0xA5 => self.res_4_l_0xcba5(),
+            0xA6 => self.res_4_hl_0xcba6(),
+            0xA7 => self.res_4_a_0xcba7(),
+            0xA8 => self.res_5_b_0xcba8(),
+            0xA9 => self.res_5_c_0xcba9(),
+            0xAA => self.res_5_d_0xcbaa(),
+            0xAB => self.res_5_e_0xcbab(),
+            0xAC => self.res_5_h_0xcbac(),
+            0xAD => self.res_5_l_0xcbad(),
+            0xAE => self.res_5_hl_0xcbae(),
+            0xAF => self.res_5_a_0xcbaf(),
+            0xB0 => self.res_6_b_0xcbb0(),
+            0xB1 => self.res_6_c_0xcbb1(),
+            0xB2 => self.res_6_d_0xcbb2(),
+            0xB3 => self.res_6_e_0xcbb3(),
+            0xB4 => self.res_6_h_0xcbb4(),
+            0xB5 => self.res_6_l_0xcbb5(),
+            0xB6 => self.res_6_hl_0xcbb6(),
+            0xB7 => self.res_6_a_0xcbb7(),
+            0xB8 => self.res_7_b_0xcbb8(),
+            0xB9 => self.res_7_c_0xcbb9(),
+            0xBA => self.res_7_d_0xcbba(),
+            0xBB => self.res_7_e_0xcbbb(),
+            0xBC => self.res_7_h_0xcbbc(),
+            0xBD => self.res_7_l_0xcbbd(),
+            0xBE => self.res_7_hl_0xcbbe(),
+            0xBF => self.res_7_a_0xcbbf(),
             0xC0 => self.set_0_b_0xcbc0(),
             0xC1 => self.set_0_c_0xcbc1(),
             0xC2 => self.set_0_d_0xcbc2(),
@@ -3833,162 +3833,378 @@ impl CPU {
         self.registers.f.h = true;
     }
     // bytes: 2 cycles: [8]
-    fn res_0_b_0xcb80(&mut self) {}
+    fn res_0_b_0xcb80(&mut self) {
+        println!("RES 0, B");
+        self.registers.b = self.registers.b & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [8]
-    fn res_0_c_0xcb81(&mut self) {}
+    fn res_0_c_0xcb81(&mut self) {
+        println!("RES 0, C");
+        self.registers.c = self.registers.c & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [8]
-    fn res_0_d_0xcb82(&mut self) {}
+    fn res_0_d_0xcb82(&mut self) {
+        println!("RES 0, D");
+        self.registers.d = self.registers.d & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [8]
-    fn res_0_e_0xcb83(&mut self) {}
+    fn res_0_e_0xcb83(&mut self) {
+        println!("RES 0, E");
+        self.registers.e = self.registers.e & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [8]
-    fn res_0_h_0xcb84(&mut self) {}
+    fn res_0_h_0xcb84(&mut self) {
+        println!("RES 0, H");
+        self.registers.h = self.registers.h & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [8]
-    fn res_0_l_0xcb85(&mut self) {}
+    fn res_0_l_0xcb85(&mut self) {
+        println!("RES 0, L");
+        self.registers.l = self.registers.l & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [16]
-    fn res_0_hl_0xcb86(&mut self) {}
+    fn res_0_hl_0xcb86(&mut self) {
+        println!("RES 0, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 0),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_0_a_0xcb87(&mut self) {}
+    fn res_0_a_0xcb87(&mut self) {
+        println!("RES 0, A");
+        self.registers.a = self.registers.a & !(0b1 << 0);
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_b_0xcb88(&mut self) {}
+    fn res_1_b_0xcb88(&mut self) {
+        println!("RES 1, B");
+        self.registers.b = self.registers.b & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_c_0xcb89(&mut self) {}
+    fn res_1_c_0xcb89(&mut self) {
+        println!("RES 1, C");
+        self.registers.c = self.registers.c & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_d_0xcb8a(&mut self) {}
+    fn res_1_d_0xcb8a(&mut self) {
+        println!("RES 1, D");
+        self.registers.d = self.registers.d & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_e_0xcb8b(&mut self) {}
+    fn res_1_e_0xcb8b(&mut self) {
+        println!("RES 1, E");
+        self.registers.e = self.registers.e & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_h_0xcb8c(&mut self) {}
+    fn res_1_h_0xcb8c(&mut self) {
+        println!("RES 1, H");
+        self.registers.h = self.registers.h & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_l_0xcb8d(&mut self) {}
+    fn res_1_l_0xcb8d(&mut self) {
+        println!("RES 1, L");
+        self.registers.l = self.registers.l & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [16]
-    fn res_1_hl_0xcb8e(&mut self) {}
+    fn res_1_hl_0xcb8e(&mut self) {
+        println!("RES 1, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 1),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_1_a_0xcb8f(&mut self) {}
+    fn res_1_a_0xcb8f(&mut self) {
+        println!("RES 1, A");
+        self.registers.a = self.registers.a & !(0b1 << 1);
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_b_0xcb90(&mut self) {}
+    fn res_2_b_0xcb90(&mut self) {
+        println!("RES 2, B");
+        self.registers.b = self.registers.b & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_c_0xcb91(&mut self) {}
+    fn res_2_c_0xcb91(&mut self) {
+        println!("RES 2, C");
+        self.registers.c = self.registers.c & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_d_0xcb92(&mut self) {}
+    fn res_2_d_0xcb92(&mut self) {
+        println!("RES 2, D");
+        self.registers.d = self.registers.d & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_e_0xcb93(&mut self) {}
+    fn res_2_e_0xcb93(&mut self) {
+        println!("RES 2, E");
+        self.registers.e = self.registers.e & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_h_0xcb94(&mut self) {}
+    fn res_2_h_0xcb94(&mut self) {
+        println!("RES 2, H");
+        self.registers.h = self.registers.h & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_l_0xcb95(&mut self) {}
+    fn res_2_l_0xcb95(&mut self) {
+        println!("RES 2, L");
+        self.registers.l = self.registers.l & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [16]
-    fn res_2_hl_0xcb96(&mut self) {}
+    fn res_2_hl_0xcb96(&mut self) {
+        println!("RES 2, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 2),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_2_a_0xcb97(&mut self) {}
+    fn res_2_a_0xcb97(&mut self) {
+        println!("RES 2, A");
+        self.registers.a = self.registers.a & !(0b1 << 2);
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_b_0xcb98(&mut self) {}
+    fn res_3_b_0xcb98(&mut self) {
+        println!("RES 3, B");
+        self.registers.b = self.registers.b & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_c_0xcb99(&mut self) {}
+    fn res_3_c_0xcb99(&mut self) {
+        println!("RES 3, C");
+        self.registers.c = self.registers.c & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_d_0xcb9a(&mut self) {}
+    fn res_3_d_0xcb9a(&mut self) {
+        println!("RES 3, D");
+        self.registers.d = self.registers.d & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_e_0xcb9b(&mut self) {}
+    fn res_3_e_0xcb9b(&mut self) {
+        println!("RES 3, E");
+        self.registers.e = self.registers.e & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_h_0xcb9c(&mut self) {}
+    fn res_3_h_0xcb9c(&mut self) {
+        println!("RES 3, H");
+        self.registers.h = self.registers.h & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_l_0xcb9d(&mut self) {}
+    fn res_3_l_0xcb9d(&mut self) {
+        println!("RES 3, L");
+        self.registers.l = self.registers.l & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [16]
-    fn res_3_hl_0xcb9e(&mut self) {}
+    fn res_3_hl_0xcb9e(&mut self) {
+        println!("RES 3, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 3),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_3_a_0xcb9f(&mut self) {}
+    fn res_3_a_0xcb9f(&mut self) {
+        println!("RES 3, A");
+        self.registers.a = self.registers.a & !(0b1 << 3);
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_b_0xcba0(&mut self) {}
+    fn res_4_b_0xcba0(&mut self) {
+        println!("RES 4, B");
+        self.registers.b = self.registers.b & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_c_0xcba1(&mut self) {}
+    fn res_4_c_0xcba1(&mut self) {
+        println!("RES 4, C");
+        self.registers.c = self.registers.c & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_d_0xcba2(&mut self) {}
+    fn res_4_d_0xcba2(&mut self) {
+        println!("RES 4, D");
+        self.registers.d = self.registers.d & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_e_0xcba3(&mut self) {}
+    fn res_4_e_0xcba3(&mut self) {
+        println!("RES 4, E");
+        self.registers.e = self.registers.e & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_h_0xcba4(&mut self) {}
+    fn res_4_h_0xcba4(&mut self) {
+        println!("RES 4, H");
+        self.registers.h = self.registers.h & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_l_0xcba5(&mut self) {}
+    fn res_4_l_0xcba5(&mut self) {
+        println!("RES 4, L");
+        self.registers.l = self.registers.l & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [16]
-    fn res_4_hl_0xcba6(&mut self) {}
+    fn res_4_hl_0xcba6(&mut self) {
+        println!("RES 4, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 4),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_4_a_0xcba7(&mut self) {}
+    fn res_4_a_0xcba7(&mut self) {
+        println!("RES 4, A");
+        self.registers.a = self.registers.a & !(0b1 << 4);
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_b_0xcba8(&mut self) {}
+    fn res_5_b_0xcba8(&mut self) {
+        println!("RES 5, B");
+        self.registers.b = self.registers.b & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_c_0xcba9(&mut self) {}
+    fn res_5_c_0xcba9(&mut self) {
+        println!("RES 5, C");
+        self.registers.c = self.registers.c & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_d_0xcbaa(&mut self) {}
+    fn res_5_d_0xcbaa(&mut self) {
+        println!("RES 5, D");
+        self.registers.d = self.registers.d & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_e_0xcbab(&mut self) {}
+    fn res_5_e_0xcbab(&mut self) {
+        println!("RES 5, E");
+        self.registers.e = self.registers.e & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_h_0xcbac(&mut self) {}
+    fn res_5_h_0xcbac(&mut self) {
+        println!("RES 5, H");
+        self.registers.h = self.registers.h & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_l_0xcbad(&mut self) {}
+    fn res_5_l_0xcbad(&mut self) {
+        println!("RES 5, L");
+        self.registers.l = self.registers.l & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [16]
-    fn res_5_hl_0xcbae(&mut self) {}
+    fn res_5_hl_0xcbae(&mut self) {
+        println!("RES 5, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 5),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_5_a_0xcbaf(&mut self) {}
+    fn res_5_a_0xcbaf(&mut self) {
+        println!("RES 5, A");
+        self.registers.a = self.registers.a & !(0b1 << 5);
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_b_0xcbb0(&mut self) {}
+    fn res_6_b_0xcbb0(&mut self) {
+        println!("RES 6, B");
+        self.registers.b = self.registers.b & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_c_0xcbb1(&mut self) {}
+    fn res_6_c_0xcbb1(&mut self) {
+        println!("RES 6, C");
+        self.registers.c = self.registers.c & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_d_0xcbb2(&mut self) {}
+    fn res_6_d_0xcbb2(&mut self) {
+        println!("RES 6, D");
+        self.registers.d = self.registers.d & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_e_0xcbb3(&mut self) {}
+    fn res_6_e_0xcbb3(&mut self) {
+        println!("RES 6, E");
+        self.registers.e = self.registers.e & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_h_0xcbb4(&mut self) {}
+    fn res_6_h_0xcbb4(&mut self) {
+        println!("RES 6, H");
+        self.registers.h = self.registers.h & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_l_0xcbb5(&mut self) {}
+    fn res_6_l_0xcbb5(&mut self) {
+        println!("RES 6, L");
+        self.registers.l = self.registers.l & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [16]
-    fn res_6_hl_0xcbb6(&mut self) {}
+    fn res_6_hl_0xcbb6(&mut self) {
+        println!("RES 6, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 6),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_6_a_0xcbb7(&mut self) {}
+    fn res_6_a_0xcbb7(&mut self) {
+        println!("RES 6, A");
+        self.registers.a = self.registers.a & !(0b1 << 6);
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_b_0xcbb8(&mut self) {}
+    fn res_7_b_0xcbb8(&mut self) {
+        println!("RES 7, B");
+        self.registers.b = self.registers.b & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_c_0xcbb9(&mut self) {}
+    fn res_7_c_0xcbb9(&mut self) {
+        println!("RES 7, C");
+        self.registers.c = self.registers.c & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_d_0xcbba(&mut self) {}
+    fn res_7_d_0xcbba(&mut self) {
+        println!("RES 7, D");
+        self.registers.d = self.registers.d & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_e_0xcbbb(&mut self) {}
+    fn res_7_e_0xcbbb(&mut self) {
+        println!("RES 7, E");
+        self.registers.e = self.registers.e & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_h_0xcbbc(&mut self) {}
+    fn res_7_h_0xcbbc(&mut self) {
+        println!("RES 7, H");
+        self.registers.h = self.registers.h & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_l_0xcbbd(&mut self) {}
+    fn res_7_l_0xcbbd(&mut self) {
+        println!("RES 7, L");
+        self.registers.l = self.registers.l & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [16]
-    fn res_7_hl_0xcbbe(&mut self) {}
+    fn res_7_hl_0xcbbe(&mut self) {
+        println!("RES 7, (HL)");
+        self.write(
+            self.registers.hl(),
+            self.read(self.registers.hl()) & !(0b1 << 7),
+        );
+    }
     // bytes: 2 cycles: [8]
-    fn res_7_a_0xcbbf(&mut self) {}
+    fn res_7_a_0xcbbf(&mut self) {
+        println!("RES 7, A");
+        self.registers.a = self.registers.a & !(0b1 << 7);
+    }
     // bytes: 2 cycles: [8]
     fn set_0_b_0xcbc0(&mut self) {
         println!("SET 0, B");
-        self.registers.b = self.registers.b | (0b1 << 0)
+        self.registers.b = self.registers.b | (0b1 << 0);
     }
     // bytes: 2 cycles: [8]
     fn set_0_c_0xcbc1(&mut self) {
         println!("SET 0, C");
-        self.registers.c = self.registers.c | (0b1 << 0)
+        self.registers.c = self.registers.c | (0b1 << 0);
     }
     // bytes: 2 cycles: [8]
     fn set_0_d_0xcbc2(&mut self) {
         println!("SET 0, D");
-        self.registers.d = self.registers.d | (0b1 << 0)
+        self.registers.d = self.registers.d | (0b1 << 0);
     }
     // bytes: 2 cycles: [8]
     fn set_0_e_0xcbc3(&mut self) {
         println!("SET 0, E");
-        self.registers.e = self.registers.e | (0b1 << 0)
+        self.registers.e = self.registers.e | (0b1 << 0);
     }
     // bytes: 2 cycles: [8]
     fn set_0_h_0xcbc4(&mut self) {
         println!("SET 0, H");
-        self.registers.h = self.registers.h | (0b1 << 0)
+        self.registers.h = self.registers.h | (0b1 << 0);
     }
     // bytes: 2 cycles: [8]
     fn set_0_l_0xcbc5(&mut self) {
         println!("SET 0, L");
-        self.registers.l = self.registers.l | (0b1 << 0)
+        self.registers.l = self.registers.l | (0b1 << 0);
     }
     // bytes: 2 cycles: [16]
     fn set_0_hl_0xcbc6(&mut self) {
@@ -4001,37 +4217,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_0_a_0xcbc7(&mut self) {
         println!("SET 0, A");
-        self.registers.a = self.registers.a | (0b1 << 0)
+        self.registers.a = self.registers.a | (0b1 << 0);
     }
     // bytes: 2 cycles: [8]
     fn set_1_b_0xcbc8(&mut self) {
         println!("SET 1, B");
-        self.registers.b = self.registers.b | (0b1 << 1)
+        self.registers.b = self.registers.b | (0b1 << 1);
     }
     // bytes: 2 cycles: [8]
     fn set_1_c_0xcbc9(&mut self) {
         println!("SET 1, C");
-        self.registers.c = self.registers.c | (0b1 << 1)
+        self.registers.c = self.registers.c | (0b1 << 1);
     }
     // bytes: 2 cycles: [8]
     fn set_1_d_0xcbca(&mut self) {
         println!("SET 1, D");
-        self.registers.d = self.registers.d | (0b1 << 1)
+        self.registers.d = self.registers.d | (0b1 << 1);
     }
     // bytes: 2 cycles: [8]
     fn set_1_e_0xcbcb(&mut self) {
         println!("SET 1, E");
-        self.registers.e = self.registers.e | (0b1 << 1)
+        self.registers.e = self.registers.e | (0b1 << 1);
     }
     // bytes: 2 cycles: [8]
     fn set_1_h_0xcbcc(&mut self) {
         println!("SET 1, H");
-        self.registers.h = self.registers.h | (0b1 << 1)
+        self.registers.h = self.registers.h | (0b1 << 1);
     }
     // bytes: 2 cycles: [8]
     fn set_1_l_0xcbcd(&mut self) {
         println!("SET 1, L");
-        self.registers.l = self.registers.l | (0b1 << 1)
+        self.registers.l = self.registers.l | (0b1 << 1);
     }
     // bytes: 2 cycles: [16]
     fn set_1_hl_0xcbce(&mut self) {
@@ -4044,37 +4260,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_1_a_0xcbcf(&mut self) {
         println!("SET 1, A");
-        self.registers.a = self.registers.a | (0b1 << 1)
+        self.registers.a = self.registers.a | (0b1 << 1);
     }
     // bytes: 2 cycles: [8]
     fn set_2_b_0xcbd0(&mut self) {
         println!("SET 2, B");
-        self.registers.b = self.registers.b | (0b1 << 2)
+        self.registers.b = self.registers.b | (0b1 << 2);
     }
     // bytes: 2 cycles: [8]
     fn set_2_c_0xcbd1(&mut self) {
         println!("SET 2, C");
-        self.registers.c = self.registers.c | (0b1 << 2)
+        self.registers.c = self.registers.c | (0b1 << 2);
     }
     // bytes: 2 cycles: [8]
     fn set_2_d_0xcbd2(&mut self) {
         println!("SET 2, D");
-        self.registers.d = self.registers.d | (0b1 << 2)
+        self.registers.d = self.registers.d | (0b1 << 2);
     }
     // bytes: 2 cycles: [8]
     fn set_2_e_0xcbd3(&mut self) {
         println!("SET 2, E");
-        self.registers.e = self.registers.e | (0b1 << 2)
+        self.registers.e = self.registers.e | (0b1 << 2);
     }
     // bytes: 2 cycles: [8]
     fn set_2_h_0xcbd4(&mut self) {
         println!("SET 2, H");
-        self.registers.h = self.registers.h | (0b1 << 2)
+        self.registers.h = self.registers.h | (0b1 << 2);
     }
     // bytes: 2 cycles: [8]
     fn set_2_l_0xcbd5(&mut self) {
         println!("SET 2, L");
-        self.registers.l = self.registers.l | (0b1 << 2)
+        self.registers.l = self.registers.l | (0b1 << 2);
     }
     // bytes: 2 cycles: [16]
     fn set_2_hl_0xcbd6(&mut self) {
@@ -4087,37 +4303,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_2_a_0xcbd7(&mut self) {
         println!("SET 2, A");
-        self.registers.a = self.registers.a | (0b1 << 2)
+        self.registers.a = self.registers.a | (0b1 << 2);
     }
     // bytes: 2 cycles: [8]
     fn set_3_b_0xcbd8(&mut self) {
         println!("SET 3, B");
-        self.registers.b = self.registers.b | (0b1 << 3)
+        self.registers.b = self.registers.b | (0b1 << 3);
     }
     // bytes: 2 cycles: [8]
     fn set_3_c_0xcbd9(&mut self) {
         println!("SET 3, C");
-        self.registers.c = self.registers.c | (0b1 << 3)
+        self.registers.c = self.registers.c | (0b1 << 3);
     }
     // bytes: 2 cycles: [8]
     fn set_3_d_0xcbda(&mut self) {
         println!("SET 3, D");
-        self.registers.d = self.registers.d | (0b1 << 3)
+        self.registers.d = self.registers.d | (0b1 << 3);
     }
     // bytes: 2 cycles: [8]
     fn set_3_e_0xcbdb(&mut self) {
         println!("SET 3, E");
-        self.registers.e = self.registers.e | (0b1 << 3)
+        self.registers.e = self.registers.e | (0b1 << 3);
     }
     // bytes: 2 cycles: [8]
     fn set_3_h_0xcbdc(&mut self) {
         println!("SET 3, H");
-        self.registers.h = self.registers.h | (0b1 << 3)
+        self.registers.h = self.registers.h | (0b1 << 3);
     }
     // bytes: 2 cycles: [8]
     fn set_3_l_0xcbdd(&mut self) {
         println!("SET 3, L");
-        self.registers.l = self.registers.l | (0b1 << 3)
+        self.registers.l = self.registers.l | (0b1 << 3);
     }
     // bytes: 2 cycles: [16]
     fn set_3_hl_0xcbde(&mut self) {
@@ -4130,37 +4346,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_3_a_0xcbdf(&mut self) {
         println!("SET 3, A");
-        self.registers.a = self.registers.a | (0b1 << 3)
+        self.registers.a = self.registers.a | (0b1 << 3);
     }
     // bytes: 2 cycles: [8]
     fn set_4_b_0xcbe0(&mut self) {
         println!("SET 4, B");
-        self.registers.b = self.registers.b | (0b1 << 4)
+        self.registers.b = self.registers.b | (0b1 << 4);
     }
     // bytes: 2 cycles: [8]
     fn set_4_c_0xcbe1(&mut self) {
         println!("SET 4, C");
-        self.registers.c = self.registers.c | (0b1 << 4)
+        self.registers.c = self.registers.c | (0b1 << 4);
     }
     // bytes: 2 cycles: [8]
     fn set_4_d_0xcbe2(&mut self) {
         println!("SET 4, D");
-        self.registers.d = self.registers.d | (0b1 << 4)
+        self.registers.d = self.registers.d | (0b1 << 4);
     }
     // bytes: 2 cycles: [8]
     fn set_4_e_0xcbe3(&mut self) {
         println!("SET 4, E");
-        self.registers.e = self.registers.e | (0b1 << 4)
+        self.registers.e = self.registers.e | (0b1 << 4);
     }
     // bytes: 2 cycles: [8]
     fn set_4_h_0xcbe4(&mut self) {
         println!("SET 4, H");
-        self.registers.h = self.registers.h | (0b1 << 4)
+        self.registers.h = self.registers.h | (0b1 << 4);
     }
     // bytes: 2 cycles: [8]
     fn set_4_l_0xcbe5(&mut self) {
         println!("SET 4, L");
-        self.registers.l = self.registers.l | (0b1 << 4)
+        self.registers.l = self.registers.l | (0b1 << 4);
     }
     // bytes: 2 cycles: [16]
     fn set_4_hl_0xcbe6(&mut self) {
@@ -4173,37 +4389,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_4_a_0xcbe7(&mut self) {
         println!("SET 4, A");
-        self.registers.a = self.registers.a | (0b1 << 4)
+        self.registers.a = self.registers.a | (0b1 << 4);
     }
     // bytes: 2 cycles: [8]
     fn set_5_b_0xcbe8(&mut self) {
         println!("SET 5, B");
-        self.registers.b = self.registers.b | (0b1 << 5)
+        self.registers.b = self.registers.b | (0b1 << 5);
     }
     // bytes: 2 cycles: [8]
     fn set_5_c_0xcbe9(&mut self) {
         println!("SET 5, C");
-        self.registers.c = self.registers.c | (0b1 << 5)
+        self.registers.c = self.registers.c | (0b1 << 5);
     }
     // bytes: 2 cycles: [8]
     fn set_5_d_0xcbea(&mut self) {
         println!("SET 5, D");
-        self.registers.d = self.registers.d | (0b1 << 5)
+        self.registers.d = self.registers.d | (0b1 << 5);
     }
     // bytes: 2 cycles: [8]
     fn set_5_e_0xcbeb(&mut self) {
         println!("SET 5, E");
-        self.registers.e = self.registers.e | (0b1 << 5)
+        self.registers.e = self.registers.e | (0b1 << 5);
     }
     // bytes: 2 cycles: [8]
     fn set_5_h_0xcbec(&mut self) {
         println!("SET 5, H");
-        self.registers.h = self.registers.h | (0b1 << 5)
+        self.registers.h = self.registers.h | (0b1 << 5);
     }
     // bytes: 2 cycles: [8]
     fn set_5_l_0xcbed(&mut self) {
         println!("SET 5, L");
-        self.registers.l = self.registers.l | (0b1 << 5)
+        self.registers.l = self.registers.l | (0b1 << 5);
     }
     // bytes: 2 cycles: [16]
     fn set_5_hl_0xcbee(&mut self) {
@@ -4216,37 +4432,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_5_a_0xcbef(&mut self) {
         println!("SET 5, A");
-        self.registers.a = self.registers.a | (0b1 << 5)
+        self.registers.a = self.registers.a | (0b1 << 5);
     }
     // bytes: 2 cycles: [8]
     fn set_6_b_0xcbf0(&mut self) {
         println!("SET 6, B");
-        self.registers.b = self.registers.b | (0b1 << 6)
+        self.registers.b = self.registers.b | (0b1 << 6);
     }
     // bytes: 2 cycles: [8]
     fn set_6_c_0xcbf1(&mut self) {
         println!("SET 6, C");
-        self.registers.c = self.registers.c | (0b1 << 6)
+        self.registers.c = self.registers.c | (0b1 << 6);
     }
     // bytes: 2 cycles: [8]
     fn set_6_d_0xcbf2(&mut self) {
         println!("SET 6, D");
-        self.registers.d = self.registers.d | (0b1 << 6)
+        self.registers.d = self.registers.d | (0b1 << 6);
     }
     // bytes: 2 cycles: [8]
     fn set_6_e_0xcbf3(&mut self) {
         println!("SET 6, E");
-        self.registers.e = self.registers.e | (0b1 << 6)
+        self.registers.e = self.registers.e | (0b1 << 6);
     }
     // bytes: 2 cycles: [8]
     fn set_6_h_0xcbf4(&mut self) {
         println!("SET 6, H");
-        self.registers.h = self.registers.h | (0b1 << 6)
+        self.registers.h = self.registers.h | (0b1 << 6);
     }
     // bytes: 2 cycles: [8]
     fn set_6_l_0xcbf5(&mut self) {
         println!("SET 6, L");
-        self.registers.l = self.registers.l | (0b1 << 6)
+        self.registers.l = self.registers.l | (0b1 << 6);
     }
     // bytes: 2 cycles: [16]
     fn set_6_hl_0xcbf6(&mut self) {
@@ -4259,37 +4475,37 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_6_a_0xcbf7(&mut self) {
         println!("SET 6, A");
-        self.registers.a = self.registers.a | (0b1 << 6)
+        self.registers.a = self.registers.a | (0b1 << 6);
     }
     // bytes: 2 cycles: [8]
     fn set_7_b_0xcbf8(&mut self) {
         println!("SET 7, B");
-        self.registers.b = self.registers.b | (0b1 << 7)
+        self.registers.b = self.registers.b | (0b1 << 7);
     }
     // bytes: 2 cycles: [8]
     fn set_7_c_0xcbf9(&mut self) {
         println!("SET 7, C");
-        self.registers.c = self.registers.c | (0b1 << 7)
+        self.registers.c = self.registers.c | (0b1 << 7);
     }
     // bytes: 2 cycles: [8]
     fn set_7_d_0xcbfa(&mut self) {
         println!("SET 7, D");
-        self.registers.d = self.registers.d | (0b1 << 7)
+        self.registers.d = self.registers.d | (0b1 << 7);
     }
     // bytes: 2 cycles: [8]
     fn set_7_e_0xcbfb(&mut self) {
         println!("SET 7, E");
-        self.registers.e = self.registers.e | (0b1 << 7)
+        self.registers.e = self.registers.e | (0b1 << 7);
     }
     // bytes: 2 cycles: [8]
     fn set_7_h_0xcbfc(&mut self) {
         println!("SET 7, H");
-        self.registers.h = self.registers.h | (0b1 << 7)
+        self.registers.h = self.registers.h | (0b1 << 7);
     }
     // bytes: 2 cycles: [8]
     fn set_7_l_0xcbfd(&mut self) {
         println!("SET 7, L");
-        self.registers.l = self.registers.l | (0b1 << 7)
+        self.registers.l = self.registers.l | (0b1 << 7);
     }
     // bytes: 2 cycles: [16]
     fn set_7_hl_0xcbfe(&mut self) {
@@ -4302,6 +4518,6 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn set_7_a_0xcbff(&mut self) {
         println!("SET 7, A");
-        self.registers.a = self.registers.a | (0b1 << 7)
+        self.registers.a = self.registers.a | (0b1 << 7);
     }
 }
