@@ -690,14 +690,14 @@ impl CPU {
             // 0x2D => self.sra_l_0xcb2d(),
             // 0x2E => self.sra_hl_0xcb2e(),
             // 0x2F => self.sra_a_0xcb2f(),
-            // 0x30 => self.swap_b_0xcb30(),
-            // 0x31 => self.swap_c_0xcb31(),
-            // 0x32 => self.swap_d_0xcb32(),
-            // 0x33 => self.swap_e_0xcb33(),
-            // 0x34 => self.swap_h_0xcb34(),
-            // 0x35 => self.swap_l_0xcb35(),
-            // 0x36 => self.swap_hl_0xcb36(),
-            // 0x37 => self.swap_a_0xcb37(),
+            0x30 => self.swap_b_0xcb30(),
+            0x31 => self.swap_c_0xcb31(),
+            0x32 => self.swap_d_0xcb32(),
+            0x33 => self.swap_e_0xcb33(),
+            0x34 => self.swap_h_0xcb34(),
+            0x35 => self.swap_l_0xcb35(),
+            0x36 => self.swap_hl_0xcb36(),
+            0x37 => self.swap_a_0xcb37(),
             // 0x38 => self.srl_b_0xcb38(),
             // 0x39 => self.srl_c_0xcb39(),
             // 0x3A => self.srl_d_0xcb3a(),
@@ -2748,21 +2748,93 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn sra_a_0xcb2f(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn swap_b_0xcb30(&mut self) {}
+    fn swap_b_0xcb30(&mut self) {
+        println!("SWAP B");
+        let upper = (self.registers.b & 0xF0) >> 4;
+        let lower = (self.registers.b & 0x0F);
+        self.registers.b = (lower << 4) | upper;
+        self.registers.f.z = self.registers.b == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
-    fn swap_c_0xcb31(&mut self) {}
+    fn swap_c_0xcb31(&mut self) {
+        println!("SWAP C");
+        let upper = (self.registers.c & 0xF0) >> 4;
+        let lower = (self.registers.c & 0x0F);
+        self.registers.c = (lower << 4) | upper;
+        self.registers.f.z = self.registers.c == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
-    fn swap_d_0xcb32(&mut self) {}
+    fn swap_d_0xcb32(&mut self) {
+        println!("SWAP D");
+        let upper = (self.registers.d & 0xF0) >> 4;
+        let lower = (self.registers.d & 0x0F);
+        self.registers.d = (lower << 4) | upper;
+        self.registers.f.z = self.registers.d == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
-    fn swap_e_0xcb33(&mut self) {}
+    fn swap_e_0xcb33(&mut self) {
+        println!("SWAP E");
+        let upper = (self.registers.e & 0xF0) >> 4;
+        let lower = (self.registers.e & 0x0F);
+        self.registers.e = (lower << 4) | upper;
+        self.registers.f.z = self.registers.e == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
-    fn swap_h_0xcb34(&mut self) {}
+    fn swap_h_0xcb34(&mut self) {
+        println!("SWAP H");
+        let upper = (self.registers.h & 0xF0) >> 4;
+        let lower = (self.registers.h & 0x0F);
+        self.registers.h = (lower << 4) | upper;
+        self.registers.f.z = self.registers.h == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
-    fn swap_l_0xcb35(&mut self) {}
+    fn swap_l_0xcb35(&mut self) {
+        println!("SWAP L");
+        let upper = (self.registers.l & 0xF0) >> 4;
+        let lower = (self.registers.l & 0x0F);
+        self.registers.l = (lower << 4) | upper;
+        self.registers.f.z = self.registers.l == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [16]
-    fn swap_hl_0xcb36(&mut self) {}
+    fn swap_hl_0xcb36(&mut self) {
+        println!("SWAP (HL)");
+        let upper = (self.registers.hl() & 0xF0) >> 4;
+        let lower = (self.registers.hl() & 0x0F);
+        self.registers.set_hl((lower << 4) | upper);
+        self.registers.f.z = self.registers.hl() == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
-    fn swap_a_0xcb37(&mut self) {}
+    fn swap_a_0xcb37(&mut self) {
+        println!("SWAP A");
+        let upper = (self.registers.a & 0xF0) >> 4;
+        let lower = (self.registers.a & 0x0F);
+        self.registers.a = (lower << 4) | upper;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+        self.registers.f.h = false;
+        self.registers.f.c = false;
+    }
     // bytes: 2 cycles: [8]
     fn srl_b_0xcb38(&mut self) {}
     // bytes: 2 cycles: [8]
