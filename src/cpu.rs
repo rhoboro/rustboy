@@ -582,7 +582,7 @@ impl CPU {
             0xC4 => self.call_nz_a16_0xc4(),
             0xC5 => self.push_bc_0xc5(),
             0xC6 => self.add_a_d8_0xc6(),
-            // 0xC7 => self.rst_00h_0xc7(),
+            0xC7 => self.rst_00h_0xc7(),
             // 0xC8 => self.ret_z_0xc8(),
             // 0xC9 => self.ret_0xc9(),
             // 0xCA => self.jp_z_a16_0xca(),
@@ -590,7 +590,7 @@ impl CPU {
             0xCC => self.call_z_a16_0xcc(),
             0xCD => self.call_a16_0xcd(),
             0xCE => self.adc_a_d8_0xce(),
-            // 0xCF => self.rst_08h_0xcf(),
+            0xCF => self.rst_08h_0xcf(),
             // 0xD0 => self.ret_nc_0xd0(),
             0xD1 => self.pop_de_0xd1(),
             // 0xD2 => self.jp_nc_a16_0xd2(),
@@ -598,7 +598,7 @@ impl CPU {
             0xD4 => self.call_nc_a16_0xd4(),
             0xD5 => self.push_de_0xd5(),
             0xD6 => self.sub_d8_0xd6(),
-            // 0xD7 => self.rst_10h_0xd7(),
+            0xD7 => self.rst_10h_0xd7(),
             // 0xD8 => self.ret_c_0xd8(),
             // 0xD9 => self.reti_0xd9(),
             // 0xDA => self.jp_c_a16_0xda(),
@@ -606,7 +606,7 @@ impl CPU {
             0xDC => self.call_c_a16_0xdc(),
             // 0xDD => self.illegal_dd_0xdd(),
             // 0xDE => self.sbc_a_d8_0xde(),
-            // 0xDF => self.rst_18h_0xdf(),
+            0xDF => self.rst_18h_0xdf(),
             0xE0 => self.ldh_a8_a_0xe0(),
             0xE1 => self.pop_hl_0xe1(),
             0xE2 => self.ld_c_a_0xe2(),
@@ -614,7 +614,7 @@ impl CPU {
             // 0xE4 => self.illegal_e4_0xe4(),
             0xE5 => self.push_hl_0xe5(),
             0xE6 => self.and_d8_0xe6(),
-            // 0xE7 => self.rst_20h_0xe7(),
+            0xE7 => self.rst_20h_0xe7(),
             0xE8 => self.add_sp_r8_0xe8(),
             0xE9 => self.jp_hl_0xe9(),
             0xEA => self.ld_a16_a_0xea(),
@@ -622,7 +622,7 @@ impl CPU {
             // 0xEC => self.illegal_ec_0xec(),
             // 0xED => self.illegal_ed_0xed(),
             0xEE => self.xor_d8_0xee(),
-            // 0xEF => self.rst_28h_0xef(),
+            0xEF => self.rst_28h_0xef(),
             0xF0 => self.ldh_a_a8_0xf0(),
             0xF1 => self.pop_af_0xf1(),
             0xF2 => self.ld_a_c_0xf2(),
@@ -630,7 +630,7 @@ impl CPU {
             // 0xF4 => self.illegal_f4_0xf4(),
             0xF5 => self.push_af_0xf5(),
             0xF6 => self.or_d8_0xf6(),
-            // 0xF7 => self.rst_30h_0xf7(),
+            0xF7 => self.rst_30h_0xf7(),
             0xF8 => self.ld_hl_sp_r8_0xf8(),
             0xF9 => self.ld_sp_hl_0xf9(),
             0xFA => self.ld_a_a16_0xfa(),
@@ -2473,7 +2473,19 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [16]
-    fn rst_00h_0xc7(&mut self) {}
+    fn rst_00h_0xc7(&mut self) {
+        println!("RST 00H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0000;
+    }
     // bytes: 1 cycles: [20, 8]
     fn ret_z_0xc8(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -2535,7 +2547,19 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [16]
-    fn rst_08h_0xcf(&mut self) {}
+    fn rst_08h_0xcf(&mut self) {
+        println!("RST 08H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0008;
+    }
     // bytes: 1 cycles: [20, 8]
     fn ret_nc_0xd0(&mut self) {}
     // bytes: 1 cycles: [12]
@@ -2593,7 +2617,19 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [16]
-    fn rst_10h_0xd7(&mut self) {}
+    fn rst_10h_0xd7(&mut self) {
+        println!("RST 10H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0010;
+    }
     // bytes: 1 cycles: [20, 8]
     fn ret_c_0xd8(&mut self) {}
     // bytes: 1 cycles: [16]
@@ -2633,7 +2669,19 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn sbc_a_d8_0xde(&mut self) {}
     // bytes: 1 cycles: [16]
-    fn rst_18h_0xdf(&mut self) {}
+    fn rst_18h_0xdf(&mut self) {
+        println!("RST 18H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0018;
+    }
     // bytes: 2 cycles: [12]
     fn ldh_a8_a_0xe0(&mut self) {
         println!("LD (a8), A");
@@ -2673,7 +2721,19 @@ impl CPU {
         self.registers.f.c = false;
     }
     // bytes: 1 cycles: [16]
-    fn rst_20h_0xe7(&mut self) {}
+    fn rst_20h_0xe7(&mut self) {
+        println!("RST 20H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0020;
+    }
     // bytes: 2 cycles: [16]
     fn add_sp_r8_0xe8(&mut self) {
         // TODO: 符号周り要確認
@@ -2715,7 +2775,19 @@ impl CPU {
         self.registers.f.c = false;
     }
     // bytes: 1 cycles: [16]
-    fn rst_28h_0xef(&mut self) {}
+    fn rst_28h_0xef(&mut self) {
+        println!("RST 28H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0028;
+    }
     // bytes: 2 cycles: [12]
     fn ldh_a_a8_0xf0(&mut self) {
         println!("LDH A, (a8)");
@@ -2758,7 +2830,19 @@ impl CPU {
         self.registers.f.c = false;
     }
     // bytes: 1 cycles: [16]
-    fn rst_30h_0xf7(&mut self) {}
+    fn rst_30h_0xf7(&mut self) {
+        println!("RST 30H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0030;
+    }
     // bytes: 2 cycles: [12]
     fn ld_hl_sp_r8_0xf8(&mut self) {
         println!("LD HL, SP+r8");
@@ -2803,7 +2887,19 @@ impl CPU {
         self.registers.f.n = true;
     }
     // bytes: 1 cycles: [16]
-    fn rst_38h_0xff(&mut self) {}
+    fn rst_38h_0xff(&mut self) {
+        println!("RST 38H");
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = 0x0000 + 0x0038;
+    }
     // bytes: 2 cycles: [8]
     fn rlc_b_0xcb00(&mut self) {
         println!("RLC B");
