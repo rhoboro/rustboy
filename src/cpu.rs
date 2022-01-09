@@ -577,7 +577,7 @@ impl CPU {
             0xBF => self.cp_a_0xbf(),
             0xC0 => self.ret_nz_0xc0(),
             0xC1 => self.pop_bc_0xc1(),
-            // 0xC2 => self.jp_nz_a16_0xc2(),
+            0xC2 => self.jp_nz_a16_0xc2(),
             0xC3 => self.jp_a16_0xc3(),
             0xC4 => self.call_nz_a16_0xc4(),
             0xC5 => self.push_bc_0xc5(),
@@ -585,15 +585,15 @@ impl CPU {
             0xC7 => self.rst_00h_0xc7(),
             0xC8 => self.ret_z_0xc8(),
             0xC9 => self.ret_0xc9(),
-            // 0xCA => self.jp_z_a16_0xca(),
-            // 0xCB => self.prefix_0xcb(),
+            0xCA => self.jp_z_a16_0xca(),
+            0xCB => self.prefix_0xcb(),
             0xCC => self.call_z_a16_0xcc(),
             0xCD => self.call_a16_0xcd(),
             0xCE => self.adc_a_d8_0xce(),
             0xCF => self.rst_08h_0xcf(),
             0xD0 => self.ret_nc_0xd0(),
             0xD1 => self.pop_de_0xd1(),
-            // 0xD2 => self.jp_nc_a16_0xd2(),
+            0xD2 => self.jp_nc_a16_0xd2(),
             // 0xD3 => self.illegal_d3_0xd3(),
             0xD4 => self.call_nc_a16_0xd4(),
             0xD5 => self.push_de_0xd5(),
@@ -601,11 +601,11 @@ impl CPU {
             0xD7 => self.rst_10h_0xd7(),
             0xD8 => self.ret_c_0xd8(),
             0xD9 => self.reti_0xd9(),
-            // 0xDA => self.jp_c_a16_0xda(),
+            0xDA => self.jp_c_a16_0xda(),
             // 0xDB => self.illegal_db_0xdb(),
             0xDC => self.call_c_a16_0xdc(),
             // 0xDD => self.illegal_dd_0xdd(),
-            // 0xDE => self.sbc_a_d8_0xde(),
+            0xDE => self.sbc_a_d8_0xde(),
             0xDF => self.rst_18h_0xdf(),
             0xE0 => self.ldh_a8_a_0xe0(),
             0xE1 => self.pop_hl_0xe1(),
@@ -638,7 +638,7 @@ impl CPU {
             // 0xFC => self.illegal_fc_0xfc(),
             // 0xFD => self.illegal_fd_0xfd(),
             0xFE => self.cp_d8_0xfe(),
-            // 0xFF => self.rst_38h_0xff(),
+            0xFF => self.rst_38h_0xff(),
             _ => println!("not implemented opcode: 0x{:x?}", opcode),
         }
     }
@@ -2036,7 +2036,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn sbc_a_b_0x98(&mut self) {
-        println!("SUB A, B");
+        println!("SBC A, B");
         let rhs: u8 = self.registers.b + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2046,7 +2046,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn sbc_a_c_0x99(&mut self) {
-        println!("SUB A, C");
+        println!("SBC A, C");
         let rhs: u8 = self.registers.c + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2056,7 +2056,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn sbc_a_d_0x9a(&mut self) {
-        println!("SUB A, D");
+        println!("SBC A, D");
         let rhs: u8 = self.registers.d + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2076,7 +2076,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn sbc_a_h_0x9c(&mut self) {
-        println!("SUB A, H");
+        println!("SBC A, H");
         let rhs: u8 = self.registers.h + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2086,7 +2086,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn sbc_a_l_0x9d(&mut self) {
-        println!("SUB A, L");
+        println!("SBC A, L");
         let rhs: u8 = self.registers.l + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2096,7 +2096,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [8]
     fn sbc_a_hl_0x9e(&mut self) {
-        println!("SUB A, (HL)");
+        println!("SBC A, (HL)");
         let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2106,7 +2106,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn sbc_a_a_0x9f(&mut self) {
-        println!("SUB A, A");
+        println!("SBC A, A");
         let rhs: u8 = self.registers.a + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
@@ -2523,7 +2523,10 @@ impl CPU {
         }
     }
     // bytes: 1 cycles: [4]
-    fn prefix_0xcb(&mut self) {}
+    fn prefix_0xcb(&mut self) {
+        // CBの場合は先に処理している
+        unreachable!();
+    }
     // bytes: 3 cycles: [24, 12]
     fn call_z_a16_0xcc(&mut self) {
         println!("CALL Z, a16");
@@ -2712,7 +2715,15 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_dd_0xdd(&mut self) {}
     // bytes: 2 cycles: [8]
-    fn sbc_a_d8_0xde(&mut self) {}
+    fn sbc_a_d8_0xde(&mut self) {
+        println!("SBC A, d8");
+        let rhs: u8 = self.fetch() + self.registers.f.c as u8;
+        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
+        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.a -= rhs;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.n = false;
+    }
     // bytes: 1 cycles: [16]
     fn rst_18h_0xdf(&mut self) {
         println!("RST 18H");
