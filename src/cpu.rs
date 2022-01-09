@@ -405,7 +405,7 @@ impl CPU {
             0x15 => self.dec_d_0x15(),
             0x16 => self.ld_d_d8_0x16(),
             0x17 => self.rla_0x17(),
-            // 0x18 => self.jr_r8_0x18(),
+            0x18 => self.jr_r8_0x18(),
             0x19 => self.add_hl_de_0x19(),
             0x1A => self.ld_a_de_0x1a(),
             0x1B => self.dec_de_0x1b(),
@@ -614,7 +614,7 @@ impl CPU {
             0xE6 => self.and_d8_0xe6(),
             // 0xE7 => self.rst_20h_0xe7(),
             0xE8 => self.add_sp_r8_0xe8(),
-            // 0xE9 => self.jp_hl_0xe9(),
+            0xE9 => self.jp_hl_0xe9(),
             0xEA => self.ld_a16_a_0xea(),
             // 0xEB => self.illegal_eb_0xeb(),
             // 0xEC => self.illegal_ec_0xec(),
@@ -1196,7 +1196,10 @@ impl CPU {
         self.registers.f.h = false;
     }
     // bytes: 2 cycles: [12]
-    fn jr_r8_0x18(&mut self) {}
+    fn jr_r8_0x18(&mut self) {
+        let r8: i16 = self.fetch().into();
+        self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+    }
     // bytes: 1 cycles: [8]
     fn add_hl_de_0x19(&mut self) {
         println!("ADD HL, DE");
@@ -2602,7 +2605,9 @@ impl CPU {
         self.registers.f.n = false;
     }
     // bytes: 1 cycles: [4]
-    fn jp_hl_0xe9(&mut self) {}
+    fn jp_hl_0xe9(&mut self) {
+        self.registers.pc = self.registers.hl();
+    }
     // bytes: 3 cycles: [16]
     fn ld_a16_a_0xea(&mut self) {
         println!("LD (a16), A");
