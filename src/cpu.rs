@@ -220,6 +220,7 @@ impl From<u8> for InterruptEnables {
     }
 }
 
+// TODO: Into でなく From を実装する（と Into も使える）
 impl Into<u8> for InterruptEnables {
     fn into(self) -> u8 {
         let mut v = 0b00000000;
@@ -269,6 +270,7 @@ impl From<u8> for InterruptFlags {
     }
 }
 
+// TODO: Into でなく From を実装する（と Into も使える）
 impl Into<u8> for InterruptFlags {
     fn into(self) -> u8 {
         let mut v = 0b00000000;
@@ -577,7 +579,7 @@ impl CPU {
             0xC1 => self.pop_bc_0xc1(),
             // 0xC2 => self.jp_nz_a16_0xc2(),
             0xC3 => self.jp_a16_0xc3(),
-            // 0xC4 => self.call_nz_a16_0xc4(),
+            0xC4 => self.call_nz_a16_0xc4(),
             0xC5 => self.push_bc_0xc5(),
             0xC6 => self.add_a_d8_0xc6(),
             // 0xC7 => self.rst_00h_0xc7(),
@@ -585,15 +587,15 @@ impl CPU {
             // 0xC9 => self.ret_0xc9(),
             // 0xCA => self.jp_z_a16_0xca(),
             // 0xCB => self.prefix_0xcb(),
-            // 0xCC => self.call_z_a16_0xcc(),
-            // 0xCD => self.call_a16_0xcd(),
+            0xCC => self.call_z_a16_0xcc(),
+            0xCD => self.call_a16_0xcd(),
             0xCE => self.adc_a_d8_0xce(),
             // 0xCF => self.rst_08h_0xcf(),
             // 0xD0 => self.ret_nc_0xd0(),
             0xD1 => self.pop_de_0xd1(),
             // 0xD2 => self.jp_nc_a16_0xd2(),
             // 0xD3 => self.illegal_d3_0xd3(),
-            // 0xD4 => self.call_nc_a16_0xd4(),
+            0xD4 => self.call_nc_a16_0xd4(),
             0xD5 => self.push_de_0xd5(),
             0xD6 => self.sub_d8_0xd6(),
             // 0xD7 => self.rst_10h_0xd7(),
@@ -601,7 +603,7 @@ impl CPU {
             // 0xD9 => self.reti_0xd9(),
             // 0xDA => self.jp_c_a16_0xda(),
             // 0xDB => self.illegal_db_0xdb(),
-            // 0xDC => self.call_c_a16_0xdc(),
+            0xDC => self.call_c_a16_0xdc(),
             // 0xDD => self.illegal_dd_0xdd(),
             // 0xDE => self.sbc_a_d8_0xde(),
             // 0xDF => self.rst_18h_0xdf(),
@@ -1197,6 +1199,7 @@ impl CPU {
     }
     // bytes: 2 cycles: [12]
     fn jr_r8_0x18(&mut self) {
+        println!("JP r8");
         let r8: i16 = self.fetch().into();
         self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
     }
@@ -1420,6 +1423,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn scf_0x37(&mut self) {
+        println!("SCF");
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = true;
@@ -2434,7 +2438,23 @@ impl CPU {
         self.registers.pc = a16;
     }
     // bytes: 3 cycles: [24, 12]
-    fn call_nz_a16_0xc4(&mut self) {}
+    fn call_nz_a16_0xc4(&mut self) {
+        println!("CALL NZ, a16");
+        let lower: u16 = self.fetch().into();
+        let upper: u16 = self.fetch().into();
+        if !self.registers.f.z {
+            self.write(
+                self.registers.sp + 1,
+                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            );
+            self.write(
+                self.registers.sp + 2,
+                ((self.registers.pc + 1) & 0x00FF) as u8,
+            );
+            self.registers.sp += 2;
+            self.registers.pc = upper << 8 | lower;
+        }
+    }
     // bytes: 1 cycles: [16]
     fn push_bc_0xc5(&mut self) {
         println!("PUSH BC");
@@ -2471,9 +2491,39 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn prefix_0xcb(&mut self) {}
     // bytes: 3 cycles: [24, 12]
-    fn call_z_a16_0xcc(&mut self) {}
+    fn call_z_a16_0xcc(&mut self) {
+        println!("CALL Z, a16");
+        let lower: u16 = self.fetch().into();
+        let upper: u16 = self.fetch().into();
+        if self.registers.f.z {
+            self.write(
+                self.registers.sp + 1,
+                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            );
+            self.write(
+                self.registers.sp + 2,
+                ((self.registers.pc + 1) & 0x00FF) as u8,
+            );
+            self.registers.sp += 2;
+            self.registers.pc = upper << 8 | lower;
+        }
+    }
     // bytes: 3 cycles: [24]
-    fn call_a16_0xcd(&mut self) {}
+    fn call_a16_0xcd(&mut self) {
+        println!("CALL a16");
+        let lower: u16 = self.fetch().into();
+        let upper: u16 = self.fetch().into();
+        self.write(
+            self.registers.sp + 1,
+            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+        );
+        self.write(
+            self.registers.sp + 2,
+            ((self.registers.pc + 1) & 0x00FF) as u8,
+        );
+        self.registers.sp += 2;
+        self.registers.pc = upper << 8 | lower;
+    }
     // bytes: 2 cycles: [8]
     fn adc_a_d8_0xce(&mut self) {
         println!("ADC A, d8");
@@ -2508,7 +2558,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_d3_0xd3(&mut self) {}
     // bytes: 3 cycles: [24, 12]
-    fn call_nc_a16_0xd4(&mut self) {}
+    fn call_nc_a16_0xd4(&mut self) {
+        println!("CALL NC, a16");
+        let lower: u16 = self.fetch().into();
+        let upper: u16 = self.fetch().into();
+        if !self.registers.f.c {
+            self.write(
+                self.registers.sp + 1,
+                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            );
+            self.write(
+                self.registers.sp + 2,
+                ((self.registers.pc + 1) & 0x00FF) as u8,
+            );
+            self.registers.sp += 2;
+            self.registers.pc = upper << 8 | lower;
+        }
+    }
     // bytes: 1 cycles: [16]
     fn push_de_0xd5(&mut self) {
         println!("PUSH DE");
@@ -2545,7 +2611,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn illegal_db_0xdb(&mut self) {}
     // bytes: 3 cycles: [24, 12]
-    fn call_c_a16_0xdc(&mut self) {}
+    fn call_c_a16_0xdc(&mut self) {
+        println!("CALL C, a16");
+        let lower: u16 = self.fetch().into();
+        let upper: u16 = self.fetch().into();
+        if self.registers.f.c {
+            self.write(
+                self.registers.sp + 1,
+                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            );
+            self.write(
+                self.registers.sp + 2,
+                ((self.registers.pc + 1) & 0x00FF) as u8,
+            );
+            self.registers.sp += 2;
+            self.registers.pc = upper << 8 | lower;
+        }
+    }
     // bytes: 1 cycles: [4]
     fn illegal_dd_0xdd(&mut self) {}
     // bytes: 2 cycles: [8]
@@ -2606,6 +2688,7 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn jp_hl_0xe9(&mut self) {
+        println!("JP (HL)");
         self.registers.pc = self.registers.hl();
     }
     // bytes: 3 cycles: [16]
