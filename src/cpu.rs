@@ -1307,8 +1307,31 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn daa_0x27(&mut self) {
-        // ややこしいので一旦飛ばす
-        todo!();
+        // TODO: テストを書く
+        // https://github.com/Baekalfen/PyBoy/blob/96d2b3d54fe73a6030ff61b6c70952b8e6aa6299/pyboy/core/opcodes.py#L412
+        let mut al = self.registers.a;
+        let mut corr = 0x00;
+        if self.registers.f.h {
+            corr |= 0x06;
+        }
+        if self.registers.f.c {
+            corr |= 0x60;
+        }
+        if self.registers.f.n {
+            al -= corr;
+        } else {
+            if (al & 0x0F) > 0x09 {
+                corr |= 0x06;
+            }
+            if al > 0x99 {
+                corr |= 0x60;
+            }
+            al += corr;
+        }
+        self.registers.a = al;
+        self.registers.f.z = self.registers.a == 0;
+        self.registers.f.c = (corr & 0x60) == 0;
+        self.registers.f.h = false;
     }
     // bytes: 2 cycles: [12, 8]
     fn jr_z_r8_0x28(&mut self) {
