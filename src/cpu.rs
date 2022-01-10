@@ -2352,7 +2352,6 @@ impl CPU {
         let rhs = self.registers.b;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2362,7 +2361,6 @@ impl CPU {
         let rhs = self.registers.c;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2372,7 +2370,6 @@ impl CPU {
         let rhs = self.registers.d;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2382,7 +2379,6 @@ impl CPU {
         let rhs = self.registers.e;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2392,7 +2388,6 @@ impl CPU {
         let rhs = self.registers.h;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2402,7 +2397,6 @@ impl CPU {
         let rhs = self.registers.l;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2412,7 +2406,6 @@ impl CPU {
         let rhs = self.read(self.registers.hl());
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2422,7 +2415,6 @@ impl CPU {
         let rhs = self.registers.a;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
@@ -2954,7 +2946,6 @@ impl CPU {
         let rhs = self.fetch();
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = (self.registers.a > rhs) as u8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
     }
