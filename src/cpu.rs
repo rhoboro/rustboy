@@ -1,4 +1,3 @@
-use crate::io::IO;
 use crate::Address;
 use core::fmt::Debug;
 use std::convert::Into;
@@ -313,19 +312,19 @@ pub struct CPU {
     // 0xFF04 ディバイダーレジスタ
     div: u8,
     // 0xFF05 - 0xFF07
-    timer: Box<dyn IO>,
+    // timer: Box<dyn IO>,
 
     // 0xFF0F 割り込みフラグ
     ifg: InterruptFlags,
 
     // 0xFF10 - FF3F
-    sound: Box<dyn IO>,
+    // sound: Box<dyn IO>,
 
     // 0xFF46 DMA(Direct Memory Access)
     dma: u8,
 
     // 0xFF40 - 0xFF4B
-    lcd: Box<dyn IO>,
+    // lcd: Box<dyn IO>,
 
     // 0xFF80 - 0xFFFE はSPが指すスタック領域
     stack: [u8; 0xFFFE - 0xFF80 + 1],
@@ -335,17 +334,9 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(
-        bus: Box<dyn Bus>,
-        timer: Box<dyn IO>,
-        sound: Box<dyn IO>,
-        lcd: Box<dyn IO>,
-    ) -> Self {
+    pub fn new(bus: Box<dyn Bus>) -> Self {
         Self {
             bus,
-            lcd,
-            timer,
-            sound,
             registers: Registers::new(),
             ime: false,
             p1: 0,
@@ -907,7 +898,7 @@ impl CPU {
         match address {
             0xFE00..=0xFE9F => {
                 // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-                todo!()
+                self.bus.read(address)
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
@@ -920,11 +911,12 @@ impl CPU {
                     0xFF01 => self.sb,
                     0xFF02 => self.sc,
                     0xFF04 => self.div,
-                    0xFF05..=0xFF07 => self.timer.read(address),
+                    0xFF05..=0xFF07 => self.bus.read(address),
                     0xFF0F => self.ifg.into(),
-                    0xFF10..=0xFF3F => self.sound.read(address),
+                    0xFF10..=0xFF3F => self.bus.read(address),
                     0xFF46 => self.dma,
-                    0xFF40..=0xFF4B => self.lcd.read(address),
+                    // LCD
+                    0xFF40..=0xFF4B => self.bus.read(address),
                     _ => unreachable!(),
                 }
             }
@@ -957,11 +949,12 @@ impl CPU {
                     0xFF01 => self.sb = data,
                     0xFF02 => self.sc = data,
                     0xFF04 => self.div = data,
-                    0xFF05..=0xFF07 => self.timer.write(address, data),
+                    0xFF05..=0xFF07 => self.bus.write(address, data),
                     0xFF0F => self.ifg = InterruptFlags::from(data),
-                    0xFF10..=0xFF3F => self.sound.write(address, data),
+                    0xFF10..=0xFF3F => self.bus.write(address, data),
                     0xFF46 => self.dma = data,
-                    0xFF40..=0xFF4B => self.lcd.write(address, data),
+                    // LCD
+                    0xFF40..=0xFF4B => self.bus.write(address, data),
                     _ => unreachable!(),
                 }
             }
@@ -2476,7 +2469,7 @@ impl CPU {
         if !self.registers.f.z {
             self.write(
                 self.registers.sp - 1,
-                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
             );
             self.write(
                 self.registers.sp - 2,
@@ -2508,7 +2501,7 @@ impl CPU {
         println!("RST 00H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2558,7 +2551,7 @@ impl CPU {
         if self.registers.f.z {
             self.write(
                 self.registers.sp - 1,
-                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
             );
             self.write(
                 self.registers.sp - 2,
@@ -2575,7 +2568,7 @@ impl CPU {
         let upper: u16 = self.fetch().into();
         self.write(
             self.registers.sp - 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp - 2,
@@ -2599,7 +2592,7 @@ impl CPU {
         println!("RST 08H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2645,7 +2638,7 @@ impl CPU {
         if !self.registers.f.c {
             self.write(
                 self.registers.sp - 1,
-                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
             );
             self.write(
                 self.registers.sp - 2,
@@ -2677,7 +2670,7 @@ impl CPU {
         println!("RST 10H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2725,7 +2718,7 @@ impl CPU {
         if self.registers.f.c {
             self.write(
                 self.registers.sp - 1,
-                ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
             );
             self.write(
                 self.registers.sp - 2,
@@ -2752,7 +2745,7 @@ impl CPU {
         println!("RST 18H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2804,7 +2797,7 @@ impl CPU {
         println!("RST 20H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2858,7 +2851,7 @@ impl CPU {
         println!("RST 28H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2913,7 +2906,7 @@ impl CPU {
         println!("RST 30H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,
@@ -2970,7 +2963,7 @@ impl CPU {
         println!("RST 38H");
         self.write(
             self.registers.sp + 1,
-            ((self.registers.pc + 1) & 0xFF00 >> 8) as u8,
+            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
             self.registers.sp + 2,

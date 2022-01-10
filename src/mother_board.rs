@@ -1,6 +1,7 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
-use crate::lcd::Lcd;
+use crate::io::IO;
+use crate::lcd::LCD;
 use crate::sound::Sound;
 use crate::timer::Timer;
 
@@ -31,19 +32,24 @@ pub fn run(config: Config) -> Result<(), &'static str> {
 #[derive(Debug)]
 pub struct MotherBoard {
     cpu: CPU,
-    // lcd
     // joypad
 }
 
 impl MotherBoard {
     pub fn new(config: &Config) -> Self {
-        let cartridge = Cartridge::new(&config.romfile);
-        let bus = Box::new(DataBus { cartridge });
         // TODO: 各種IOはMotherBoardが保持してCPUからは参照にしたい
-        let timer = Box::new(Timer {});
-        let sound = Box::new(Sound {});
-        let lcd = Box::new(Lcd {});
-        let cpu = CPU::new(bus, timer, sound, lcd);
+        let cartridge = Cartridge::new(&config.romfile);
+        let lcd = LCD::new();
+        let timer = Timer {};
+        let sound = Sound {};
+        let bus = Box::new(DataBus {
+            cartridge,
+            lcd,
+            timer,
+            sound,
+            ram: [0; 4 * 1024 * 2],
+        });
+        let cpu = CPU::new(bus);
         Self { cpu }
     }
 
@@ -62,6 +68,10 @@ impl MotherBoard {
 
 struct DataBus {
     cartridge: Cartridge,
+    ram: [u8; 4 * 1024 * 2],
+    lcd: LCD,
+    timer: Timer,
+    sound: Sound,
 }
 
 impl Bus for DataBus {
@@ -76,7 +86,7 @@ impl Bus for DataBus {
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
-                todo!()
+                self.lcd.read(address)
             }
             0xA000..=0xBFFF => {
                 // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
@@ -85,13 +95,19 @@ impl Bus for DataBus {
             0xC000..=0xDFFF => {
                 // 0xC000 - 0xCFFF: 4KB 作業 RAM(メインメモリ)
                 // 0xD000 - 0xDFFF: 4KB 作業 RAM(メインメモリ)
-                todo!()
+                self.ram[(address - 0xC000) as usize]
             }
             0xE000..=0xFDFF => {
                 // 0xE000 - 0xFDFF: 0xC000 - 0xDDFF と同じ内容
-                todo!()
+                self.read(address - 0x2000)
             }
             // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
+            // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
+            0xFE00..=0xFE9F => self.lcd.read(address),
+            // 以下はI/Oポート
+            0xFF05..=0xFF07 => self.timer.read(address),
+            0xFF10..=0xFF3F => self.sound.read(address),
+            0xFF40..=0xFF4B => self.lcd.read(address),
             _ => unreachable!(),
         }
     }
@@ -106,7 +122,7 @@ impl Bus for DataBus {
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
-                todo!()
+                self.lcd.write(address, data);
             }
             0xA000..=0xBFFF => {
                 // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
@@ -115,13 +131,19 @@ impl Bus for DataBus {
             0xC000..=0xDFFF => {
                 // 0xC000 - 0xCFFF: 4KB 作業 RAM(メインメモリ)
                 // 0xD000 - 0xDFFF: 4KB 作業 RAM(メインメモリ)
-                todo!()
+                self.ram[(address - 0xC000) as usize] = data;
             }
             0xE000..=0xFDFF => {
                 // 0xE000 - 0xFDFF: 0xC000 - 0xDDFF と同じ内容
-                todo!()
+                self.write(address - 0x2000, data)
             }
-            // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
+            // 以降はシステム領域（WR信号は外部に出力されず本来はCPU内部で処理される）
+            // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
+            0xFE00..=0xFE9F => self.lcd.write(address, data),
+            // 以下はI/Oポート
+            0xFF05..=0xFF07 => self.timer.write(address, data),
+            0xFF10..=0xFF3F => self.sound.write(address, data),
+            0xFF40..=0xFF4B => self.lcd.write(address, data),
             _ => unreachable!(),
         }
     }

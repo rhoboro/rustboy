@@ -3,19 +3,117 @@ use crate::Address;
 
 use std::fmt::{Debug, Formatter};
 
-pub struct Lcd {}
+pub struct LCD {
+    // スプライト属性テーブル (OAM - Object Attribute Memory)
+    oam: [u8; 4 * 40],
+    vram: [u8; 8 * 1024],
+    // レジスタ
+    // 0xFF40: LCD制御
+    lcdc: u8,
+    // 0xFF41: LCDステータス
+    stat: u8,
+    // 0xFF42: スクロールY座標
+    scy: u8,
+    // 0xFF43: スクロールX座標
+    scx: u8,
+    // 0xFF44: LCDC Y座標
+    ly: u8,
+    // 0xFF45: LY比較
+    lyc: u8,
+    // 0xFF47: 背景パレットデータ
+    bgp: u8,
+    // 0xFF48: オブジェクトパレット0
+    obp0: u8,
+    // 0xFF49: オブジェクトパレット1
+    obp1: u8,
+    // 0xFF4A: ウィンドウY座標
+    wy: u8,
+    // 0xFF4B: ウィンドウX座標
+    wx: u8,
+}
 
-impl IO for Lcd {
-    fn read(&self, address: Address) -> u8 {
-        println!("Read: {}", address);
-        0
-    }
-    fn write(&mut self, address: Address, data: u8) {
-        println!("Write: {}, Data: {}", address, data);
+impl LCD {
+    pub fn new() -> Self {
+        Self {
+            oam: [0; 4 * 40],
+            vram: [0; 8 * 1024],
+            lcdc: 0,
+            stat: 0,
+            scy: 0,
+            scx: 0,
+            ly: 0,
+            lyc: 0,
+            bgp: 0,
+            obp0: 0,
+            obp1: 0,
+            wy: 0,
+            wx: 0,
+        }
     }
 }
 
-impl Debug for Lcd {
+impl IO for LCD {
+    fn read(&self, address: Address) -> u8 {
+        println!("Read: {}", address);
+        match address {
+            0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
+            0x8000..=0x9FFF => {
+                // 0x8000 - 0x9FFF: 8KB VRAM
+                self.vram[(address - 0x8000) as usize]
+            }
+            0xFF40..=0xFF4B => {
+                // レジスタ
+                match address {
+                    0xFF40 => self.lcdc,
+                    0xFF41 => self.stat,
+                    0xFF42 => self.scy,
+                    0xFF43 => self.scx,
+                    0xFF44 => self.ly,
+                    0xFF45 => self.lyc,
+                    0xFF47 => self.bgp,
+                    0xFF48 => self.obp0,
+                    0xFF49 => self.obp1,
+                    0xFF4A => self.wy,
+                    0xFF4B => self.wx,
+                    _ => unreachable!(),
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
+    fn write(&mut self, address: Address, data: u8) {
+        println!("Write: {}, Data: {}", address, data);
+        match address {
+            0xFE00..=0xFE9F => {
+                self.oam[(address - 0xFE00) as usize] = data;
+            }
+            0x8000..=0x9FFF => {
+                // 0x8000 - 0x9FFF: 8KB VRAM
+                self.vram[(address - 0x8000) as usize] = data;
+            }
+            0xFF40..=0xFF4B => {
+                // レジスタ
+                match address {
+                    0xFF40 => self.lcdc = data,
+                    0xFF41 => self.stat = data,
+                    0xFF42 => self.scy = data,
+                    0xFF43 => self.scx = data,
+                    0xFF44 => self.ly = data,
+                    0xFF45 => self.lyc = data,
+                    0xFF47 => self.bgp = data,
+                    0xFF48 => self.obp0 = data,
+                    0xFF49 => self.obp1 = data,
+                    0xFF4A => self.wy = data,
+                    0xFF4B => self.wx = data,
+                    _ => unreachable!(),
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Debug for LCD {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // rom_data は表示しない
         write!(f, "Lcd")
