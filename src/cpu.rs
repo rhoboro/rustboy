@@ -1,8 +1,10 @@
 use crate::Address;
 use core::fmt::Debug;
+use std::cell::RefCell;
 use std::convert::Into;
 use std::default::Default;
 use std::fmt::Formatter;
+use std::rc::Weak;
 
 // &, + 演算子をサポートする型にデフォルト実装を自動で付与したい
 trait ArithmeticUtil<RHS = Self> {
@@ -48,7 +50,7 @@ impl ArithmeticUtil<u16> for u16 {
 // データバスは8bit
 pub trait Bus {
     fn read(&self, _address: Address) -> u8;
-    fn write(&mut self, _address: Address, _data: u8);
+    fn write(&self, _address: Address, _data: u8);
 }
 
 impl Debug for dyn Bus {
@@ -295,7 +297,7 @@ impl Into<u8> for InterruptFlags {
 #[derive(Debug)]
 pub struct CPU {
     registers: Registers,
-    bus: Box<dyn Bus>,
+    bus: Weak<RefCell<dyn Bus>>,
     // Interrupt Master Enable Flag
     ime: bool,
 
@@ -334,7 +336,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(bus: Box<dyn Bus>) -> Self {
+    pub fn new(bus: Weak<RefCell<dyn Bus>>) -> Self {
         Self {
             bus,
             registers: Registers::new(),
@@ -897,7 +899,7 @@ impl CPU {
         match address {
             0xFE00..=0xFE9F => {
                 // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-                self.bus.read(address)
+                self.bus.upgrade().unwrap().borrow().read(address)
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
@@ -910,32 +912,32 @@ impl CPU {
                     0xFF01 => self.sb,
                     0xFF02 => self.sc,
                     0xFF04 => self.div,
-                    0xFF05..=0xFF07 => self.bus.read(address),
+                    0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF0F => self.ifg.into(),
-                    0xFF10..=0xFF3F => self.bus.read(address),
+                    0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF46 => self.dma,
                     // LCD
-                    0xFF40..=0xFF4B => self.bus.read(address),
+                    0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().read(address),
                     _ => unreachable!(),
                 }
             }
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                self.bus.read(address)
+                self.bus.upgrade().unwrap().borrow().read(address)
             }
             0xFFFF => {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
                 self.ie.into()
             }
             // 0x0000 - 0xFDFF は ROM/RAM へのアクセス
-            _ => self.bus.read(address),
+            _ => self.bus.upgrade().unwrap().borrow().read(address),
         }
     }
     fn write(&mut self, address: Address, data: u8) {
         match address {
             0xFE00..=0xFE9F => {
                 // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-                self.bus.write(address, data);
+                self.bus.upgrade().unwrap().borrow().write(address, data);
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
@@ -948,12 +950,12 @@ impl CPU {
                     0xFF01 => self.sb = data,
                     0xFF02 => self.sc = data,
                     0xFF04 => self.div = data,
-                    0xFF05..=0xFF07 => self.bus.write(address, data),
+                    0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF0F => self.ifg = InterruptFlags::from(data),
-                    0xFF10..=0xFF3F => self.bus.write(address, data),
+                    0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF46 => self.dma = data,
                     // LCD
-                    0xFF40..=0xFF4B => self.bus.write(address, data),
+                    0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().write(address, data),
                     _ => {
                         println!("IGNORE: {:x?}", address);
                     }
@@ -961,14 +963,14 @@ impl CPU {
             }
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                self.bus.write(address, data)
+                self.bus.upgrade().unwrap().borrow().write(address, data)
             }
             0xFFFF => {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
                 self.ie = InterruptEnables::from(data);
             }
             // 0x0000 - 0xFDFF は ROM/RAM へのアクセス
-            _ => self.bus.write(address, data),
+            _ => self.bus.upgrade().unwrap().borrow().write(address, data),
         }
     }
     pub fn reset(&mut self) {
