@@ -3,7 +3,23 @@ use crate::Address;
 
 use std::fmt::{Debug, Formatter};
 
-pub struct LCD {
+// RGBA
+struct PixelData(u8, u8, u8, u8);
+
+const WHITE: PixelData = PixelData(255, 255, 255, 0);
+const LIGHT_GRAY: PixelData = PixelData(170, 170, 170, 0);
+const DARK_GRAY: PixelData = PixelData(85, 85, 85, 0);
+const BLACK: PixelData = PixelData(0, 0, 0, 0);
+
+const WIDTH_LCD: u16 = 166;
+const HEIGHT_LCD: u16 = 144;
+const WIDTH_BG: u16 = 256;
+const HEIGHT_BG: u16 = 256;
+const WIDTH_WINDOW: u16 = 256;
+const HEIGHT_WINDOW: u16 = 256;
+
+pub struct PPU {
+    frame_buffer: [PixelData; 160 * 144],
     // スプライト属性テーブル (OAM - Object Attribute Memory)
     oam: [u8; 4 * 40],
     vram: [u8; 8 * 1024],
@@ -32,9 +48,10 @@ pub struct LCD {
     wx: u8,
 }
 
-impl LCD {
+impl PPU {
     pub fn new() -> Self {
         Self {
+            frame_buffer: [WHITE; 160 * 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],
             lcdc: 0,
@@ -52,7 +69,7 @@ impl LCD {
     }
 }
 
-impl IO for LCD {
+impl IO for PPU {
     fn read(&self, address: Address) -> u8 {
         println!("Read: {}", address);
         match address {
@@ -113,7 +130,7 @@ impl IO for LCD {
     }
 }
 
-impl Debug for LCD {
+impl Debug for PPU {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // rom_data は表示しない
         write!(f, "Lcd")

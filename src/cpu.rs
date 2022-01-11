@@ -327,7 +327,7 @@ pub struct CPU {
     // lcd: Box<dyn IO>,
 
     // 0xFF80 - 0xFFFE はSPが指すスタック領域
-    stack: [u8; 0xFFFE - 0xFF80 + 1],
+    // stack: [u8; 0xFFFE - 0xFF80 + 1],
 
     // 0xFFFF 割り込みマスク
     ie: InterruptEnables,
@@ -346,7 +346,6 @@ impl CPU {
             div: 0,
             ifg: InterruptFlags::default(),
             dma: 0,
-            stack: [0; 127],
             ie: InterruptEnables::default(),
         }
     }
@@ -922,7 +921,7 @@ impl CPU {
             }
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                todo!()
+                self.bus.read(address)
             }
             0xFFFF => {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
@@ -936,11 +935,11 @@ impl CPU {
         match address {
             0xFE00..=0xFE9F => {
                 // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-                todo!()
+                self.bus.write(address, data);
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                unreachable!()
+                println!("IGNORE: {:x?}", address);
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
@@ -955,12 +954,14 @@ impl CPU {
                     0xFF46 => self.dma = data,
                     // LCD
                     0xFF40..=0xFF4B => self.bus.write(address, data),
-                    _ => unreachable!(),
+                    _ => {
+                        println!("IGNORE: {:x?}", address);
+                    }
                 }
             }
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                todo!()
+                self.bus.write(address, data)
             }
             0xFFFF => {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
@@ -2492,14 +2493,14 @@ impl CPU {
     fn rst_00h_0xc7(&mut self) {
         println!("RST 00H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0000;
     }
     // bytes: 1 cycles: [20, 8]
@@ -2583,14 +2584,14 @@ impl CPU {
     fn rst_08h_0xcf(&mut self) {
         println!("RST 08H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0008;
     }
     // bytes: 1 cycles: [20, 8]
@@ -2661,14 +2662,14 @@ impl CPU {
     fn rst_10h_0xd7(&mut self) {
         println!("RST 10H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0010;
     }
     // bytes: 1 cycles: [20, 8]
@@ -2736,14 +2737,14 @@ impl CPU {
     fn rst_18h_0xdf(&mut self) {
         println!("RST 18H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0018;
     }
     // bytes: 2 cycles: [12]
@@ -2788,14 +2789,14 @@ impl CPU {
     fn rst_20h_0xe7(&mut self) {
         println!("RST 20H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0020;
     }
     // bytes: 2 cycles: [16]
@@ -2842,14 +2843,14 @@ impl CPU {
     fn rst_28h_0xef(&mut self) {
         println!("RST 28H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0028;
     }
     // bytes: 2 cycles: [12]
@@ -2897,14 +2898,14 @@ impl CPU {
     fn rst_30h_0xf7(&mut self) {
         println!("RST 30H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0030;
     }
     // bytes: 2 cycles: [12]
@@ -2953,14 +2954,14 @@ impl CPU {
     fn rst_38h_0xff(&mut self) {
         println!("RST 38H");
         self.write(
-            self.registers.sp + 1,
+            self.registers.sp - 1,
             (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
         );
         self.write(
-            self.registers.sp + 2,
+            self.registers.sp - 2,
             ((self.registers.pc + 1) & 0x00FF) as u8,
         );
-        self.registers.sp += 2;
+        self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0038;
     }
     // bytes: 2 cycles: [8]
