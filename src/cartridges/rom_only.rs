@@ -29,10 +29,8 @@ impl Mbc for RomOnly {
             // ROMバンク1から読み込み
             0x4000..=0x7FFF => self.rom_banks[1][(address - 0x4000) as usize],
             // RAMから読み込み
-            0xA000..=0xBFFF => {
-                self.ram_banks[0][(address - 0xA000) as usize]
-            },
-            _ => unreachable!()
+            0xA000..=0xBFFF => self.ram_banks[0][(address - 0xA000) as usize],
+            _ => unreachable!(),
         }
     }
     fn write(&mut self, address: Address, data: u8) {
@@ -42,10 +40,8 @@ impl Mbc for RomOnly {
             // ROMバンク1から読み込み
             0x4000..=0x7FFF => self.rom_banks[1][(address - 0x4000) as usize] = data,
             // RAMから読み込み
-            0xA000..=0xBFFF => {
-                self.ram_banks[0][(address - 0xA000) as usize] = data
-            },
-            _ => unreachable!()
+            0xA000..=0xBFFF => self.ram_banks[0][(address - 0xA000) as usize] = data,
+            _ => unreachable!(),
         }
     }
 }
