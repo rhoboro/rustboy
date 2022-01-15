@@ -45,7 +45,6 @@ pub struct MotherBoard {
 
 impl MotherBoard {
     pub fn new(config: &Config) -> Rc<RefCell<Self>> {
-        // TODO: 各種IOはMotherBoardが保持してCPUからは参照にしたい
         let cartridge = RefCell::new(Cartridge::new(&config.romfile));
         println!("{:?}", cartridge);
         let ppu = RefCell::new(Box::new(PPU::new()));
@@ -80,15 +79,6 @@ impl MotherBoard {
     }
 }
 
-// struct DataBus {
-//     cartridge: Box<Cartridge>,
-//     ram: [u8; 4 * 1024 * 2],
-//     stack: [u8; 0xFFFE - 0xFF80 + 1],
-//     ppu: Box<dyn IO>,
-//     timer: Box<dyn IO>,
-//     sound: Box<dyn IO>,
-// }
-
 impl Bus for MotherBoard {
     // メモリから1バイト読み込む
     fn read(&self, address: Address) -> u8 {
@@ -105,7 +95,7 @@ impl Bus for MotherBoard {
             }
             0xA000..=0xBFFF => {
                 // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
-                todo!()
+                self.cartridge.borrow().read(address)
             }
             0xC000..=0xDFFF => {
                 // 0xC000 - 0xCFFF: 4KB 作業 RAM(メインメモリ)
@@ -145,7 +135,7 @@ impl Bus for MotherBoard {
             }
             0xA000..=0xBFFF => {
                 // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
-                todo!()
+                self.cartridge.borrow_mut().write(address, data);
             }
             0xC000..=0xDFFF => {
                 // 0xC000 - 0xCFFF: 4KB 作業 RAM(メインメモリ)
