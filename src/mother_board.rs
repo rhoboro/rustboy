@@ -1,7 +1,7 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
 use crate::io::IO;
-use crate::lcd::PPU;
+use crate::ppu::PPU;
 use crate::sound::Sound;
 use crate::timer::Timer;
 use std::cell::RefCell;

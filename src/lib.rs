@@ -1,8 +1,8 @@
 mod cartridges;
 mod cpu;
 mod io;
-mod lcd;
 mod mother_board;
+mod ppu;
 mod sound;
 mod timer;
 
