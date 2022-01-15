@@ -71,9 +71,11 @@ impl PPU {
 
 impl IO for PPU {
     fn read(&self, address: Address) -> u8 {
-        println!("Read: {}", address);
+        println!("Read: {:X?}", address);
         match address {
-            0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
+            0xFE00..=0xFE9F => {
+                self.oam[(address - 0xFE00) as usize]
+            },
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
                 self.vram[(address - 0x8000) as usize]
@@ -99,7 +101,7 @@ impl IO for PPU {
         }
     }
     fn write(&mut self, address: Address, data: u8) {
-        println!("Write: {}, Data: {}", address, data);
+        println!("Write: {:X?}, Data: {}", address, data);
         match address {
             0xFE00..=0xFE9F => {
                 self.oam[(address - 0xFE00) as usize] = data;

@@ -6,11 +6,11 @@ pub struct Timer {}
 
 impl IO for Timer {
     fn read(&self, address: Address) -> u8 {
-        println!("Read: {}", address);
+        println!("Read: {:X?}", address);
         0
     }
     fn write(&mut self, address: Address, data: u8) {
-        println!("Write: {}, Data: {}", address, data);
+        println!("Write: {:X?}, Data: {}", address, data);
     }
 }
 
