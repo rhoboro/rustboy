@@ -1,4 +1,5 @@
 use super::{Mbc, RamBank, RamSize, RomBank, BANK_SIZE_RAM};
+use crate::debug_log;
 use crate::Address;
 
 pub struct RomOnly {
@@ -23,16 +24,14 @@ impl Mbc for RomOnly {
         self.current_bank
     }
     fn read(&self, address: Address) -> u8 {
-        println!("Read Rom: {:04X?}", address);
+        debug_log!("Read Rom: {:04X?}", address);
         match address {
             // ROMバンク0から読み込み
             0x0000..=0x3FFF => self.rom_banks[0][address as usize],
             // ROMバンク1から読み込み
             0x4000..=0x7FFF => self.rom_banks[1][(address - 0x4000) as usize],
             // RAMから読み込み
-            0xA000..=0xBFFF => {
-                self.ram_banks[0][(address - 0xA000) as usize]
-            },
+            0xA000..=0xBFFF => self.ram_banks[0][(address - 0xA000) as usize],
             _ => unreachable!(),
         }
     }
@@ -43,9 +42,7 @@ impl Mbc for RomOnly {
             // ROMバンク1から読み込み
             0x4000..=0x7FFF => self.rom_banks[1][(address - 0x4000) as usize] = data,
             // RAMから読み込み
-            0xA000..=0xBFFF => {
-                self.ram_banks[0][(address - 0xA000) as usize] = data
-            },
+            0xA000..=0xBFFF => self.ram_banks[0][(address - 0xA000) as usize] = data,
             _ => unreachable!(),
         }
     }

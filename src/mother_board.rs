@@ -1,5 +1,6 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
+use crate::debug_log;
 use crate::io::IO;
 use crate::ppu::PPU;
 use crate::sound::Sound;
@@ -46,7 +47,7 @@ pub struct MotherBoard {
 impl MotherBoard {
     pub fn new(config: &Config) -> Rc<RefCell<Self>> {
         let cartridge = RefCell::new(Cartridge::new(&config.romfile));
-        println!("{:?}", cartridge);
+        debug_log!("{:?}", cartridge);
         let ppu = RefCell::new(Box::new(PPU::new()));
         let timer = RefCell::new(Box::new(Timer {}));
         let sound = RefCell::new(Box::new(Sound {}));
@@ -70,7 +71,7 @@ impl MotherBoard {
         cpu.reset();
         loop {
             let (opcode, cycle) = cpu.tick().unwrap();
-            println!("OPCODE: 0x{:04X?}", opcode);
+            debug_log!("OPCODE: 0x{:04X?}", opcode);
             if opcode == 0x76 {
                 // HALT
                 break;

@@ -1,5 +1,6 @@
 mod cartridges;
 mod cpu;
+mod debugger;
 mod io;
 mod mother_board;
 mod ppu;

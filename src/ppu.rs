@@ -1,3 +1,4 @@
+use crate::debug_log;
 use crate::io::IO;
 use crate::Address;
 
@@ -12,7 +13,8 @@ struct Terminal;
 
 impl LCD for Terminal {
     fn draw(&mut self, frame_buffer: &[PixelData; 160 * 144]) {
-        println!("draw");
+        debug_log!("draw");
+        println!("\x1b[2J");
         for y in 0..144 {
             for x in 0..159 {
                 print!("{:?}", frame_buffer[x + (y * 160)]);
@@ -209,7 +211,7 @@ impl PPU {
     pub fn tick(&mut self, cycle: u8) {
         self.clock += cycle as u64;
         if self.clock_next_target <= self.clock {
-            println!("LCD REFRESH!!!");
+            debug_log!("LCD REFRESH!!!");
             self.clock_next_target += REFRESH_CYCLE;
             self.scan_lines();
         }
@@ -251,13 +253,13 @@ impl PPU {
                 if !self.fifo_background.is_empty() {
                     // push Pixel to LCD
                     let offset = (WIDTH_LCD * (self.ly as u16) + self.x_position_counter) as usize;
-                    // println!("{} {} {}", self.ly, self.x_position_counter, offset);
+                    // debug_log!("{} {} {}", self.ly, self.x_position_counter, offset);
                     for i in 0..=7 {
                         let pixel = self.fifo_background.pop_front();
                         let index = (offset + i - 1).wrapping_sub(7);
                         self.frame_buffer[index] = pixel.unwrap().color.to_rgba();
                     }
-                    // println!("offset + 7 = {}", offset + 7);
+                    // debug_log!("offset + 7 = {}", offset + 7);
                     if offset + 7 == self.frame_buffer.len() - 1 {
                         self.lcd.draw(&self.frame_buffer);
                     }
@@ -277,7 +279,7 @@ impl PPU {
         let mut tile_address = base_address + self.x_position_counter;
         tile_address.wrapping_add(((self.scx / 8) & 0x1F) as u16);
         tile_address.wrapping_add((32 * (((self.ly + self.scy) as u16) & 0xFF) / 8) as u16);
-        println!("tile_address: {:X?}", tile_address);
+        debug_log!("tile_address: {:X?}", tile_address);
         self.read(tile_address)
     }
     fn fetch_tile_data(&self, tile_number: u8) -> (u8, u8) {
@@ -290,7 +292,7 @@ impl PPU {
         };
         let low = self.read(address);
         let high = self.read(address + 1);
-        println!("tile: {}, low {}, high {}", tile_number, low, high);
+        debug_log!("tile: {}, low {}, high {}", tile_number, low, high);
         (low, high)
     }
     fn push_fifo(&mut self, pixel: (u8, u8)) {
@@ -315,7 +317,7 @@ impl PPU {
 
 impl IO for PPU {
     fn read(&self, address: Address) -> u8 {
-        // println!("Read: {:X?}", address);
+        // debug_log!("Read: {:X?}", address);
         match address {
             0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
             0x8000..=0x9FFF => {
@@ -343,7 +345,7 @@ impl IO for PPU {
         }
     }
     fn write(&mut self, address: Address, data: u8) {
-        println!("Write: {:X?}, Data: {}", address, data);
+        debug_log!("Write: {:X?}, Data: {}", address, data);
         match address {
             0xFE00..=0xFE9F => {
                 self.oam[(address - 0xFE00) as usize] = data;
