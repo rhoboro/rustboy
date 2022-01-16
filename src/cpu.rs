@@ -1014,7 +1014,7 @@ impl CPU {
         self.write(0xFF41, 0x81); // STAT
         self.write(0xFF42, 0x00); // SCY
         self.write(0xFF43, 0x00); // SCX
-        self.write(0xFF44, 0x91); // LY
+        self.write(0xFF44, 0x00); // LY
         self.write(0xFF45, 0x00); // LYC
         self.write(0xFF46, 0xFF); // DMA
         self.write(0xFF47, 0xFC); // BGP

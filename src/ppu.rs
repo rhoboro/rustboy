@@ -12,6 +12,7 @@ struct Terminal;
 
 impl LCD for Terminal {
     fn draw(&mut self, frame_buffer: &[PixelData; 160 * 144]) {
+        println!("draw");
         for y in 0..144 {
             for x in 0..160 {
                 print!("{:?}", frame_buffer[x + (y * 160)]);
@@ -26,16 +27,23 @@ struct PixelData(u8, u8, u8, u8);
 
 impl Debug for PixelData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        match self {
+            PixelData(255, 255, 255, 0) => write!(f, "A"),
+            PixelData(170, 170, 170, 0) => write!(f, "B"),
+            PixelData(85, 85, 85, 0) => write!(f, "C"),
+            PixelData(0, 0, 0, 0) => write!(f, "D"),
+            _ => write!(f, ""),
+        }
     }
 }
 
+const REFRESH_CYCLE: u64 = 70224;
 const WHITE: PixelData = PixelData(255, 255, 255, 0);
 const LIGHT_GRAY: PixelData = PixelData(170, 170, 170, 0);
 const DARK_GRAY: PixelData = PixelData(85, 85, 85, 0);
 const BLACK: PixelData = PixelData(0, 0, 0, 0);
 
-const WIDTH_LCD: u16 = 166;
+const WIDTH_LCD: u16 = 160;
 const HEIGHT_LCD: u16 = 144;
 const WIDTH_BG: u16 = 256;
 const HEIGHT_BG: u16 = 256;
@@ -125,6 +133,10 @@ struct VRAM {
 
 pub struct PPU {
     lcd: Box<dyn LCD>,
+    // TODO: ずっと起動してたら溢れる
+    clock: u64,
+    // 70224 T-cycle ごとに1回描画するため、次の描画時の clock を記録する
+    clock_next_target: u64,
     // 実際の画面と対応
     frame_buffer: [PixelData; 160 * 144],
     // スプライト属性テーブル (OAM - Object Attribute Memory)
@@ -171,6 +183,8 @@ impl PPU {
     pub fn new() -> Self {
         Self {
             lcd: Box::new(Terminal {}),
+            clock: 0,
+            clock_next_target: 70224,
             frame_buffer: [WHITE; 160 * 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],
@@ -192,17 +206,26 @@ impl PPU {
     }
 
     pub fn tick(&mut self, cycle: u8) {
-        println!("{}", cycle);
+        self.clock += cycle as u64;
+        if self.clock_next_target <= self.clock {
+            println!("LCD REFRESH!!!");
+            self.clock_next_target += REFRESH_CYCLE;
+            self.scan_lines();
+        }
+        println!("{}", self.clock);
     }
 
     fn scan_lines(&mut self) {
         loop {
             // ly レジスタが現在処理中の行
             // 1画面は154行（LCD144行 + 擬似スキャンライン10行）
-            if self.ly >= 154 {
+            if self.ly >= 144 {
+                self.ly = 0;
+                self.x_position_counter = 0;
                 break;
             }
             self.scan_line();
+            self.ly += 1;
         }
     }
 
@@ -227,11 +250,14 @@ impl PPU {
                 self.push_fifo(tile_data);
                 if !self.fifo_background.is_empty() {
                     // push Pixel to LCD
-                    let offset = (160 * (self.ly as u16) + (8 * self.x_position_counter)) as usize;
+                    let offset = (WIDTH_LCD * (self.ly as u16) + self.x_position_counter) as usize;
+                    // println!("{} {} {}", self.ly, self.x_position_counter, offset);
                     for i in 0..=7 {
                         let pixel = self.fifo_background.pop_front();
-                        self.frame_buffer[offset + i] = pixel.unwrap().color.to_rgba();
+                        let index = (offset + i - 1).wrapping_sub(7);
+                        self.frame_buffer[index] = pixel.unwrap().color.to_rgba();
                     }
+                    // println!("offset + 7 = {}", offset + 7);
                     if offset + 7 == self.frame_buffer.len() - 1 {
                         self.lcd.draw(&self.frame_buffer);
                     }
@@ -249,8 +275,8 @@ impl PPU {
         };
         // オフセット計算
         let mut tile_address = base_address + self.x_position_counter;
-        tile_address += ((self.scx / 8) & 0x1F) as u16;
-        tile_address += (32 * ((self.ly + self.scy) & 0xFF) / 8) as u16;
+        tile_address.wrapping_add(((self.scx / 8) & 0x1F) as u16);
+        tile_address.wrapping_add((32 * (((self.ly + self.scy) as u16) & 0xFF) / 8) as u16);
         self.read(tile_address)
     }
     fn fetch_tile_data(&self, tile_number: u8) -> (u8, u8) {
@@ -279,15 +305,15 @@ impl PPU {
                 color,
                 palette: self.obp0,
                 background_priority: 0,
-            })
+            });
+            self.x_position_counter += 1;
         }
-        self.x_position_counter += 1;
     }
 }
 
 impl IO for PPU {
     fn read(&self, address: Address) -> u8 {
-        println!("Read: {:X?}", address);
+        // println!("Read: {:X?}", address);
         match address {
             0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
             0x8000..=0x9FFF => {
