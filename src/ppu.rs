@@ -14,7 +14,7 @@ impl LCD for Terminal {
     fn draw(&mut self, frame_buffer: &[PixelData; 160 * 144]) {
         println!("draw");
         for y in 0..144 {
-            for x in 0..160 {
+            for x in 0..159 {
                 print!("{:?}", frame_buffer[x + (y * 160)]);
             }
             println!();
@@ -61,6 +61,7 @@ enum PPUMode {
     Drawing,
 }
 
+#[derive(PartialEq)]
 enum Color {
     // 00
     White,
@@ -212,7 +213,6 @@ impl PPU {
             self.clock_next_target += REFRESH_CYCLE;
             self.scan_lines();
         }
-        println!("{}", self.clock);
     }
 
     fn scan_lines(&mut self) {
@@ -277,6 +277,7 @@ impl PPU {
         let mut tile_address = base_address + self.x_position_counter;
         tile_address.wrapping_add(((self.scx / 8) & 0x1F) as u16);
         tile_address.wrapping_add((32 * (((self.ly + self.scy) as u16) & 0xFF) / 8) as u16);
+        println!("tile_address: {:X?}", tile_address);
         self.read(tile_address)
     }
     fn fetch_tile_data(&self, tile_number: u8) -> (u8, u8) {
@@ -289,6 +290,7 @@ impl PPU {
         };
         let low = self.read(address);
         let high = self.read(address + 1);
+        println!("tile: {}, low {}, high {}", tile_number, low, high);
         (low, high)
     }
     fn push_fifo(&mut self, pixel: (u8, u8)) {

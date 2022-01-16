@@ -1,3 +1,4 @@
+#[allow(overflowing_literals)]
 use crate::Address;
 use core::fmt::Debug;
 use std::cell::RefCell;
@@ -909,7 +910,8 @@ impl CPU {
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                unimplemented!()
+                println!("{:X?}", address);
+                unreachable!()
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
@@ -947,7 +949,8 @@ impl CPU {
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                println!("IGNORE: {:x?}", address);
+                println!("{:X?}", address);
+                unreachable!()
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
@@ -1014,7 +1017,7 @@ impl CPU {
         self.write(0xFF41, 0x81); // STAT
         self.write(0xFF42, 0x00); // SCY
         self.write(0xFF43, 0x00); // SCX
-        self.write(0xFF44, 0x00); // LY
+        self.write(0xFF44, 0x91); // LY
         self.write(0xFF45, 0x00); // LYC
         self.write(0xFF46, 0xFF); // DMA
         self.write(0xFF47, 0xFC); // BGP
@@ -1224,9 +1227,9 @@ impl CPU {
     }
     // bytes: 2 cycles: [12]
     fn jr_r8_0x18(&mut self) -> u8 {
-        println!("JP r8");
-        let r8: i16 = self.fetch().into();
-        self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+        println!("JR r8");
+        let r8: u16 = 0xFF00 | self.fetch() as u16;
+        self.registers.pc = self.registers.pc.wrapping_add(r8);
         12
     }
     // bytes: 1 cycles: [8]
@@ -1519,7 +1522,10 @@ impl CPU {
         println!("JR C, r8");
         let r8: i8 = self.fetch() as i8;
         if self.registers.f.c {
+            println!("r8: {}", r8);
+            println!("after pc: {}", self.registers.pc);
             self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            println!("before pc: {}", self.registers.pc);
             12
         } else {
             8
