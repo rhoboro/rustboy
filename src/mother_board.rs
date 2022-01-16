@@ -38,7 +38,7 @@ pub struct MotherBoard {
     cartridge: RefCell<Cartridge>,
     ram: RefCell<[u8; 4 * 1024 * 2]>,
     stack: RefCell<[u8; 0xFFFE - 0xFF80 + 1]>,
-    ppu: RefCell<Box<dyn IO>>,
+    ppu: RefCell<Box<PPU>>,
     timer: RefCell<Box<dyn IO>>,
     sound: RefCell<Box<dyn IO>>,
 }
@@ -69,11 +69,12 @@ impl MotherBoard {
         let mut cpu = self.cpu.as_ref().unwrap().borrow_mut();
         cpu.reset();
         loop {
-            let opcode = cpu.tick().unwrap();
+            let (opcode, cycle) = cpu.tick().unwrap();
             if opcode == 0x76 {
                 // HALT
                 break;
             }
+            self.ppu.borrow_mut().tick(cycle);
         }
         Ok(())
     }

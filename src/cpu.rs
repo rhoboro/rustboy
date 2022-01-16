@@ -351,19 +351,19 @@ impl CPU {
             ie: InterruptEnables::default(),
         }
     }
-    pub fn tick(&mut self) -> Result<u8, &str> {
+    pub fn tick(&mut self) -> Result<(u8, u8), &str> {
         // fetch
         let opcode = self.fetch();
         // decode & execute
         if opcode == 0xCB {
             // CBの場合は16bit命令になる
             let opcode = self.fetch();
-            self.execute_cb(opcode);
+            let cycle = self.execute_cb(opcode);
+            Ok((opcode, cycle))
         } else {
-            self.execute(opcode);
+            let cycle = self.execute(opcode);
+            Ok((opcode, cycle))
         }
-        println!("{:?}", self.registers);
-        Ok(opcode)
     }
     // PCの位置から1バイト読み取り、PCをインクリメントする
     fn fetch(&mut self) -> u8 {
@@ -373,7 +373,7 @@ impl CPU {
         byte
     }
     // https://gbdev.io/gb-opcodes/optables/
-    fn execute(&mut self, opcode: u8) {
+    fn execute(&mut self, opcode: u8) -> u8 {
         match opcode {
             0x00 => self.nop_0x00(),
             0x01 => self.ld_bc_d16_0x01(),
@@ -631,10 +631,13 @@ impl CPU {
             // 0xFD => self.illegal_fd_0xfd(),
             0xFE => self.cp_d8_0xfe(),
             0xFF => self.rst_38h_0xff(),
-            _ => println!("not implemented opcode: 0x{:x?}", opcode),
+            _ => {
+                println!("not implemented opcode: 0x{:x?}", opcode);
+                unreachable!()
+            }
         }
     }
-    fn execute_cb(&mut self, opcode: u8) {
+    fn execute_cb(&mut self, opcode: u8) -> u8 {
         match opcode {
             0x00 => self.rlc_b_0xcb00(),
             0x01 => self.rlc_c_0xcb01(),
@@ -892,7 +895,10 @@ impl CPU {
             0xFD => self.set_7_l_0xcbfd(),
             0xFE => self.set_7_hl_0xcbfe(),
             0xFF => self.set_7_a_0xcbff(),
-            _ => println!("not implemented opcode: 0xcb{:x?}", opcode),
+            _ => {
+                println!("not implemented opcode: 0xcb{:x?}", opcode);
+                unreachable!()
+            }
         }
     }
     fn read(&self, address: Address) -> u8 {
@@ -1023,51 +1029,58 @@ impl CPU {
 
     // 以下は opcode と対応
     // bytes: 1 cycles: [4]
-    fn nop_0x00(&mut self) {
+    fn nop_0x00(&mut self) -> u8 {
         println!("NOP");
+        4
     }
     // bytes: 3 cycles: [12]
-    fn ld_bc_d16_0x01(&mut self) {
+    fn ld_bc_d16_0x01(&mut self) -> u8 {
         println!("LD BC, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
         self.registers.set_bc(d16);
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_bc_a_0x02(&mut self) {
+    fn ld_bc_a_0x02(&mut self) -> u8 {
         println!("LD (BC), A");
         self.write(self.registers.bc(), self.registers.a);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn inc_bc_0x03(&mut self) {
+    fn inc_bc_0x03(&mut self) -> u8 {
         println!("INC BC");
         self.registers.set_bc(self.registers.bc() + 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_b_0x04(&mut self) {
+    fn inc_b_0x04(&mut self) -> u8 {
         println!("INC B");
         self.registers.f.h = self.registers.b.calc_half_carry(1);
         self.registers.b += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.b == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_b_0x05(&mut self) {
+    fn dec_b_0x05(&mut self) -> u8 {
         println!("DEC B");
         self.registers.f.h = self.registers.b.calc_half_borrow(1);
         self.registers.b -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.b == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_b_d8_0x06(&mut self) {
+    fn ld_b_d8_0x06(&mut self) -> u8 {
         println!("LD B, d8");
         let d8 = self.fetch();
         self.registers.b = d8;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn rlca_0x07(&mut self) {
+    fn rlca_0x07(&mut self) -> u8 {
         println!("RLCA");
         let c = (self.registers.a >> 7) == 1;
         self.registers.a = self.registers.a << 1 | c as u8;
@@ -1075,17 +1088,19 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        4
     }
     // bytes: 3 cycles: [20]
-    fn ld_a16_sp_0x08(&mut self) {
+    fn ld_a16_sp_0x08(&mut self) -> u8 {
         println!("LD (a16), SP");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         self.write(a16, self.read(self.registers.sp));
+        20
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_bc_0x09(&mut self) {
+    fn add_hl_bc_0x09(&mut self) -> u8 {
         println!("ADD HL, BC");
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.bc());
         // ここのハーフキャリーは変則的
@@ -1093,41 +1108,47 @@ impl CPU {
             ((self.registers.hl() & 0x3FF) + (self.registers.bc() & 0x3FF)) & 0x400 == 0x400;
         self.registers.set_hl(self.registers.bc());
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_a_bc_0x0a(&mut self) {
+    fn ld_a_bc_0x0a(&mut self) -> u8 {
         println!("LD A, (BC)");
         self.registers.a = self.read(self.registers.bc());
+        8
     }
     // bytes: 1 cycles: [8]
-    fn dec_bc_0x0b(&mut self) {
+    fn dec_bc_0x0b(&mut self) -> u8 {
         println!("DEC BC");
         self.registers.set_bc(self.registers.bc() - 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_c_0x0c(&mut self) {
+    fn inc_c_0x0c(&mut self) -> u8 {
         println!("INC C");
         self.registers.f.h = self.registers.c.calc_half_carry(1);
         self.registers.c += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.c == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_c_0x0d(&mut self) {
+    fn dec_c_0x0d(&mut self) -> u8 {
         println!("DEC C");
         self.registers.f.h = self.registers.c.calc_half_borrow(1);
         self.registers.c -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.c == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_c_d8_0x0e(&mut self) {
+    fn ld_c_d8_0x0e(&mut self) -> u8 {
         println!("ld C, d8");
         let d8 = self.fetch();
         self.registers.c = d8;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn rrca_0x0f(&mut self) {
+    fn rrca_0x0f(&mut self) -> u8 {
         println!("RRCA");
         let c = (self.registers.a & 0x1) == 1;
         self.registers.a = (c as u8) << 7 | self.registers.a >> 1;
@@ -1135,56 +1156,63 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        4
     }
     // bytes: 2 cycles: [4]
-    fn stop_d8_0x10(&mut self) {
+    fn stop_d8_0x10(&mut self) -> u8 {
         println!("STOP");
         // ボタンが押されるまでCPUとLCDをHALT
         let _ = self.fetch();
         todo!();
     }
     // bytes: 3 cycles: [12]
-    fn ld_de_d16_0x11(&mut self) {
+    fn ld_de_d16_0x11(&mut self) -> u8 {
         println!("ld DE, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
         self.registers.set_de(d16);
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_de_a_0x12(&mut self) {
+    fn ld_de_a_0x12(&mut self) -> u8 {
         println!("LD (DE), A");
         self.write(self.registers.de(), self.registers.a);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn inc_de_0x13(&mut self) {
+    fn inc_de_0x13(&mut self) -> u8 {
         println!("INC DE");
         self.registers.set_de(self.registers.de() + 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_d_0x14(&mut self) {
+    fn inc_d_0x14(&mut self) -> u8 {
         println!("INC D");
         self.registers.f.h = self.registers.d.calc_half_carry(1);
         self.registers.d += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.d == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_d_0x15(&mut self) {
+    fn dec_d_0x15(&mut self) -> u8 {
         println!("DEC D");
         self.registers.f.h = self.registers.d.calc_half_borrow(1);
         self.registers.d -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.d == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_d_d8_0x16(&mut self) {
+    fn ld_d_d8_0x16(&mut self) -> u8 {
         println!("ld D, d8");
         let d8 = self.fetch();
         self.registers.d = d8;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn rla_0x17(&mut self) {
+    fn rla_0x17(&mut self) -> u8 {
         println!("RLA");
         let c = (self.registers.a >> 7) == 1;
         self.registers.a = (self.registers.a << 1) | self.registers.f.c as u8;
@@ -1192,15 +1220,17 @@ impl CPU {
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        4
     }
     // bytes: 2 cycles: [12]
-    fn jr_r8_0x18(&mut self) {
+    fn jr_r8_0x18(&mut self) -> u8 {
         println!("JP r8");
         let r8: i16 = self.fetch().into();
         self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+        12
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_de_0x19(&mut self) {
+    fn add_hl_de_0x19(&mut self) -> u8 {
         println!("ADD HL, DE");
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.de());
         // ここのハーフキャリーは変則的
@@ -1208,41 +1238,47 @@ impl CPU {
             ((self.registers.hl() & 0x3FF) + (self.registers.de() & 0x3FF)) & 0x400 == 0x400;
         self.registers.set_hl(self.registers.de());
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_a_de_0x1a(&mut self) {
+    fn ld_a_de_0x1a(&mut self) -> u8 {
         println!("LD A, (DE)");
         self.registers.a = self.read(self.registers.de());
+        8
     }
     // bytes: 1 cycles: [8]
-    fn dec_de_0x1b(&mut self) {
+    fn dec_de_0x1b(&mut self) -> u8 {
         println!("DEC DE");
         self.registers.set_de(self.registers.de() - 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_e_0x1c(&mut self) {
+    fn inc_e_0x1c(&mut self) -> u8 {
         println!("INC E");
         self.registers.f.h = self.registers.e.calc_half_carry(1);
         self.registers.e += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.e == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_e_0x1d(&mut self) {
+    fn dec_e_0x1d(&mut self) -> u8 {
         println!("DEC E");
         self.registers.f.h = self.registers.e.calc_half_borrow(1);
         self.registers.e -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.e == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_e_d8_0x1e(&mut self) {
+    fn ld_e_d8_0x1e(&mut self) -> u8 {
         println!("ld E, d8");
         let d8 = self.fetch();
         self.registers.e = d8;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn rra_0x1f(&mut self) {
+    fn rra_0x1f(&mut self) -> u8 {
         println!("RRA");
         let c = (self.registers.a & 0x1) == 1;
         self.registers.a = ((self.registers.f.c as u8) << 7) | (self.registers.a >> 1);
@@ -1250,59 +1286,69 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        4
     }
     // bytes: 2 cycles: [12, 8]
-    fn jr_nz_r8_0x20(&mut self) {
+    fn jr_nz_r8_0x20(&mut self) -> u8 {
         println!("JR NZ, r8");
         let r8: i8 = self.fetch() as i8;
         if !self.registers.f.z {
             self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            12
+        } else {
+            8
         }
     }
     // bytes: 3 cycles: [12]
-    fn ld_hl_d16_0x21(&mut self) {
+    fn ld_hl_d16_0x21(&mut self) -> u8 {
         println!("ld HL, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
         self.registers.set_hl(d16);
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_a_0x22(&mut self) {
+    fn ld_hl_a_0x22(&mut self) -> u8 {
         println!("LD (HL+), A");
         self.write(self.registers.hl(), self.registers.a);
         self.registers.a = self.read(self.registers.hl());
         self.registers.set_hl(self.registers.hl() + 1);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn inc_hl_0x23(&mut self) {
+    fn inc_hl_0x23(&mut self) -> u8 {
         println!("INC HL");
         self.registers.set_hl(self.registers.hl() + 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_h_0x24(&mut self) {
+    fn inc_h_0x24(&mut self) -> u8 {
         println!("INC H");
         self.registers.f.h = self.registers.h.calc_half_carry(1);
         self.registers.h += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.h == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_h_0x25(&mut self) {
+    fn dec_h_0x25(&mut self) -> u8 {
         println!("DEC H");
         self.registers.f.h = self.registers.h.calc_half_borrow(1);
         self.registers.h -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.h == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_h_d8_0x26(&mut self) {
+    fn ld_h_d8_0x26(&mut self) -> u8 {
         println!("ld H, d8");
         let d8 = self.fetch();
         self.registers.h = d8;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn daa_0x27(&mut self) {
+    fn daa_0x27(&mut self) -> u8 {
         // TODO: テストを書く
         // https://github.com/Baekalfen/PyBoy/blob/96d2b3d54fe73a6030ff61b6c70952b8e6aa6299/pyboy/core/opcodes.py#L412
         let mut al = self.registers.a;
@@ -1328,17 +1374,21 @@ impl CPU {
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.c = (corr & 0x60) == 0;
         self.registers.f.h = false;
+        4
     }
     // bytes: 2 cycles: [12, 8]
-    fn jr_z_r8_0x28(&mut self) {
+    fn jr_z_r8_0x28(&mut self) -> u8 {
         println!("JR Z, r8");
         let r8: i8 = self.fetch() as i8;
         if self.registers.f.z {
             self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            12
+        } else {
+            8
         }
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_hl_0x29(&mut self) {
+    fn add_hl_hl_0x29(&mut self) -> u8 {
         println!("ADD HL, HL");
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.hl());
         // ここのハーフキャリーは変則的
@@ -1346,117 +1396,137 @@ impl CPU {
             ((self.registers.hl() & 0x3FF) + (self.registers.hl() & 0x3FF)) & 0x400 == 0x400;
         self.registers.set_hl(self.registers.hl());
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_a_hl_0x2a(&mut self) {
+    fn ld_a_hl_0x2a(&mut self) -> u8 {
         println!("LD A, (HL+)");
         self.registers.a = self.read(self.registers.hl());
         self.registers.set_hl(self.registers.hl() + 1);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn dec_hl_0x2b(&mut self) {
+    fn dec_hl_0x2b(&mut self) -> u8 {
         println!("DEC HL");
         self.registers.set_hl(self.registers.hl() - 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_l_0x2c(&mut self) {
+    fn inc_l_0x2c(&mut self) -> u8 {
         println!("INC L");
         self.registers.f.h = self.registers.l.calc_half_carry(1);
         self.registers.l += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.l == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_l_0x2d(&mut self) {
+    fn dec_l_0x2d(&mut self) -> u8 {
         println!("DEC L");
         self.registers.f.h = self.registers.l.calc_half_borrow(1);
         self.registers.l -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.l == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_l_d8_0x2e(&mut self) {
+    fn ld_l_d8_0x2e(&mut self) -> u8 {
         println!("ld L, d8");
         let d8 = self.fetch();
         self.registers.l = d8;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn cpl_0x2f(&mut self) {
+    fn cpl_0x2f(&mut self) -> u8 {
         println!("CPL");
         self.registers.a = !self.registers.a;
         self.registers.f.n = true;
         self.registers.f.h = true;
+        4
     }
     // bytes: 2 cycles: [12, 8]
-    fn jr_nc_r8_0x30(&mut self) {
+    fn jr_nc_r8_0x30(&mut self) -> u8 {
         println!("JR NC, r8");
         let r8: i8 = self.fetch() as i8;
         if !self.registers.f.c {
             self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            12
+        } else {
+            8
         }
     }
     // bytes: 3 cycles: [12]
-    fn ld_sp_d16_0x31(&mut self) {
+    fn ld_sp_d16_0x31(&mut self) -> u8 {
         println!("ld SP, d16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let d16 = h << 8 | l;
         self.registers.sp = d16;
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_a_0x32(&mut self) {
+    fn ld_hl_a_0x32(&mut self) -> u8 {
         println!("LD (HL-), A");
         self.write(self.registers.hl(), self.registers.a);
         self.registers.a = self.read(self.registers.hl());
         self.registers.set_hl(self.registers.hl() - 1);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn inc_sp_0x33(&mut self) {
+    fn inc_sp_0x33(&mut self) -> u8 {
         println!("INC SP");
         let spv = self.read(self.registers.sp);
         self.write(self.registers.sp, spv + 1);
+        8
     }
     // bytes: 1 cycles: [12]
-    fn inc_hl_0x34(&mut self) {
+    fn inc_hl_0x34(&mut self) -> u8 {
         println!("INC (HL)");
         let hl = self.read(self.registers.hl());
         self.registers.f.h = hl.calc_half_carry(1);
         self.write(self.registers.hl(), hl + 1);
         self.registers.f.n = false;
         self.registers.f.z = (hl + 1) == 0;
+        12
     }
     // bytes: 1 cycles: [12]
-    fn dec_hl_0x35(&mut self) {
+    fn dec_hl_0x35(&mut self) -> u8 {
         println!("DEC (HL)");
         let hl = self.read(self.registers.hl());
         self.registers.f.h = hl.calc_half_borrow(1);
         self.write(self.registers.hl(), hl - 1);
         self.registers.f.n = true;
         self.registers.f.z = (hl - 1) == 0;
+        12
     }
     // bytes: 2 cycles: [12]
-    fn ld_hl_d8_0x36(&mut self) {
+    fn ld_hl_d8_0x36(&mut self) -> u8 {
         println!("LD (HL), n");
         let d8 = self.fetch();
         self.write(self.registers.hl(), d8);
+        12
     }
     // bytes: 1 cycles: [4]
-    fn scf_0x37(&mut self) {
+    fn scf_0x37(&mut self) -> u8 {
         println!("SCF");
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = true;
+        4
     }
     // bytes: 2 cycles: [12, 8]
-    fn jr_c_r8_0x38(&mut self) {
+    fn jr_c_r8_0x38(&mut self) -> u8 {
         println!("JR C, r8");
         let r8: i8 = self.fetch() as i8;
         if self.registers.f.c {
             self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            12
+        } else {
+            8
         }
     }
     // bytes: 1 cycles: [8]
-    fn add_hl_sp_0x39(&mut self) {
+    fn add_hl_sp_0x39(&mut self) -> u8 {
         println!("ADD HL, SP");
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.sp);
         // ここのハーフキャリーは変則的
@@ -1464,425 +1534,501 @@ impl CPU {
             ((self.registers.hl() & 0x3FF) + (self.registers.sp & 0x3FF)) & 0x400 == 0x400;
         self.registers.set_hl(self.registers.sp);
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_a_hl_0x3a(&mut self) {
+    fn ld_a_hl_0x3a(&mut self) -> u8 {
         println!("LD A, (HL-)");
         self.registers.a = self.read(self.registers.hl());
         self.registers.set_hl(self.registers.hl() - 1);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn dec_sp_0x3b(&mut self) {
+    fn dec_sp_0x3b(&mut self) -> u8 {
         println!("DEC SP");
         let spv = self.read(self.registers.sp);
         self.write(self.registers.sp, spv - 1);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn inc_a_0x3c(&mut self) {
+    fn inc_a_0x3c(&mut self) -> u8 {
         println!("INC A");
         self.registers.f.h = self.registers.a.calc_half_carry(1);
         self.registers.a += 1;
         self.registers.f.n = false;
         self.registers.f.z = self.registers.a == 0;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn dec_a_0x3d(&mut self) {
+    fn dec_a_0x3d(&mut self) -> u8 {
         println!("DEC A");
         self.registers.f.h = self.registers.a.calc_half_borrow(1);
         self.registers.a -= 1;
         self.registers.f.n = true;
         self.registers.f.z = self.registers.a == 0;
+        4
     }
     // bytes: 2 cycles: [8]
-    fn ld_a_d8_0x3e(&mut self) {
+    fn ld_a_d8_0x3e(&mut self) -> u8 {
         println!("LD A, d8");
         let d8: u16 = self.fetch().into();
         self.registers.a = self.read(d8);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ccf_0x3f(&mut self) {
+    fn ccf_0x3f(&mut self) -> u8 {
         println!("CCF");
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = !self.registers.f.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_b_0x40(&mut self) {
+    fn ld_b_b_0x40(&mut self) -> u8 {
         println!("LD B, B");
         self.registers.b = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_c_0x41(&mut self) {
+    fn ld_b_c_0x41(&mut self) -> u8 {
         println!("LD B, C");
         self.registers.b = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_d_0x42(&mut self) {
+    fn ld_b_d_0x42(&mut self) -> u8 {
         println!("LD B, D");
         self.registers.b = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_e_0x43(&mut self) {
+    fn ld_b_e_0x43(&mut self) -> u8 {
         println!("LD B, E");
         self.registers.b = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_h_0x44(&mut self) {
+    fn ld_b_h_0x44(&mut self) -> u8 {
         println!("LD B, H");
         self.registers.b = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_l_0x45(&mut self) {
+    fn ld_b_l_0x45(&mut self) -> u8 {
         println!("LD B, L");
         self.registers.b = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_b_hl_0x46(&mut self) {
+    fn ld_b_hl_0x46(&mut self) -> u8 {
         println!("LD B, (HL)");
         self.registers.b = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_b_a_0x47(&mut self) {
+    fn ld_b_a_0x47(&mut self) -> u8 {
         println!("LD B, A");
         self.registers.b = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_b_0x48(&mut self) {
+    fn ld_c_b_0x48(&mut self) -> u8 {
         println!("LD C, B");
         self.registers.c = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_c_0x49(&mut self) {
+    fn ld_c_c_0x49(&mut self) -> u8 {
         println!("LD C, C");
         self.registers.c = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_d_0x4a(&mut self) {
+    fn ld_c_d_0x4a(&mut self) -> u8 {
         println!("LD C, D");
         self.registers.c = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_e_0x4b(&mut self) {
+    fn ld_c_e_0x4b(&mut self) -> u8 {
         println!("LD C, E");
         self.registers.c = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_h_0x4c(&mut self) {
+    fn ld_c_h_0x4c(&mut self) -> u8 {
         println!("LD C, H");
         self.registers.c = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_l_0x4d(&mut self) {
+    fn ld_c_l_0x4d(&mut self) -> u8 {
         println!("LD C, B");
         self.registers.c = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_c_hl_0x4e(&mut self) {
+    fn ld_c_hl_0x4e(&mut self) -> u8 {
         println!("LD C, (HL)");
         self.registers.c = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_c_a_0x4f(&mut self) {
+    fn ld_c_a_0x4f(&mut self) -> u8 {
         println!("LD C, A");
         self.registers.c = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_b_0x50(&mut self) {
+    fn ld_d_b_0x50(&mut self) -> u8 {
         println!("LD D, B");
         self.registers.d = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_c_0x51(&mut self) {
+    fn ld_d_c_0x51(&mut self) -> u8 {
         println!("LD D, C");
         self.registers.d = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_d_0x52(&mut self) {
+    fn ld_d_d_0x52(&mut self) -> u8 {
         println!("LD D, D");
         self.registers.d = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_e_0x53(&mut self) {
+    fn ld_d_e_0x53(&mut self) -> u8 {
         println!("LD D, E");
         self.registers.d = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_h_0x54(&mut self) {
+    fn ld_d_h_0x54(&mut self) -> u8 {
         println!("LD D, H");
         self.registers.d = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_l_0x55(&mut self) {
+    fn ld_d_l_0x55(&mut self) -> u8 {
         println!("LD D, L");
         self.registers.d = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_d_hl_0x56(&mut self) {
+    fn ld_d_hl_0x56(&mut self) -> u8 {
         println!("LD D, (HL)");
         self.registers.d = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_d_a_0x57(&mut self) {
+    fn ld_d_a_0x57(&mut self) -> u8 {
         println!("LD D, A");
         self.registers.d = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_b_0x58(&mut self) {
+    fn ld_e_b_0x58(&mut self) -> u8 {
         println!("LD E, B");
         self.registers.e = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_c_0x59(&mut self) {
+    fn ld_e_c_0x59(&mut self) -> u8 {
         println!("LD E, C");
         self.registers.e = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_d_0x5a(&mut self) {
+    fn ld_e_d_0x5a(&mut self) -> u8 {
         println!("LD E, D");
         self.registers.e = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_e_0x5b(&mut self) {
+    fn ld_e_e_0x5b(&mut self) -> u8 {
         println!("LD E, E");
         self.registers.e = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_h_0x5c(&mut self) {
+    fn ld_e_h_0x5c(&mut self) -> u8 {
         println!("LD E, H");
         self.registers.e = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_l_0x5d(&mut self) {
+    fn ld_e_l_0x5d(&mut self) -> u8 {
         println!("LD E, L");
         self.registers.e = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_e_hl_0x5e(&mut self) {
+    fn ld_e_hl_0x5e(&mut self) -> u8 {
         println!("LD E, (HL)");
         self.registers.e = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_e_a_0x5f(&mut self) {
+    fn ld_e_a_0x5f(&mut self) -> u8 {
         println!("LD E, A");
         self.registers.e = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_b_0x60(&mut self) {
+    fn ld_h_b_0x60(&mut self) -> u8 {
         println!("LD H, B");
         self.registers.h = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_c_0x61(&mut self) {
+    fn ld_h_c_0x61(&mut self) -> u8 {
         println!("LD H, C");
         self.registers.h = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_d_0x62(&mut self) {
+    fn ld_h_d_0x62(&mut self) -> u8 {
         println!("LD H, D");
         self.registers.h = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_e_0x63(&mut self) {
+    fn ld_h_e_0x63(&mut self) -> u8 {
         println!("LD H, E");
         self.registers.h = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_h_0x64(&mut self) {
+    fn ld_h_h_0x64(&mut self) -> u8 {
         println!("LD H, H");
         self.registers.h = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_l_0x65(&mut self) {
+    fn ld_h_l_0x65(&mut self) -> u8 {
         println!("LD H, L");
         self.registers.h = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_h_hl_0x66(&mut self) {
+    fn ld_h_hl_0x66(&mut self) -> u8 {
         println!("LD H, (HL)");
         self.registers.h = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_h_a_0x67(&mut self) {
+    fn ld_h_a_0x67(&mut self) -> u8 {
         println!("LD H, A");
         self.registers.h = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_b_0x68(&mut self) {
+    fn ld_l_b_0x68(&mut self) -> u8 {
         println!("LD L, B");
         self.registers.l = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_c_0x69(&mut self) {
+    fn ld_l_c_0x69(&mut self) -> u8 {
         println!("LD L, C");
         self.registers.l = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_d_0x6a(&mut self) {
+    fn ld_l_d_0x6a(&mut self) -> u8 {
         println!("LD L, D");
         self.registers.l = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_e_0x6b(&mut self) {
+    fn ld_l_e_0x6b(&mut self) -> u8 {
         println!("LD L, E");
         self.registers.l = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_h_0x6c(&mut self) {
+    fn ld_l_h_0x6c(&mut self) -> u8 {
         println!("LD L, H");
         self.registers.l = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_l_0x6d(&mut self) {
+    fn ld_l_l_0x6d(&mut self) -> u8 {
         println!("LD L, L");
         self.registers.l = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_l_hl_0x6e(&mut self) {
+    fn ld_l_hl_0x6e(&mut self) -> u8 {
         println!("LD L, (HL)");
         self.registers.l = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_l_a_0x6f(&mut self) {
+    fn ld_l_a_0x6f(&mut self) -> u8 {
         println!("LD L, A");
         self.registers.l = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_b_0x70(&mut self) {
+    fn ld_hl_b_0x70(&mut self) -> u8 {
         println!("LD (HL), B");
         self.write(self.registers.hl(), self.registers.b);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_c_0x71(&mut self) {
+    fn ld_hl_c_0x71(&mut self) -> u8 {
         println!("LD (HL), C");
         self.write(self.registers.hl(), self.registers.c);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_d_0x72(&mut self) {
+    fn ld_hl_d_0x72(&mut self) -> u8 {
         println!("LD (HL), D");
         self.write(self.registers.hl(), self.registers.d);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_e_0x73(&mut self) {
+    fn ld_hl_e_0x73(&mut self) -> u8 {
         println!("LD (HL), E");
         self.write(self.registers.hl(), self.registers.e);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_h_0x74(&mut self) {
+    fn ld_hl_h_0x74(&mut self) -> u8 {
         println!("LD (HL), H");
         self.write(self.registers.hl(), self.registers.h);
+        8
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_l_0x75(&mut self) {
+    fn ld_hl_l_0x75(&mut self) -> u8 {
         println!("LD (HL), L");
         self.write(self.registers.hl(), self.registers.l);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn halt_0x76(&mut self) {
+    fn halt_0x76(&mut self) -> u8 {
         println!("HALT");
         // 割り込みが来るまで待機
-        todo!()
+        todo!();
     }
     // bytes: 1 cycles: [8]
-    fn ld_hl_a_0x77(&mut self) {
+    fn ld_hl_a_0x77(&mut self) -> u8 {
         println!("LD (HL), A");
         self.write(self.registers.hl(), self.registers.a);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_b_0x78(&mut self) {
+    fn ld_a_b_0x78(&mut self) -> u8 {
         println!("LD A, B");
         self.registers.a = self.registers.b;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_c_0x79(&mut self) {
+    fn ld_a_c_0x79(&mut self) -> u8 {
         println!("LD A, C");
         self.registers.a = self.registers.c;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_d_0x7a(&mut self) {
+    fn ld_a_d_0x7a(&mut self) -> u8 {
         println!("LD A, D");
         self.registers.a = self.registers.d;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_e_0x7b(&mut self) {
+    fn ld_a_e_0x7b(&mut self) -> u8 {
         println!("LD A, E");
         self.registers.a = self.registers.e;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_h_0x7c(&mut self) {
+    fn ld_a_h_0x7c(&mut self) -> u8 {
         println!("LD A, H");
         self.registers.a = self.registers.h;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_l_0x7d(&mut self) {
+    fn ld_a_l_0x7d(&mut self) -> u8 {
         println!("LD A, L");
         self.registers.a = self.registers.l;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn ld_a_hl_0x7e(&mut self) {
+    fn ld_a_hl_0x7e(&mut self) -> u8 {
         println!("LD A, (HL)");
         self.registers.a = self.read(self.registers.hl());
+        8
     }
     // bytes: 1 cycles: [4]
-    fn ld_a_a_0x7f(&mut self) {
+    fn ld_a_a_0x7f(&mut self) -> u8 {
         println!("LD A, A");
         self.registers.a = self.registers.a;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn add_a_b_0x80(&mut self) {
+    fn add_a_b_0x80(&mut self) -> u8 {
         println!("ADD A, B");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.b);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.b);
         self.registers.a += self.registers.b;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn add_a_c_0x81(&mut self) {
+    fn add_a_c_0x81(&mut self) -> u8 {
         println!("ADD A, C");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.c);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.c);
         self.registers.a += self.registers.c;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn add_a_d_0x82(&mut self) {
+    fn add_a_d_0x82(&mut self) -> u8 {
         println!("ADD A, D");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.d);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.d);
         self.registers.a += self.registers.d;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn add_a_e_0x83(&mut self) {
+    fn add_a_e_0x83(&mut self) -> u8 {
         println!("ADD A, E");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.e);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.e);
         self.registers.a += self.registers.e;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn add_a_h_0x84(&mut self) {
+    fn add_a_h_0x84(&mut self) -> u8 {
         println!("ADD A, H");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.h);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.h);
         self.registers.a += self.registers.h;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn add_a_l_0x85(&mut self) {
+    fn add_a_l_0x85(&mut self) -> u8 {
         println!("ADD A, L");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.l);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.l);
         self.registers.a += self.registers.l;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn add_a_hl_0x86(&mut self) {
+    fn add_a_hl_0x86(&mut self) -> u8 {
         println!("ADD A, (HL)");
         let hl = self.read(self.registers.hl());
         self.registers.f.h = self.registers.a.calc_half_carry(hl);
@@ -1890,18 +2036,20 @@ impl CPU {
         self.registers.a += hl;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn add_a_a_0x87(&mut self) {
+    fn add_a_a_0x87(&mut self) -> u8 {
         println!("ADD A, A");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.a);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.a);
         self.registers.a += self.registers.a;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_b_0x88(&mut self) {
+    fn adc_a_b_0x88(&mut self) -> u8 {
         println!("ADC A, B");
         let rhs: u8 = self.registers.b + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1909,9 +2057,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_c_0x89(&mut self) {
+    fn adc_a_c_0x89(&mut self) -> u8 {
         println!("ADC A, C");
         let rhs: u8 = self.registers.c + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1919,9 +2068,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_d_0x8a(&mut self) {
+    fn adc_a_d_0x8a(&mut self) -> u8 {
         println!("ADC A, D");
         let rhs: u8 = self.registers.d + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1929,9 +2079,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_e_0x8b(&mut self) {
+    fn adc_a_e_0x8b(&mut self) -> u8 {
         println!("ADC A, E");
         let rhs: u8 = self.registers.e + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1939,9 +2090,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_h_0x8c(&mut self) {
+    fn adc_a_h_0x8c(&mut self) -> u8 {
         println!("ADC A, H");
         let rhs: u8 = self.registers.h + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1949,9 +2101,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_l_0x8d(&mut self) {
+    fn adc_a_l_0x8d(&mut self) -> u8 {
         println!("ADC A, L");
         let rhs: u8 = self.registers.l + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1959,9 +2112,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn adc_a_hl_0x8e(&mut self) {
+    fn adc_a_hl_0x8e(&mut self) -> u8 {
         println!("ADC A, (HL)");
         let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1969,9 +2123,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn adc_a_a_0x8f(&mut self) {
+    fn adc_a_a_0x8f(&mut self) -> u8 {
         println!("ADC A, A");
         let rhs: u8 = self.registers.a + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -1979,63 +2134,70 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sub_b_0x90(&mut self) {
+    fn sub_b_0x90(&mut self) -> u8 {
         println!("SUB B");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.b);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.b);
         self.registers.a -= self.registers.b;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sub_c_0x91(&mut self) {
+    fn sub_c_0x91(&mut self) -> u8 {
         println!("SUB C");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.c);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.c);
         self.registers.a -= self.registers.c;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sub_d_0x92(&mut self) {
+    fn sub_d_0x92(&mut self) -> u8 {
         println!("SUB D");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.d);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.d);
         self.registers.a -= self.registers.d;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sub_e_0x93(&mut self) {
+    fn sub_e_0x93(&mut self) -> u8 {
         println!("SUB E");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.e);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.e);
         self.registers.a -= self.registers.e;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sub_h_0x94(&mut self) {
+    fn sub_h_0x94(&mut self) -> u8 {
         println!("SUB H");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.h);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.h);
         self.registers.a -= self.registers.h;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sub_l_0x95(&mut self) {
+    fn sub_l_0x95(&mut self) -> u8 {
         println!("SUB L");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.l);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.l);
         self.registers.a -= self.registers.l;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn sub_hl_0x96(&mut self) {
+    fn sub_hl_0x96(&mut self) -> u8 {
         println!("SUB (HL)");
         let hl = self.read(self.registers.hl());
         self.registers.f.h = self.registers.a.calc_half_borrow(hl);
@@ -2043,18 +2205,20 @@ impl CPU {
         self.registers.a -= hl;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn sub_a_0x97(&mut self) {
+    fn sub_a_0x97(&mut self) -> u8 {
         println!("SUB A");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.a);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.a);
         self.registers.a -= self.registers.a;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_b_0x98(&mut self) {
+    fn sbc_a_b_0x98(&mut self) -> u8 {
         println!("SBC A, B");
         let rhs: u8 = self.registers.b + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2062,9 +2226,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_c_0x99(&mut self) {
+    fn sbc_a_c_0x99(&mut self) -> u8 {
         println!("SBC A, C");
         let rhs: u8 = self.registers.c + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2072,9 +2237,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_d_0x9a(&mut self) {
+    fn sbc_a_d_0x9a(&mut self) -> u8 {
         println!("SBC A, D");
         let rhs: u8 = self.registers.d + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2082,9 +2248,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_e_0x9b(&mut self) {
+    fn sbc_a_e_0x9b(&mut self) -> u8 {
         println!("SUB A, E");
         let rhs: u8 = self.registers.e + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2092,9 +2259,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_h_0x9c(&mut self) {
+    fn sbc_a_h_0x9c(&mut self) -> u8 {
         println!("SBC A, H");
         let rhs: u8 = self.registers.h + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2102,9 +2270,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_l_0x9d(&mut self) {
+    fn sbc_a_l_0x9d(&mut self) -> u8 {
         println!("SBC A, L");
         let rhs: u8 = self.registers.l + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2112,9 +2281,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn sbc_a_hl_0x9e(&mut self) {
+    fn sbc_a_hl_0x9e(&mut self) -> u8 {
         println!("SBC A, (HL)");
         let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2122,9 +2292,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn sbc_a_a_0x9f(&mut self) {
+    fn sbc_a_a_0x9f(&mut self) -> u8 {
         println!("SBC A, A");
         let rhs: u8 = self.registers.a + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2132,332 +2303,373 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn and_b_0xa0(&mut self) {
+    fn and_b_0xa0(&mut self) -> u8 {
         println!("AND B");
         self.registers.a &= self.registers.b;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn and_c_0xa1(&mut self) {
+    fn and_c_0xa1(&mut self) -> u8 {
         println!("AND C");
         self.registers.a &= self.registers.c;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn and_d_0xa2(&mut self) {
+    fn and_d_0xa2(&mut self) -> u8 {
         println!("AND D");
         self.registers.a &= self.registers.d;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn and_e_0xa3(&mut self) {
+    fn and_e_0xa3(&mut self) -> u8 {
         println!("AND E");
         self.registers.a &= self.registers.e;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn and_h_0xa4(&mut self) {
+    fn and_h_0xa4(&mut self) -> u8 {
         println!("AND H");
         self.registers.a &= self.registers.h;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn and_l_0xa5(&mut self) {
+    fn and_l_0xa5(&mut self) -> u8 {
         println!("AND L");
         self.registers.a &= self.registers.l;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn and_hl_0xa6(&mut self) {
+    fn and_hl_0xa6(&mut self) -> u8 {
         println!("AND (HL)");
         self.registers.a &= self.read(self.registers.hl());
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn and_a_0xa7(&mut self) {
+    fn and_a_0xa7(&mut self) -> u8 {
         println!("AND A");
         self.registers.a &= self.registers.a;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn xor_b_0xa8(&mut self) {
+    fn xor_b_0xa8(&mut self) -> u8 {
         println!("XOR B");
         self.registers.a ^= self.registers.b;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn xor_c_0xa9(&mut self) {
+    fn xor_c_0xa9(&mut self) -> u8 {
         println!("XOR C");
         self.registers.a ^= self.registers.c;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn xor_d_0xaa(&mut self) {
+    fn xor_d_0xaa(&mut self) -> u8 {
         println!("XOR D");
         self.registers.a ^= self.registers.d;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn xor_e_0xab(&mut self) {
+    fn xor_e_0xab(&mut self) -> u8 {
         println!("XOR E");
         self.registers.a ^= self.registers.e;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn xor_h_0xac(&mut self) {
+    fn xor_h_0xac(&mut self) -> u8 {
         println!("XOR H");
         self.registers.a ^= self.registers.h;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn xor_l_0xad(&mut self) {
+    fn xor_l_0xad(&mut self) -> u8 {
         println!("XOR L");
         self.registers.a ^= self.registers.l;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn xor_hl_0xae(&mut self) {
+    fn xor_hl_0xae(&mut self) -> u8 {
         println!("XOR (HL)");
         self.registers.a ^= self.read(self.registers.hl());
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn xor_a_0xaf(&mut self) {
+    fn xor_a_0xaf(&mut self) -> u8 {
         println!("XOR A");
         self.registers.a ^= self.registers.a;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn or_b_0xb0(&mut self) {
+    fn or_b_0xb0(&mut self) -> u8 {
         println!("OR B");
         self.registers.a |= self.registers.b;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn or_c_0xb1(&mut self) {
+    fn or_c_0xb1(&mut self) -> u8 {
         println!("OR C");
         self.registers.a |= self.registers.c;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn or_d_0xb2(&mut self) {
+    fn or_d_0xb2(&mut self) -> u8 {
         println!("OR D");
         self.registers.a |= self.registers.d;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn or_e_0xb3(&mut self) {
+    fn or_e_0xb3(&mut self) -> u8 {
         println!("OR E");
         self.registers.a |= self.registers.e;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn or_h_0xb4(&mut self) {
+    fn or_h_0xb4(&mut self) -> u8 {
         println!("OR H");
         self.registers.a |= self.registers.h;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn or_l_0xb5(&mut self) {
+    fn or_l_0xb5(&mut self) -> u8 {
         println!("OR L");
         self.registers.a |= self.registers.l;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn or_hl_0xb6(&mut self) {
+    fn or_hl_0xb6(&mut self) -> u8 {
         println!("OR (HL)");
         self.registers.a |= self.read(self.registers.hl());
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn or_a_0xb7(&mut self) {
+    fn or_a_0xb7(&mut self) -> u8 {
         println!("OR A");
         self.registers.a |= self.registers.a;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn cp_b_0xb8(&mut self) {
+    fn cp_b_0xb8(&mut self) -> u8 {
         println!("CP B");
         let rhs = self.registers.b;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn cp_c_0xb9(&mut self) {
+    fn cp_c_0xb9(&mut self) -> u8 {
         println!("CP C");
         let rhs = self.registers.c;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn cp_d_0xba(&mut self) {
+    fn cp_d_0xba(&mut self) -> u8 {
         println!("CP D");
         let rhs = self.registers.d;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn cp_e_0xbb(&mut self) {
+    fn cp_e_0xbb(&mut self) -> u8 {
         println!("CP E");
         let rhs = self.registers.e;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn cp_h_0xbc(&mut self) {
+    fn cp_h_0xbc(&mut self) -> u8 {
         println!("CP H");
         let rhs = self.registers.h;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn cp_l_0xbd(&mut self) {
+    fn cp_l_0xbd(&mut self) -> u8 {
         println!("CP L");
         let rhs = self.registers.l;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [8]
-    fn cp_hl_0xbe(&mut self) {
+    fn cp_hl_0xbe(&mut self) -> u8 {
         println!("CP (HL)");
         let rhs = self.read(self.registers.hl());
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        8
     }
     // bytes: 1 cycles: [4]
-    fn cp_a_0xbf(&mut self) {
+    fn cp_a_0xbf(&mut self) -> u8 {
         println!("CP A");
         let rhs = self.registers.a;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        4
     }
     // bytes: 1 cycles: [20, 8]
-    fn ret_nz_0xc0(&mut self) {
+    fn ret_nz_0xc0(&mut self) -> u8 {
         println!("RET NZ");
         if !self.registers.f.z {
             let lower: u16 = self.read(self.registers.sp).into();
             let upper: u16 = self.read(self.registers.sp + 1).into();
             self.registers.sp += 2;
             self.registers.pc = upper << 8 | lower;
+            20
+        } else {
+            8
         }
     }
     // bytes: 1 cycles: [12]
-    fn pop_bc_0xc1(&mut self) {
+    fn pop_bc_0xc1(&mut self) -> u8 {
         println!("POP BC");
         self.registers.b = self.read(self.registers.sp + 1);
         self.registers.c = self.read(self.registers.sp);
         self.registers.sp += 2;
+        12
     }
     // bytes: 3 cycles: [16, 12]
-    fn jp_nz_a16_0xc2(&mut self) {
+    fn jp_nz_a16_0xc2(&mut self) -> u8 {
         println!("JP NZ, a16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         if !self.registers.f.z {
             self.registers.pc = a16;
+            16
+        } else {
+            12
         }
     }
     // bytes: 3 cycles: [16]
-    fn jp_a16_0xc3(&mut self) {
+    fn jp_a16_0xc3(&mut self) -> u8 {
         println!("JP a16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         self.registers.pc = a16;
+        16
     }
     // bytes: 3 cycles: [24, 12]
-    fn call_nz_a16_0xc4(&mut self) {
+    fn call_nz_a16_0xc4(&mut self) -> u8 {
         println!("CALL NZ, a16");
         let lower: u16 = self.fetch().into();
         let upper: u16 = self.fetch().into();
@@ -2472,17 +2684,21 @@ impl CPU {
             );
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
+            24
+        } else {
+            12
         }
     }
     // bytes: 1 cycles: [16]
-    fn push_bc_0xc5(&mut self) {
+    fn push_bc_0xc5(&mut self) -> u8 {
         println!("PUSH BC");
         self.write(self.registers.sp - 1, self.registers.b);
         self.write(self.registers.sp - 2, self.registers.c);
         self.registers.sp -= 2;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn add_a_d8_0xc6(&mut self) {
+    fn add_a_d8_0xc6(&mut self) -> u8 {
         println!("ADD A, d8");
         let d8: u8 = self.fetch();
         self.registers.f.h = self.registers.a.calc_half_carry(d8);
@@ -2490,9 +2706,10 @@ impl CPU {
         self.registers.a += d8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_00h_0xc7(&mut self) {
+    fn rst_00h_0xc7(&mut self) -> u8 {
         println!("RST 00H");
         self.write(
             self.registers.sp - 1,
@@ -2504,42 +2721,50 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0000;
+        16
     }
     // bytes: 1 cycles: [20, 8]
-    fn ret_z_0xc8(&mut self) {
+    fn ret_z_0xc8(&mut self) -> u8 {
         println!("RET Z");
         if self.registers.f.z {
             let lower: u16 = self.read(self.registers.sp).into();
             let upper: u16 = self.read(self.registers.sp + 1).into();
             self.registers.sp += 2;
             self.registers.pc = upper << 8 | lower;
+            20
+        } else {
+            8
         }
     }
     // bytes: 1 cycles: [16]
-    fn ret_0xc9(&mut self) {
+    fn ret_0xc9(&mut self) -> u8 {
         println!("RET");
         let lower: u16 = self.read(self.registers.sp).into();
         let upper: u16 = self.read(self.registers.sp + 1).into();
         self.registers.sp += 2;
         self.registers.pc = upper << 8 | lower;
+        16
     }
     // bytes: 3 cycles: [16, 12]
-    fn jp_z_a16_0xca(&mut self) {
+    fn jp_z_a16_0xca(&mut self) -> u8 {
         println!("JP Z, a16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         if self.registers.f.z {
             self.registers.pc = a16;
+            16
+        } else {
+            12
         }
     }
     // bytes: 1 cycles: [4]
-    fn prefix_0xcb(&mut self) {
+    fn prefix_0xcb(&mut self) -> u8 {
         // CBの場合は先に処理している
         unreachable!();
     }
     // bytes: 3 cycles: [24, 12]
-    fn call_z_a16_0xcc(&mut self) {
+    fn call_z_a16_0xcc(&mut self) -> u8 {
         println!("CALL Z, a16");
         let lower: u16 = self.fetch().into();
         let upper: u16 = self.fetch().into();
@@ -2554,10 +2779,13 @@ impl CPU {
             );
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
+            24
+        } else {
+            12
         }
     }
     // bytes: 3 cycles: [24]
-    fn call_a16_0xcd(&mut self) {
+    fn call_a16_0xcd(&mut self) -> u8 {
         println!("CALL a16");
         let lower: u16 = self.fetch().into();
         let upper: u16 = self.fetch().into();
@@ -2571,9 +2799,10 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = upper << 8 | lower;
+        24
     }
     // bytes: 2 cycles: [8]
-    fn adc_a_d8_0xce(&mut self) {
+    fn adc_a_d8_0xce(&mut self) -> u8 {
         println!("ADC A, d8");
         let rhs: u8 = self.fetch() + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
@@ -2581,9 +2810,10 @@ impl CPU {
         self.registers.a += rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_08h_0xcf(&mut self) {
+    fn rst_08h_0xcf(&mut self) -> u8 {
         println!("RST 08H");
         self.write(
             self.registers.sp - 1,
@@ -2595,38 +2825,48 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0008;
+        16
     }
     // bytes: 1 cycles: [20, 8]
-    fn ret_nc_0xd0(&mut self) {
+    fn ret_nc_0xd0(&mut self) -> u8 {
         println!("RET NC");
         if !self.registers.f.c {
             let lower: u16 = self.read(self.registers.sp).into();
             let upper: u16 = self.read(self.registers.sp + 1).into();
             self.registers.sp += 2;
             self.registers.pc = upper << 8 | lower;
+            20
+        } else {
+            8
         }
     }
     // bytes: 1 cycles: [12]
-    fn pop_de_0xd1(&mut self) {
+    fn pop_de_0xd1(&mut self) -> u8 {
         println!("POP DE");
         self.registers.d = self.read(self.registers.sp + 1);
         self.registers.e = self.read(self.registers.sp);
         self.registers.sp += 2;
+        12
     }
     // bytes: 3 cycles: [16, 12]
-    fn jp_nc_a16_0xd2(&mut self) {
+    fn jp_nc_a16_0xd2(&mut self) -> u8 {
         println!("JP NC, a16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         if !self.registers.f.c {
             self.registers.pc = a16;
+            16
+        } else {
+            12
         }
     }
     // bytes: 1 cycles: [4]
-    fn illegal_d3_0xd3(&mut self) {}
+    fn illegal_d3_0xd3(&mut self) -> u8 {
+        4
+    }
     // bytes: 3 cycles: [24, 12]
-    fn call_nc_a16_0xd4(&mut self) {
+    fn call_nc_a16_0xd4(&mut self) -> u8 {
         println!("CALL NC, a16");
         let lower: u16 = self.fetch().into();
         let upper: u16 = self.fetch().into();
@@ -2641,17 +2881,21 @@ impl CPU {
             );
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
+            24
+        } else {
+            12
         }
     }
     // bytes: 1 cycles: [16]
-    fn push_de_0xd5(&mut self) {
+    fn push_de_0xd5(&mut self) -> u8 {
         println!("PUSH DE");
         self.write(self.registers.sp - 1, self.registers.d);
         self.write(self.registers.sp - 2, self.registers.e);
         self.registers.sp -= 2;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn sub_d8_0xd6(&mut self) {
+    fn sub_d8_0xd6(&mut self) -> u8 {
         println!("SUB d8");
         let d8 = self.fetch();
         self.registers.f.h = self.registers.a.calc_half_borrow(d8);
@@ -2659,9 +2903,10 @@ impl CPU {
         self.registers.a -= d8;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_10h_0xd7(&mut self) {
+    fn rst_10h_0xd7(&mut self) -> u8 {
         println!("RST 10H");
         self.write(
             self.registers.sp - 1,
@@ -2673,40 +2918,50 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0010;
+        16
     }
     // bytes: 1 cycles: [20, 8]
-    fn ret_c_0xd8(&mut self) {
+    fn ret_c_0xd8(&mut self) -> u8 {
         println!("RET C");
         if self.registers.f.c {
             let lower: u16 = self.read(self.registers.sp).into();
             let upper: u16 = self.read(self.registers.sp + 1).into();
             self.registers.sp += 2;
             self.registers.pc = upper << 8 | lower;
+            20
+        } else {
+            8
         }
     }
     // bytes: 1 cycles: [16]
-    fn reti_0xd9(&mut self) {
+    fn reti_0xd9(&mut self) -> u8 {
         println!("RETI");
         let lower: u16 = self.read(self.registers.sp).into();
         let upper: u16 = self.read(self.registers.sp + 1).into();
         self.registers.sp += 2;
         self.registers.pc = upper << 8 | lower;
         self.ime = true;
+        16
     }
     // bytes: 3 cycles: [16, 12]
-    fn jp_c_a16_0xda(&mut self) {
+    fn jp_c_a16_0xda(&mut self) -> u8 {
         println!("JP C, a16");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         if self.registers.f.c {
             self.registers.pc = a16;
+            16
+        } else {
+            12
         }
     }
     // bytes: 1 cycles: [4]
-    fn illegal_db_0xdb(&mut self) {}
+    fn illegal_db_0xdb(&mut self) -> u8 {
+        4
+    }
     // bytes: 3 cycles: [24, 12]
-    fn call_c_a16_0xdc(&mut self) {
+    fn call_c_a16_0xdc(&mut self) -> u8 {
         println!("CALL C, a16");
         let lower: u16 = self.fetch().into();
         let upper: u16 = self.fetch().into();
@@ -2721,12 +2976,17 @@ impl CPU {
             );
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
+            24
+        } else {
+            12
         }
     }
     // bytes: 1 cycles: [4]
-    fn illegal_dd_0xdd(&mut self) {}
+    fn illegal_dd_0xdd(&mut self) -> u8 {
+        4
+    }
     // bytes: 2 cycles: [8]
-    fn sbc_a_d8_0xde(&mut self) {
+    fn sbc_a_d8_0xde(&mut self) -> u8 {
         println!("SBC A, d8");
         let rhs: u8 = self.fetch() + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
@@ -2734,9 +2994,10 @@ impl CPU {
         self.registers.a -= rhs;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_18h_0xdf(&mut self) {
+    fn rst_18h_0xdf(&mut self) -> u8 {
         println!("RST 18H");
         self.write(
             self.registers.sp - 1,
@@ -2748,47 +3009,57 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0018;
+        16
     }
     // bytes: 2 cycles: [12]
-    fn ldh_a8_a_0xe0(&mut self) {
+    fn ldh_a8_a_0xe0(&mut self) -> u8 {
         println!("LD (a8), A");
         let a8: u16 = self.fetch().into();
         self.write(0xFF00 + a8, self.registers.a);
+        12
     }
     // bytes: 1 cycles: [12]
-    fn pop_hl_0xe1(&mut self) {
+    fn pop_hl_0xe1(&mut self) -> u8 {
         println!("POP HL");
         self.registers.h = self.read(self.registers.sp + 1);
         self.registers.l = self.read(self.registers.sp);
         self.registers.sp += 2;
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_c_a_0xe2(&mut self) {
+    fn ld_c_a_0xe2(&mut self) -> u8 {
         println!("LD (C), A");
         self.write(0xFF00 + self.registers.c as u16, self.registers.a);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn illegal_e3_0xe3(&mut self) {}
+    fn illegal_e3_0xe3(&mut self) -> u8 {
+        4
+    }
     // bytes: 1 cycles: [4]
-    fn illegal_e4_0xe4(&mut self) {}
+    fn illegal_e4_0xe4(&mut self) -> u8 {
+        4
+    }
     // bytes: 1 cycles: [16]
-    fn push_hl_0xe5(&mut self) {
+    fn push_hl_0xe5(&mut self) -> u8 {
         println!("PUSH HL");
         self.write(self.registers.sp - 1, self.registers.h);
         self.write(self.registers.sp - 2, self.registers.l);
         self.registers.sp -= 2;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn and_d8_0xe6(&mut self) {
+    fn and_d8_0xe6(&mut self) -> u8 {
         println!("AND d8");
         self.registers.a &= self.fetch();
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
         self.registers.f.c = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_20h_0xe7(&mut self) {
+    fn rst_20h_0xe7(&mut self) -> u8 {
         println!("RST 20H");
         self.write(
             self.registers.sp - 1,
@@ -2800,9 +3071,10 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0020;
+        16
     }
     // bytes: 2 cycles: [16]
-    fn add_sp_r8_0xe8(&mut self) {
+    fn add_sp_r8_0xe8(&mut self) -> u8 {
         // TODO: 符号周り要確認
         println!("ADD SP, r8");
         let r8 = self.fetch() as i8;
@@ -2812,37 +3084,47 @@ impl CPU {
         self.write(self.registers.sp, spv.wrapping_add(r8 as u8));
         self.registers.f.z = false;
         self.registers.f.n = false;
+        16
     }
     // bytes: 1 cycles: [4]
-    fn jp_hl_0xe9(&mut self) {
+    fn jp_hl_0xe9(&mut self) -> u8 {
         println!("JP (HL)");
         self.registers.pc = self.registers.hl();
+        4
     }
     // bytes: 3 cycles: [16]
-    fn ld_a16_a_0xea(&mut self) {
+    fn ld_a16_a_0xea(&mut self) -> u8 {
         println!("LD (a16), A");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         self.write(a16, self.registers.a);
+        16
     }
     // bytes: 1 cycles: [4]
-    fn illegal_eb_0xeb(&mut self) {}
+    fn illegal_eb_0xeb(&mut self) -> u8 {
+        4
+    }
     // bytes: 1 cycles: [4]
-    fn illegal_ec_0xec(&mut self) {}
+    fn illegal_ec_0xec(&mut self) -> u8 {
+        4
+    }
     // bytes: 1 cycles: [4]
-    fn illegal_ed_0xed(&mut self) {}
+    fn illegal_ed_0xed(&mut self) -> u8 {
+        4
+    }
     // bytes: 2 cycles: [8]
-    fn xor_d8_0xee(&mut self) {
+    fn xor_d8_0xee(&mut self) -> u8 {
         println!("XOR d8");
         self.registers.a ^= self.fetch();
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_28h_0xef(&mut self) {
+    fn rst_28h_0xef(&mut self) -> u8 {
         println!("RST 28H");
         self.write(
             self.registers.sp - 1,
@@ -2854,50 +3136,59 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0028;
+        16
     }
     // bytes: 2 cycles: [12]
-    fn ldh_a_a8_0xf0(&mut self) {
+    fn ldh_a_a8_0xf0(&mut self) -> u8 {
         println!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
         self.registers.a = self.read(a8 + 0xFF00);
+        12
     }
     // bytes: 1 cycles: [12]
-    fn pop_af_0xf1(&mut self) {
+    fn pop_af_0xf1(&mut self) -> u8 {
         println!("POP AF");
         self.registers.a = self.read(self.registers.sp + 1);
         self.registers.f = Flags::from(self.read(self.registers.sp));
         self.registers.sp += 2;
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_a_c_0xf2(&mut self) {
+    fn ld_a_c_0xf2(&mut self) -> u8 {
         println!("LD A, (C)");
         self.registers.a = self.read(0xFF00 + self.registers.c as u16);
+        8
     }
     // bytes: 1 cycles: [4]
-    fn di_0xf3(&mut self) {
+    fn di_0xf3(&mut self) -> u8 {
         println!("DI");
         self.ime = false;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn illegal_f4_0xf4(&mut self) {}
+    fn illegal_f4_0xf4(&mut self) -> u8 {
+        4
+    }
     // bytes: 1 cycles: [16]
-    fn push_af_0xf5(&mut self) {
+    fn push_af_0xf5(&mut self) -> u8 {
         println!("PUSH AF");
         self.write(self.registers.sp - 1, self.registers.a);
         self.write(self.registers.sp - 2, self.registers.f.into());
         self.registers.sp -= 2;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn or_d8_0xf6(&mut self) {
+    fn or_d8_0xf6(&mut self) -> u8 {
         println!("OR d8");
         self.registers.a |= self.fetch();
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_30h_0xf7(&mut self) {
+    fn rst_30h_0xf7(&mut self) -> u8 {
         println!("RST 30H");
         self.write(
             self.registers.sp - 1,
@@ -2909,9 +3200,10 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0030;
+        16
     }
     // bytes: 2 cycles: [12]
-    fn ld_hl_sp_r8_0xf8(&mut self) {
+    fn ld_hl_sp_r8_0xf8(&mut self) -> u8 {
         println!("LD HL, SP+r8");
         let r8: i8 = self.fetch() as i8;
         self.registers
@@ -2920,40 +3212,49 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = self.registers.sp.calc_half_carry(r8 as u16);
         self.registers.f.c = self.registers.sp.calc_carry(r8 as u16);
+        12
     }
     // bytes: 1 cycles: [8]
-    fn ld_sp_hl_0xf9(&mut self) {
+    fn ld_sp_hl_0xf9(&mut self) -> u8 {
         println!("LD SP, HL");
         self.registers.sp = self.registers.hl();
+        8
     }
     // bytes: 3 cycles: [16]
-    fn ld_a_a16_0xfa(&mut self) {
+    fn ld_a_a16_0xfa(&mut self) -> u8 {
         println!("LD A, (a16)");
         let l: u16 = self.fetch().into();
         let h: u16 = self.fetch().into();
         let a16 = h << 8 | l;
         self.registers.a = self.read(a16);
+        16
     }
     // bytes: 1 cycles: [4]
-    fn ei_0xfb(&mut self) {
+    fn ei_0xfb(&mut self) -> u8 {
         println!("EI");
         self.ime = true;
+        4
     }
     // bytes: 1 cycles: [4]
-    fn illegal_fc_0xfc(&mut self) {}
+    fn illegal_fc_0xfc(&mut self) -> u8 {
+        4
+    }
     // bytes: 1 cycles: [4]
-    fn illegal_fd_0xfd(&mut self) {}
+    fn illegal_fd_0xfd(&mut self) -> u8 {
+        4
+    }
     // bytes: 2 cycles: [8]
-    fn cp_d8_0xfe(&mut self) {
+    fn cp_d8_0xfe(&mut self) -> u8 {
         println!("CP d8");
         let rhs = self.fetch();
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
+        8
     }
     // bytes: 1 cycles: [16]
-    fn rst_38h_0xff(&mut self) {
+    fn rst_38h_0xff(&mut self) -> u8 {
         println!("RST 38H");
         self.write(
             self.registers.sp - 1,
@@ -2965,9 +3266,10 @@ impl CPU {
         );
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0038;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn rlc_b_0xcb00(&mut self) {
+    fn rlc_b_0xcb00(&mut self) -> u8 {
         println!("RLC B");
         let c = (self.registers.b >> 7) == 0x1;
         self.registers.b = self.registers.b << 1 | c as u8;
@@ -2975,9 +3277,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rlc_c_0xcb01(&mut self) {
+    fn rlc_c_0xcb01(&mut self) -> u8 {
         println!("RLC C");
         let c = (self.registers.c >> 7) == 0x1;
         self.registers.c = self.registers.c << 1 | c as u8;
@@ -2985,9 +3288,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rlc_d_0xcb02(&mut self) {
+    fn rlc_d_0xcb02(&mut self) -> u8 {
         println!("RLC D");
         let c = (self.registers.d >> 7) == 0x1;
         self.registers.d = self.registers.d << 1 | c as u8;
@@ -2995,9 +3299,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rlc_e_0xcb03(&mut self) {
+    fn rlc_e_0xcb03(&mut self) -> u8 {
         println!("RLC E");
         let c = (self.registers.e >> 7) == 0x1;
         self.registers.e = self.registers.e << 1 | c as u8;
@@ -3005,9 +3310,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rlc_h_0xcb04(&mut self) {
+    fn rlc_h_0xcb04(&mut self) -> u8 {
         println!("RLC H");
         let c = (self.registers.h >> 7) == 0x1;
         self.registers.h = self.registers.h << 1 | c as u8;
@@ -3015,9 +3321,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rlc_l_0xcb05(&mut self) {
+    fn rlc_l_0xcb05(&mut self) -> u8 {
         println!("RLC L");
         let c = (self.registers.l >> 7) == 0x1;
         self.registers.l = self.registers.l << 1 | c as u8;
@@ -3025,9 +3332,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn rlc_hl_0xcb06(&mut self) {
+    fn rlc_hl_0xcb06(&mut self) -> u8 {
         println!("RLC (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 0x1;
         self.write(
@@ -3038,9 +3346,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn rlc_a_0xcb07(&mut self) {
+    fn rlc_a_0xcb07(&mut self) -> u8 {
         println!("RLC A");
         let c = (self.registers.a >> 7) == 0x1;
         self.registers.a = self.registers.a << 1 | c as u8;
@@ -3048,9 +3357,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rrc_b_0xcb08(&mut self) {
+    fn rrc_b_0xcb08(&mut self) -> u8 {
         println!("RRC B");
         let c = (self.registers.b >> 7) == 1;
         self.registers.b = (c as u8) << 7 | self.registers.b >> 1;
@@ -3058,9 +3368,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rrc_c_0xcb09(&mut self) {
+    fn rrc_c_0xcb09(&mut self) -> u8 {
         println!("RRC C");
         let c = (self.registers.c >> 7) == 1;
         self.registers.c = (c as u8) << 7 | self.registers.c >> 1;
@@ -3068,9 +3379,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rrc_d_0xcb0a(&mut self) {
+    fn rrc_d_0xcb0a(&mut self) -> u8 {
         println!("RRC D");
         let c = (self.registers.d >> 7) == 1;
         self.registers.d = (c as u8) << 7 | self.registers.d >> 1;
@@ -3078,9 +3390,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rrc_e_0xcb0b(&mut self) {
+    fn rrc_e_0xcb0b(&mut self) -> u8 {
         println!("RRC E");
         let c = (self.registers.e >> 7) == 1;
         self.registers.e = (c as u8) << 7 | self.registers.e >> 1;
@@ -3088,9 +3401,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rrc_h_0xcb0c(&mut self) {
+    fn rrc_h_0xcb0c(&mut self) -> u8 {
         println!("RRC H");
         let c = (self.registers.h >> 7) == 1;
         self.registers.h = (c as u8) << 7 | self.registers.h >> 1;
@@ -3098,9 +3412,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rrc_l_0xcb0d(&mut self) {
+    fn rrc_l_0xcb0d(&mut self) -> u8 {
         println!("RRC L");
         let c = (self.registers.l >> 7) == 1;
         self.registers.l = (c as u8) << 7 | self.registers.l >> 1;
@@ -3108,9 +3423,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn rrc_hl_0xcb0e(&mut self) {
+    fn rrc_hl_0xcb0e(&mut self) -> u8 {
         println!("RRC (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 1;
         self.write(
@@ -3121,9 +3437,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn rrc_a_0xcb0f(&mut self) {
+    fn rrc_a_0xcb0f(&mut self) -> u8 {
         println!("RRC A");
         let c = (self.registers.a >> 7) == 1;
         self.registers.a = (c as u8) << 7 | self.registers.a >> 1;
@@ -3131,9 +3448,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rl_b_0xcb10(&mut self) {
+    fn rl_b_0xcb10(&mut self) -> u8 {
         println!("RL B");
         let c = (self.registers.b >> 7) == 0x1;
         self.registers.b = self.registers.b << 1 | self.registers.f.c as u8;
@@ -3141,9 +3459,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rl_c_0xcb11(&mut self) {
+    fn rl_c_0xcb11(&mut self) -> u8 {
         println!("RL C");
         let c = (self.registers.c >> 7) == 0x1;
         self.registers.c = self.registers.c << 1 | self.registers.f.c as u8;
@@ -3151,9 +3470,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rl_d_0xcb12(&mut self) {
+    fn rl_d_0xcb12(&mut self) -> u8 {
         println!("RL D");
         let c = (self.registers.d >> 7) == 0x1;
         self.registers.d = self.registers.d << 1 | self.registers.f.c as u8;
@@ -3161,9 +3481,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rl_e_0xcb13(&mut self) {
+    fn rl_e_0xcb13(&mut self) -> u8 {
         println!("RL E");
         let c = (self.registers.e >> 7) == 0x1;
         self.registers.e = self.registers.e << 1 | self.registers.f.c as u8;
@@ -3171,9 +3492,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rl_h_0xcb14(&mut self) {
+    fn rl_h_0xcb14(&mut self) -> u8 {
         println!("RL H");
         let c = (self.registers.h >> 7) == 0x1;
         self.registers.h = self.registers.h << 1 | self.registers.f.c as u8;
@@ -3181,9 +3503,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rl_l_0xcb15(&mut self) {
+    fn rl_l_0xcb15(&mut self) -> u8 {
         println!("RL L");
         let c = (self.registers.l >> 7) == 0x1;
         self.registers.l = self.registers.l << 1 | self.registers.f.c as u8;
@@ -3191,9 +3514,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn rl_hl_0xcb16(&mut self) {
+    fn rl_hl_0xcb16(&mut self) -> u8 {
         println!("RL (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 0x1;
         self.write(
@@ -3204,9 +3528,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn rl_a_0xcb17(&mut self) {
+    fn rl_a_0xcb17(&mut self) -> u8 {
         println!("RL A");
         let c = (self.registers.a >> 7) == 0x1;
         self.registers.a = self.registers.a << 1 | (self.registers.f.c as u8);
@@ -3214,9 +3539,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rr_b_0xcb18(&mut self) {
+    fn rr_b_0xcb18(&mut self) -> u8 {
         println!("RR B");
         let c = (self.registers.b >> 7) == 1;
         self.registers.b = (self.registers.f.c as u8) << 7 | self.registers.b >> 1;
@@ -3224,9 +3550,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rr_c_0xcb19(&mut self) {
+    fn rr_c_0xcb19(&mut self) -> u8 {
         println!("RR C");
         let c = (self.registers.c >> 7) == 1;
         self.registers.c = (self.registers.f.c as u8) << 7 | self.registers.c >> 1;
@@ -3234,9 +3561,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rr_d_0xcb1a(&mut self) {
+    fn rr_d_0xcb1a(&mut self) -> u8 {
         println!("RR D");
         let c = (self.registers.d >> 7) == 1;
         self.registers.d = (self.registers.f.c as u8) << 7 | self.registers.d >> 1;
@@ -3244,9 +3572,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rr_e_0xcb1b(&mut self) {
+    fn rr_e_0xcb1b(&mut self) -> u8 {
         println!("RR E");
         let c = (self.registers.e >> 7) == 1;
         self.registers.e = (self.registers.f.c as u8) << 7 | self.registers.e >> 1;
@@ -3254,9 +3583,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rr_h_0xcb1c(&mut self) {
+    fn rr_h_0xcb1c(&mut self) -> u8 {
         println!("RR H");
         let c = (self.registers.h >> 7) == 1;
         self.registers.h = (self.registers.f.c as u8) << 7 | self.registers.h >> 1;
@@ -3264,9 +3594,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn rr_l_0xcb1d(&mut self) {
+    fn rr_l_0xcb1d(&mut self) -> u8 {
         println!("RR L");
         let c = (self.registers.l >> 7) == 1;
         self.registers.l = (self.registers.f.c as u8) << 7 | self.registers.l >> 1;
@@ -3274,9 +3605,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn rr_hl_0xcb1e(&mut self) {
+    fn rr_hl_0xcb1e(&mut self) -> u8 {
         println!("RR (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 1;
         self.write(
@@ -3287,9 +3619,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn rr_a_0xcb1f(&mut self) {
+    fn rr_a_0xcb1f(&mut self) -> u8 {
         println!("RR A");
         let c = (self.registers.a >> 7) == 1;
         self.registers.a = (self.registers.f.c as u8) << 7 | self.registers.a >> 1;
@@ -3297,81 +3630,90 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sla_b_0xcb20(&mut self) {
+    fn sla_b_0xcb20(&mut self) -> u8 {
         println!("SLA B");
         self.registers.f.c = (self.registers.b >> 7) == 0x1;
         self.registers.b = self.registers.b << 1;
         self.registers.f.z = self.registers.b == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sla_c_0xcb21(&mut self) {
+    fn sla_c_0xcb21(&mut self) -> u8 {
         println!("SLA C");
         self.registers.f.c = (self.registers.c >> 7) == 0x1;
         self.registers.c = self.registers.c << 1;
         self.registers.f.z = self.registers.c == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sla_d_0xcb22(&mut self) {
+    fn sla_d_0xcb22(&mut self) -> u8 {
         println!("SLA D");
         self.registers.f.c = (self.registers.d >> 7) == 0x1;
         self.registers.d = self.registers.d << 1;
         self.registers.f.z = self.registers.d == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sla_e_0xcb23(&mut self) {
+    fn sla_e_0xcb23(&mut self) -> u8 {
         println!("SLA E");
         self.registers.f.c = (self.registers.e >> 7) == 0x1;
         self.registers.e = self.registers.e << 1;
         self.registers.f.z = self.registers.e == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sla_h_0xcb24(&mut self) {
+    fn sla_h_0xcb24(&mut self) -> u8 {
         println!("SLA H");
         self.registers.f.c = (self.registers.h >> 7) == 0x1;
         self.registers.h = self.registers.h << 1;
         self.registers.f.z = self.registers.h == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sla_l_0xcb25(&mut self) {
+    fn sla_l_0xcb25(&mut self) -> u8 {
         println!("SLA L");
         self.registers.f.c = (self.registers.l >> 7) == 0x1;
         self.registers.l = self.registers.l << 1;
         self.registers.f.z = self.registers.l == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn sla_hl_0xcb26(&mut self) {
+    fn sla_hl_0xcb26(&mut self) -> u8 {
         println!("SLA (HL)");
         self.registers.f.c = (self.read(self.registers.hl()) >> 7) == 0x1;
         self.write(self.registers.hl(), self.read(self.registers.hl()) << 1);
         self.registers.f.z = self.registers.hl() == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn sla_a_0xcb27(&mut self) {
+    fn sla_a_0xcb27(&mut self) -> u8 {
         println!("SLA A");
         self.registers.f.c = (self.registers.a >> 7) == 0x1;
         self.registers.a = self.registers.a << 1;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sra_b_0xcb28(&mut self) {
+    fn sra_b_0xcb28(&mut self) -> u8 {
         println!("SRA B");
         let c = self.registers.b & 0x1 == 0x1;
         let smb = self.registers.b & 0x80;
@@ -3380,9 +3722,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sra_c_0xcb29(&mut self) {
+    fn sra_c_0xcb29(&mut self) -> u8 {
         println!("SRA C");
         let c = self.registers.c & 0x1 == 0x1;
         let smb = self.registers.c & 0x80;
@@ -3391,9 +3734,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sra_d_0xcb2a(&mut self) {
+    fn sra_d_0xcb2a(&mut self) -> u8 {
         println!("SRA D");
         let c = self.registers.d & 0x1 == 0x1;
         let smd = self.registers.d & 0x80;
@@ -3402,9 +3746,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sra_e_0xcb2b(&mut self) {
+    fn sra_e_0xcb2b(&mut self) -> u8 {
         println!("SRA E");
         let c = self.registers.e & 0x1 == 0x1;
         let smd = self.registers.e & 0x80;
@@ -3413,9 +3758,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sra_h_0xcb2c(&mut self) {
+    fn sra_h_0xcb2c(&mut self) -> u8 {
         println!("SRA H");
         let c = self.registers.h & 0x1 == 0x1;
         let smb = self.registers.h & 0x80;
@@ -3424,9 +3770,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn sra_l_0xcb2d(&mut self) {
+    fn sra_l_0xcb2d(&mut self) -> u8 {
         println!("SRA L");
         let c = self.registers.b & 0x1 == 0x1;
         let smb = self.registers.b & 0x80;
@@ -3435,9 +3782,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn sra_hl_0xcb2e(&mut self) {
+    fn sra_hl_0xcb2e(&mut self) -> u8 {
         println!("SRA (HL)");
         let c = self.read(self.registers.hl()) & 0x1 == 0x1;
         let smb = self.read(self.registers.hl()) & 0x80;
@@ -3449,9 +3797,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn sra_a_0xcb2f(&mut self) {
+    fn sra_a_0xcb2f(&mut self) -> u8 {
         println!("SRA A");
         let c = self.registers.a & 0x1 == 0x1;
         let smb = self.registers.a & 0x80;
@@ -3460,9 +3809,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn swap_b_0xcb30(&mut self) {
+    fn swap_b_0xcb30(&mut self) -> u8 {
         println!("SWAP B");
         let upper = (self.registers.b & 0xF0) >> 4;
         let lower = self.registers.b & 0x0F;
@@ -3471,9 +3821,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn swap_c_0xcb31(&mut self) {
+    fn swap_c_0xcb31(&mut self) -> u8 {
         println!("SWAP C");
         let upper = (self.registers.c & 0xF0) >> 4;
         let lower = self.registers.c & 0x0F;
@@ -3482,9 +3833,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn swap_d_0xcb32(&mut self) {
+    fn swap_d_0xcb32(&mut self) -> u8 {
         println!("SWAP D");
         let upper = (self.registers.d & 0xF0) >> 4;
         let lower = self.registers.d & 0x0F;
@@ -3493,9 +3845,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn swap_e_0xcb33(&mut self) {
+    fn swap_e_0xcb33(&mut self) -> u8 {
         println!("SWAP E");
         let upper = (self.registers.e & 0xF0) >> 4;
         let lower = self.registers.e & 0x0F;
@@ -3504,9 +3857,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn swap_h_0xcb34(&mut self) {
+    fn swap_h_0xcb34(&mut self) -> u8 {
         println!("SWAP H");
         let upper = (self.registers.h & 0xF0) >> 4;
         let lower = self.registers.h & 0x0F;
@@ -3515,9 +3869,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn swap_l_0xcb35(&mut self) {
+    fn swap_l_0xcb35(&mut self) -> u8 {
         println!("SWAP L");
         let upper = (self.registers.l & 0xF0) >> 4;
         let lower = self.registers.l & 0x0F;
@@ -3526,9 +3881,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn swap_hl_0xcb36(&mut self) {
+    fn swap_hl_0xcb36(&mut self) -> u8 {
         println!("SWAP (HL)");
         let upper = (self.registers.hl() & 0xF0) >> 4;
         let lower = self.registers.hl() & 0x0F;
@@ -3537,9 +3893,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn swap_a_0xcb37(&mut self) {
+    fn swap_a_0xcb37(&mut self) -> u8 {
         println!("SWAP A");
         let upper = (self.registers.a & 0xF0) >> 4;
         let lower = self.registers.a & 0x0F;
@@ -3548,9 +3905,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn srl_b_0xcb38(&mut self) {
+    fn srl_b_0xcb38(&mut self) -> u8 {
         println!("SRL B");
         let c = (self.registers.b >> 7) == 0x1;
         let msb = self.registers.b & 0x80;
@@ -3559,9 +3917,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn srl_c_0xcb39(&mut self) {
+    fn srl_c_0xcb39(&mut self) -> u8 {
         println!("SRL C");
         let c = (self.registers.c >> 7) == 0x1;
         let msb = self.registers.c & 0x80;
@@ -3570,9 +3929,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn srl_d_0xcb3a(&mut self) {
+    fn srl_d_0xcb3a(&mut self) -> u8 {
         println!("SRL D");
         let c = (self.registers.d >> 7) == 0x1;
         let msb = self.registers.d & 0x80;
@@ -3581,9 +3941,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn srl_e_0xcb3b(&mut self) {
+    fn srl_e_0xcb3b(&mut self) -> u8 {
         println!("SRL E");
         let c = (self.registers.e >> 7) == 0x1;
         let msb = self.registers.e & 0x80;
@@ -3592,9 +3953,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn srl_h_0xcb3c(&mut self) {
+    fn srl_h_0xcb3c(&mut self) -> u8 {
         println!("SRL H");
         let c = (self.registers.h >> 7) == 0x1;
         let msb = self.registers.h & 0x80;
@@ -3603,9 +3965,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn srl_l_0xcb3d(&mut self) {
+    fn srl_l_0xcb3d(&mut self) -> u8 {
         println!("SRL L");
         let c = (self.registers.l >> 7) == 0x1;
         let msb = self.registers.l & 0x80;
@@ -3614,9 +3977,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [16]
-    fn srl_hl_0xcb3e(&mut self) {
+    fn srl_hl_0xcb3e(&mut self) -> u8 {
         println!("SRL (HL)");
         let c = (self.read(self.registers.hl()) >> 7) == 0x1;
         let msb = self.read(self.registers.hl()) & 0x80;
@@ -3628,9 +3992,10 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        16
     }
     // bytes: 2 cycles: [8]
-    fn srl_a_0xcb3f(&mut self) {
+    fn srl_a_0xcb3f(&mut self) -> u8 {
         println!("SRL A");
         let c = (self.registers.a >> 7) == 0x1;
         let msb = self.registers.a & 0x80;
@@ -3639,1141 +4004,1334 @@ impl CPU {
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_b_0xcb40(&mut self) {
+    fn bit_0_b_0xcb40(&mut self) -> u8 {
         println!("BIT 0, B");
         self.registers.f.z = (self.registers.b & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_c_0xcb41(&mut self) {
+    fn bit_0_c_0xcb41(&mut self) -> u8 {
         println!("BIT 0, C");
         self.registers.f.z = (self.registers.c & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_d_0xcb42(&mut self) {
+    fn bit_0_d_0xcb42(&mut self) -> u8 {
         println!("BIT 0, D");
         self.registers.f.z = (self.registers.d & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_e_0xcb43(&mut self) {
+    fn bit_0_e_0xcb43(&mut self) -> u8 {
         println!("BIT 0, E");
         self.registers.f.z = (self.registers.e & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_h_0xcb44(&mut self) {
+    fn bit_0_h_0xcb44(&mut self) -> u8 {
         println!("BIT 0, H");
         self.registers.f.z = (self.registers.h & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_l_0xcb45(&mut self) {
+    fn bit_0_l_0xcb45(&mut self) -> u8 {
         println!("BIT 0, L");
         self.registers.f.z = (self.registers.l & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_0_hl_0xcb46(&mut self) {
+    fn bit_0_hl_0xcb46(&mut self) -> u8 {
         println!("BIT 0, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_0_a_0xcb47(&mut self) {
+    fn bit_0_a_0xcb47(&mut self) -> u8 {
         println!("BIT 0, A");
         self.registers.f.z = (self.registers.a & 0b1 << 0) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_b_0xcb48(&mut self) {
+    fn bit_1_b_0xcb48(&mut self) -> u8 {
         println!("BIT 1, B");
         self.registers.f.z = (self.registers.b & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_c_0xcb49(&mut self) {
+    fn bit_1_c_0xcb49(&mut self) -> u8 {
         println!("BIT 1, C");
         self.registers.f.z = (self.registers.c & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_d_0xcb4a(&mut self) {
+    fn bit_1_d_0xcb4a(&mut self) -> u8 {
         println!("BIT 1, D");
         self.registers.f.z = (self.registers.d & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_e_0xcb4b(&mut self) {
+    fn bit_1_e_0xcb4b(&mut self) -> u8 {
         println!("BIT 1, E");
         self.registers.f.z = (self.registers.e & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_h_0xcb4c(&mut self) {
+    fn bit_1_h_0xcb4c(&mut self) -> u8 {
         println!("BIT 1, H");
         self.registers.f.z = (self.registers.h & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_l_0xcb4d(&mut self) {
+    fn bit_1_l_0xcb4d(&mut self) -> u8 {
         println!("BIT 1, L");
         self.registers.f.z = (self.registers.l & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_1_hl_0xcb4e(&mut self) {
+    fn bit_1_hl_0xcb4e(&mut self) -> u8 {
         println!("BIT 1, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_1_a_0xcb4f(&mut self) {
+    fn bit_1_a_0xcb4f(&mut self) -> u8 {
         println!("BIT 1, A");
         self.registers.f.z = (self.registers.a & 0b1 << 1) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_b_0xcb50(&mut self) {
+    fn bit_2_b_0xcb50(&mut self) -> u8 {
         println!("BIT 2, B");
         self.registers.f.z = (self.registers.b & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_c_0xcb51(&mut self) {
+    fn bit_2_c_0xcb51(&mut self) -> u8 {
         println!("BIT 2, C");
         self.registers.f.z = (self.registers.c & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_d_0xcb52(&mut self) {
+    fn bit_2_d_0xcb52(&mut self) -> u8 {
         println!("BIT 2, D");
         self.registers.f.z = (self.registers.d & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_e_0xcb53(&mut self) {
+    fn bit_2_e_0xcb53(&mut self) -> u8 {
         println!("BIT 2, E");
         self.registers.f.z = (self.registers.e & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_h_0xcb54(&mut self) {
+    fn bit_2_h_0xcb54(&mut self) -> u8 {
         println!("BIT 2, H");
         self.registers.f.z = (self.registers.h & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_l_0xcb55(&mut self) {
+    fn bit_2_l_0xcb55(&mut self) -> u8 {
         println!("BIT 2, L");
         self.registers.f.z = (self.registers.l & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_2_hl_0xcb56(&mut self) {
+    fn bit_2_hl_0xcb56(&mut self) -> u8 {
         println!("BIT 2, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_2_a_0xcb57(&mut self) {
+    fn bit_2_a_0xcb57(&mut self) -> u8 {
         println!("BIT 2, A");
         self.registers.f.z = (self.registers.a & 0b1 << 2) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_b_0xcb58(&mut self) {
+    fn bit_3_b_0xcb58(&mut self) -> u8 {
         println!("BIT 3, B");
         self.registers.f.z = (self.registers.b & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_c_0xcb59(&mut self) {
+    fn bit_3_c_0xcb59(&mut self) -> u8 {
         println!("BIT 3, C");
         self.registers.f.z = (self.registers.c & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_d_0xcb5a(&mut self) {
+    fn bit_3_d_0xcb5a(&mut self) -> u8 {
         println!("BIT 3, D");
         self.registers.f.z = (self.registers.d & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_e_0xcb5b(&mut self) {
+    fn bit_3_e_0xcb5b(&mut self) -> u8 {
         println!("BIT 3, E");
         self.registers.f.z = (self.registers.e & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_h_0xcb5c(&mut self) {
+    fn bit_3_h_0xcb5c(&mut self) -> u8 {
         println!("BIT 3, H");
         self.registers.f.z = (self.registers.h & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_l_0xcb5d(&mut self) {
+    fn bit_3_l_0xcb5d(&mut self) -> u8 {
         println!("BIT 3, L");
         self.registers.f.z = (self.registers.l & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_3_hl_0xcb5e(&mut self) {
+    fn bit_3_hl_0xcb5e(&mut self) -> u8 {
         println!("BIT 3, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_3_a_0xcb5f(&mut self) {
+    fn bit_3_a_0xcb5f(&mut self) -> u8 {
         println!("BIT 3, A");
         self.registers.f.z = (self.registers.a & 0b1 << 3) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_b_0xcb60(&mut self) {
+    fn bit_4_b_0xcb60(&mut self) -> u8 {
         println!("BIT 4, B");
         self.registers.f.z = (self.registers.b & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_c_0xcb61(&mut self) {
+    fn bit_4_c_0xcb61(&mut self) -> u8 {
         println!("BIT 4, C");
         self.registers.f.z = (self.registers.c & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_d_0xcb62(&mut self) {
+    fn bit_4_d_0xcb62(&mut self) -> u8 {
         println!("BIT 4, D");
         self.registers.f.z = (self.registers.d & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_e_0xcb63(&mut self) {
+    fn bit_4_e_0xcb63(&mut self) -> u8 {
         println!("BIT 4, E");
         self.registers.f.z = (self.registers.e & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_h_0xcb64(&mut self) {
+    fn bit_4_h_0xcb64(&mut self) -> u8 {
         println!("BIT 4, H");
         self.registers.f.z = (self.registers.h & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_l_0xcb65(&mut self) {
+    fn bit_4_l_0xcb65(&mut self) -> u8 {
         println!("BIT 4, L");
         self.registers.f.z = (self.registers.l & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_4_hl_0xcb66(&mut self) {
+    fn bit_4_hl_0xcb66(&mut self) -> u8 {
         println!("BIT 4, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_4_a_0xcb67(&mut self) {
+    fn bit_4_a_0xcb67(&mut self) -> u8 {
         println!("BIT 4, A");
         self.registers.f.z = (self.registers.a & 0b1 << 4) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_b_0xcb68(&mut self) {
+    fn bit_5_b_0xcb68(&mut self) -> u8 {
         println!("BIT 5, B");
         self.registers.f.z = (self.registers.b & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_c_0xcb69(&mut self) {
+    fn bit_5_c_0xcb69(&mut self) -> u8 {
         println!("BIT 5, C");
         self.registers.f.z = (self.registers.c & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_d_0xcb6a(&mut self) {
+    fn bit_5_d_0xcb6a(&mut self) -> u8 {
         println!("BIT 5, D");
         self.registers.f.z = (self.registers.d & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_e_0xcb6b(&mut self) {
+    fn bit_5_e_0xcb6b(&mut self) -> u8 {
         println!("BIT 5, E");
         self.registers.f.z = (self.registers.e & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_h_0xcb6c(&mut self) {
+    fn bit_5_h_0xcb6c(&mut self) -> u8 {
         println!("BIT 5, H");
         self.registers.f.z = (self.registers.h & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_l_0xcb6d(&mut self) {
+    fn bit_5_l_0xcb6d(&mut self) -> u8 {
         println!("BIT 5, L");
         self.registers.f.z = (self.registers.l & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_5_hl_0xcb6e(&mut self) {
+    fn bit_5_hl_0xcb6e(&mut self) -> u8 {
         println!("BIT 5, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_5_a_0xcb6f(&mut self) {
+    fn bit_5_a_0xcb6f(&mut self) -> u8 {
         println!("BIT 5, A");
         self.registers.f.z = (self.registers.a & 0b1 << 5) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_b_0xcb70(&mut self) {
+    fn bit_6_b_0xcb70(&mut self) -> u8 {
         println!("BIT 6, B");
         self.registers.f.z = (self.registers.b & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_c_0xcb71(&mut self) {
+    fn bit_6_c_0xcb71(&mut self) -> u8 {
         println!("BIT 6, C");
         self.registers.f.z = (self.registers.c & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_d_0xcb72(&mut self) {
+    fn bit_6_d_0xcb72(&mut self) -> u8 {
         println!("BIT 6, D");
         self.registers.f.z = (self.registers.d & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_e_0xcb73(&mut self) {
+    fn bit_6_e_0xcb73(&mut self) -> u8 {
         println!("BIT 6, E");
         self.registers.f.z = (self.registers.e & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_h_0xcb74(&mut self) {
+    fn bit_6_h_0xcb74(&mut self) -> u8 {
         println!("BIT 6, H");
         self.registers.f.z = (self.registers.h & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_l_0xcb75(&mut self) {
+    fn bit_6_l_0xcb75(&mut self) -> u8 {
         println!("BIT 6, L");
         self.registers.f.z = (self.registers.l & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_6_hl_0xcb76(&mut self) {
+    fn bit_6_hl_0xcb76(&mut self) -> u8 {
         println!("BIT 6, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_6_a_0xcb77(&mut self) {
+    fn bit_6_a_0xcb77(&mut self) -> u8 {
         println!("BIT 6, A");
         self.registers.f.z = (self.registers.a & 0b1 << 6) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_b_0xcb78(&mut self) {
+    fn bit_7_b_0xcb78(&mut self) -> u8 {
         println!("BIT 7, B");
         self.registers.f.z = (self.registers.b & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_c_0xcb79(&mut self) {
+    fn bit_7_c_0xcb79(&mut self) -> u8 {
         println!("BIT 7, C");
         self.registers.f.z = (self.registers.c & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_d_0xcb7a(&mut self) {
+    fn bit_7_d_0xcb7a(&mut self) -> u8 {
         println!("BIT 7, D");
         self.registers.f.z = (self.registers.d & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_e_0xcb7b(&mut self) {
+    fn bit_7_e_0xcb7b(&mut self) -> u8 {
         println!("BIT 7, E");
         self.registers.f.z = (self.registers.e & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_h_0xcb7c(&mut self) {
+    fn bit_7_h_0xcb7c(&mut self) -> u8 {
         println!("BIT 7, H");
         self.registers.f.z = (self.registers.h & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_l_0xcb7d(&mut self) {
+    fn bit_7_l_0xcb7d(&mut self) -> u8 {
         println!("BIT 7, L");
         self.registers.f.z = (self.registers.l & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [12]
-    fn bit_7_hl_0xcb7e(&mut self) {
+    fn bit_7_hl_0xcb7e(&mut self) -> u8 {
         println!("BIT 7, (HL)");
         self.registers.f.z = (self.read(self.registers.hl()) & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        12
     }
     // bytes: 2 cycles: [8]
-    fn bit_7_a_0xcb7f(&mut self) {
+    fn bit_7_a_0xcb7f(&mut self) -> u8 {
         println!("BIT 7, A");
         self.registers.f.z = (self.registers.a & 0b1 << 7) == 0;
         self.registers.f.n = false;
         self.registers.f.h = true;
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_0_b_0xcb80(&mut self) {
+    fn res_0_b_0xcb80(&mut self) -> u8 {
         println!("RES 0, B");
         self.registers.b = self.registers.b & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_0_c_0xcb81(&mut self) {
+    fn res_0_c_0xcb81(&mut self) -> u8 {
         println!("RES 0, C");
         self.registers.c = self.registers.c & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_0_d_0xcb82(&mut self) {
+    fn res_0_d_0xcb82(&mut self) -> u8 {
         println!("RES 0, D");
         self.registers.d = self.registers.d & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_0_e_0xcb83(&mut self) {
+    fn res_0_e_0xcb83(&mut self) -> u8 {
         println!("RES 0, E");
         self.registers.e = self.registers.e & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_0_h_0xcb84(&mut self) {
+    fn res_0_h_0xcb84(&mut self) -> u8 {
         println!("RES 0, H");
         self.registers.h = self.registers.h & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_0_l_0xcb85(&mut self) {
+    fn res_0_l_0xcb85(&mut self) -> u8 {
         println!("RES 0, L");
         self.registers.l = self.registers.l & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_0_hl_0xcb86(&mut self) {
+    fn res_0_hl_0xcb86(&mut self) -> u8 {
         println!("RES 0, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 0),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_0_a_0xcb87(&mut self) {
+    fn res_0_a_0xcb87(&mut self) -> u8 {
         println!("RES 0, A");
         self.registers.a = self.registers.a & !(0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_1_b_0xcb88(&mut self) {
+    fn res_1_b_0xcb88(&mut self) -> u8 {
         println!("RES 1, B");
         self.registers.b = self.registers.b & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_1_c_0xcb89(&mut self) {
+    fn res_1_c_0xcb89(&mut self) -> u8 {
         println!("RES 1, C");
         self.registers.c = self.registers.c & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_1_d_0xcb8a(&mut self) {
+    fn res_1_d_0xcb8a(&mut self) -> u8 {
         println!("RES 1, D");
         self.registers.d = self.registers.d & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_1_e_0xcb8b(&mut self) {
+    fn res_1_e_0xcb8b(&mut self) -> u8 {
         println!("RES 1, E");
         self.registers.e = self.registers.e & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_1_h_0xcb8c(&mut self) {
+    fn res_1_h_0xcb8c(&mut self) -> u8 {
         println!("RES 1, H");
         self.registers.h = self.registers.h & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_1_l_0xcb8d(&mut self) {
+    fn res_1_l_0xcb8d(&mut self) -> u8 {
         println!("RES 1, L");
         self.registers.l = self.registers.l & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_1_hl_0xcb8e(&mut self) {
+    fn res_1_hl_0xcb8e(&mut self) -> u8 {
         println!("RES 1, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 1),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_1_a_0xcb8f(&mut self) {
+    fn res_1_a_0xcb8f(&mut self) -> u8 {
         println!("RES 1, A");
         self.registers.a = self.registers.a & !(0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_2_b_0xcb90(&mut self) {
+    fn res_2_b_0xcb90(&mut self) -> u8 {
         println!("RES 2, B");
         self.registers.b = self.registers.b & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_2_c_0xcb91(&mut self) {
+    fn res_2_c_0xcb91(&mut self) -> u8 {
         println!("RES 2, C");
         self.registers.c = self.registers.c & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_2_d_0xcb92(&mut self) {
+    fn res_2_d_0xcb92(&mut self) -> u8 {
         println!("RES 2, D");
         self.registers.d = self.registers.d & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_2_e_0xcb93(&mut self) {
+    fn res_2_e_0xcb93(&mut self) -> u8 {
         println!("RES 2, E");
         self.registers.e = self.registers.e & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_2_h_0xcb94(&mut self) {
+    fn res_2_h_0xcb94(&mut self) -> u8 {
         println!("RES 2, H");
         self.registers.h = self.registers.h & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_2_l_0xcb95(&mut self) {
+    fn res_2_l_0xcb95(&mut self) -> u8 {
         println!("RES 2, L");
         self.registers.l = self.registers.l & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_2_hl_0xcb96(&mut self) {
+    fn res_2_hl_0xcb96(&mut self) -> u8 {
         println!("RES 2, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 2),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_2_a_0xcb97(&mut self) {
+    fn res_2_a_0xcb97(&mut self) -> u8 {
         println!("RES 2, A");
         self.registers.a = self.registers.a & !(0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_3_b_0xcb98(&mut self) {
+    fn res_3_b_0xcb98(&mut self) -> u8 {
         println!("RES 3, B");
         self.registers.b = self.registers.b & !(0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_3_c_0xcb99(&mut self) {
+    fn res_3_c_0xcb99(&mut self) -> u8 {
         println!("RES 3, C");
         self.registers.c = self.registers.c & !(0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_3_d_0xcb9a(&mut self) {
+    fn res_3_d_0xcb9a(&mut self) -> u8 {
         println!("RES 3, D");
         self.registers.d = self.registers.d & !(0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_3_e_0xcb9b(&mut self) {
+    fn res_3_e_0xcb9b(&mut self) -> u8 {
         println!("RES 3, E");
         self.registers.e = self.registers.e & !(0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_3_h_0xcb9c(&mut self) {
+    fn res_3_h_0xcb9c(&mut self) -> u8 {
         println!("RES 3, H");
         self.registers.h = self.registers.h & !(0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_3_l_0xcb9d(&mut self) {
+    fn res_3_l_0xcb9d(&mut self) -> u8 {
         println!("RES 3, L");
         self.registers.l = self.registers.l & !(0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_3_hl_0xcb9e(&mut self) {
+    fn res_3_hl_0xcb9e(&mut self) -> u8 {
         println!("RES 3, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 3),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_3_a_0xcb9f(&mut self) {
+    fn res_3_a_0xcb9f(&mut self) -> u8 {
         println!("RES 3, A");
         self.registers.a = self.registers.a & !(0b1 << 3);
+        0
     }
     // bytes: 2 cycles: [8]
-    fn res_4_b_0xcba0(&mut self) {
+    fn res_4_b_0xcba0(&mut self) -> u8 {
         println!("RES 4, B");
         self.registers.b = self.registers.b & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_4_c_0xcba1(&mut self) {
+    fn res_4_c_0xcba1(&mut self) -> u8 {
         println!("RES 4, C");
         self.registers.c = self.registers.c & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_4_d_0xcba2(&mut self) {
+    fn res_4_d_0xcba2(&mut self) -> u8 {
         println!("RES 4, D");
         self.registers.d = self.registers.d & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_4_e_0xcba3(&mut self) {
+    fn res_4_e_0xcba3(&mut self) -> u8 {
         println!("RES 4, E");
         self.registers.e = self.registers.e & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_4_h_0xcba4(&mut self) {
+    fn res_4_h_0xcba4(&mut self) -> u8 {
         println!("RES 4, H");
         self.registers.h = self.registers.h & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_4_l_0xcba5(&mut self) {
+    fn res_4_l_0xcba5(&mut self) -> u8 {
         println!("RES 4, L");
         self.registers.l = self.registers.l & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_4_hl_0xcba6(&mut self) {
+    fn res_4_hl_0xcba6(&mut self) -> u8 {
         println!("RES 4, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 4),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_4_a_0xcba7(&mut self) {
+    fn res_4_a_0xcba7(&mut self) -> u8 {
         println!("RES 4, A");
         self.registers.a = self.registers.a & !(0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_5_b_0xcba8(&mut self) {
+    fn res_5_b_0xcba8(&mut self) -> u8 {
         println!("RES 5, B");
         self.registers.b = self.registers.b & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_5_c_0xcba9(&mut self) {
+    fn res_5_c_0xcba9(&mut self) -> u8 {
         println!("RES 5, C");
         self.registers.c = self.registers.c & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_5_d_0xcbaa(&mut self) {
+    fn res_5_d_0xcbaa(&mut self) -> u8 {
         println!("RES 5, D");
         self.registers.d = self.registers.d & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_5_e_0xcbab(&mut self) {
+    fn res_5_e_0xcbab(&mut self) -> u8 {
         println!("RES 5, E");
         self.registers.e = self.registers.e & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_5_h_0xcbac(&mut self) {
+    fn res_5_h_0xcbac(&mut self) -> u8 {
         println!("RES 5, H");
         self.registers.h = self.registers.h & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_5_l_0xcbad(&mut self) {
+    fn res_5_l_0xcbad(&mut self) -> u8 {
         println!("RES 5, L");
         self.registers.l = self.registers.l & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_5_hl_0xcbae(&mut self) {
+    fn res_5_hl_0xcbae(&mut self) -> u8 {
         println!("RES 5, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 5),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_5_a_0xcbaf(&mut self) {
+    fn res_5_a_0xcbaf(&mut self) -> u8 {
         println!("RES 5, A");
         self.registers.a = self.registers.a & !(0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_6_b_0xcbb0(&mut self) {
+    fn res_6_b_0xcbb0(&mut self) -> u8 {
         println!("RES 6, B");
         self.registers.b = self.registers.b & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_6_c_0xcbb1(&mut self) {
+    fn res_6_c_0xcbb1(&mut self) -> u8 {
         println!("RES 6, C");
         self.registers.c = self.registers.c & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_6_d_0xcbb2(&mut self) {
+    fn res_6_d_0xcbb2(&mut self) -> u8 {
         println!("RES 6, D");
         self.registers.d = self.registers.d & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_6_e_0xcbb3(&mut self) {
+    fn res_6_e_0xcbb3(&mut self) -> u8 {
         println!("RES 6, E");
         self.registers.e = self.registers.e & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_6_h_0xcbb4(&mut self) {
+    fn res_6_h_0xcbb4(&mut self) -> u8 {
         println!("RES 6, H");
         self.registers.h = self.registers.h & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_6_l_0xcbb5(&mut self) {
+    fn res_6_l_0xcbb5(&mut self) -> u8 {
         println!("RES 6, L");
         self.registers.l = self.registers.l & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_6_hl_0xcbb6(&mut self) {
+    fn res_6_hl_0xcbb6(&mut self) -> u8 {
         println!("RES 6, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 6),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_6_a_0xcbb7(&mut self) {
+    fn res_6_a_0xcbb7(&mut self) -> u8 {
         println!("RES 6, A");
         self.registers.a = self.registers.a & !(0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_7_b_0xcbb8(&mut self) {
+    fn res_7_b_0xcbb8(&mut self) -> u8 {
         println!("RES 7, B");
         self.registers.b = self.registers.b & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_7_c_0xcbb9(&mut self) {
+    fn res_7_c_0xcbb9(&mut self) -> u8 {
         println!("RES 7, C");
         self.registers.c = self.registers.c & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_7_d_0xcbba(&mut self) {
+    fn res_7_d_0xcbba(&mut self) -> u8 {
         println!("RES 7, D");
         self.registers.d = self.registers.d & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_7_e_0xcbbb(&mut self) {
+    fn res_7_e_0xcbbb(&mut self) -> u8 {
         println!("RES 7, E");
         self.registers.e = self.registers.e & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_7_h_0xcbbc(&mut self) {
+    fn res_7_h_0xcbbc(&mut self) -> u8 {
         println!("RES 7, H");
         self.registers.h = self.registers.h & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn res_7_l_0xcbbd(&mut self) {
+    fn res_7_l_0xcbbd(&mut self) -> u8 {
         println!("RES 7, L");
         self.registers.l = self.registers.l & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn res_7_hl_0xcbbe(&mut self) {
+    fn res_7_hl_0xcbbe(&mut self) -> u8 {
         println!("RES 7, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) & !(0b1 << 7),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn res_7_a_0xcbbf(&mut self) {
+    fn res_7_a_0xcbbf(&mut self) -> u8 {
         println!("RES 7, A");
         self.registers.a = self.registers.a & !(0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_0_b_0xcbc0(&mut self) {
+    fn set_0_b_0xcbc0(&mut self) -> u8 {
         println!("SET 0, B");
         self.registers.b = self.registers.b | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_0_c_0xcbc1(&mut self) {
+    fn set_0_c_0xcbc1(&mut self) -> u8 {
         println!("SET 0, C");
         self.registers.c = self.registers.c | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_0_d_0xcbc2(&mut self) {
+    fn set_0_d_0xcbc2(&mut self) -> u8 {
         println!("SET 0, D");
         self.registers.d = self.registers.d | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_0_e_0xcbc3(&mut self) {
+    fn set_0_e_0xcbc3(&mut self) -> u8 {
         println!("SET 0, E");
         self.registers.e = self.registers.e | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_0_h_0xcbc4(&mut self) {
+    fn set_0_h_0xcbc4(&mut self) -> u8 {
         println!("SET 0, H");
         self.registers.h = self.registers.h | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_0_l_0xcbc5(&mut self) {
+    fn set_0_l_0xcbc5(&mut self) -> u8 {
         println!("SET 0, L");
         self.registers.l = self.registers.l | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_0_hl_0xcbc6(&mut self) {
+    fn set_0_hl_0xcbc6(&mut self) -> u8 {
         println!("SET 0, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 0),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_0_a_0xcbc7(&mut self) {
+    fn set_0_a_0xcbc7(&mut self) -> u8 {
         println!("SET 0, A");
         self.registers.a = self.registers.a | (0b1 << 0);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_1_b_0xcbc8(&mut self) {
+    fn set_1_b_0xcbc8(&mut self) -> u8 {
         println!("SET 1, B");
         self.registers.b = self.registers.b | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_1_c_0xcbc9(&mut self) {
+    fn set_1_c_0xcbc9(&mut self) -> u8 {
         println!("SET 1, C");
         self.registers.c = self.registers.c | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_1_d_0xcbca(&mut self) {
+    fn set_1_d_0xcbca(&mut self) -> u8 {
         println!("SET 1, D");
         self.registers.d = self.registers.d | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_1_e_0xcbcb(&mut self) {
+    fn set_1_e_0xcbcb(&mut self) -> u8 {
         println!("SET 1, E");
         self.registers.e = self.registers.e | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_1_h_0xcbcc(&mut self) {
+    fn set_1_h_0xcbcc(&mut self) -> u8 {
         println!("SET 1, H");
         self.registers.h = self.registers.h | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_1_l_0xcbcd(&mut self) {
+    fn set_1_l_0xcbcd(&mut self) -> u8 {
         println!("SET 1, L");
         self.registers.l = self.registers.l | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_1_hl_0xcbce(&mut self) {
+    fn set_1_hl_0xcbce(&mut self) -> u8 {
         println!("SET 1, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 1),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_1_a_0xcbcf(&mut self) {
+    fn set_1_a_0xcbcf(&mut self) -> u8 {
         println!("SET 1, A");
         self.registers.a = self.registers.a | (0b1 << 1);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_2_b_0xcbd0(&mut self) {
+    fn set_2_b_0xcbd0(&mut self) -> u8 {
         println!("SET 2, B");
         self.registers.b = self.registers.b | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_2_c_0xcbd1(&mut self) {
+    fn set_2_c_0xcbd1(&mut self) -> u8 {
         println!("SET 2, C");
         self.registers.c = self.registers.c | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_2_d_0xcbd2(&mut self) {
+    fn set_2_d_0xcbd2(&mut self) -> u8 {
         println!("SET 2, D");
         self.registers.d = self.registers.d | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_2_e_0xcbd3(&mut self) {
+    fn set_2_e_0xcbd3(&mut self) -> u8 {
         println!("SET 2, E");
         self.registers.e = self.registers.e | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_2_h_0xcbd4(&mut self) {
+    fn set_2_h_0xcbd4(&mut self) -> u8 {
         println!("SET 2, H");
         self.registers.h = self.registers.h | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_2_l_0xcbd5(&mut self) {
+    fn set_2_l_0xcbd5(&mut self) -> u8 {
         println!("SET 2, L");
         self.registers.l = self.registers.l | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_2_hl_0xcbd6(&mut self) {
+    fn set_2_hl_0xcbd6(&mut self) -> u8 {
         println!("SET 2, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 2),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_2_a_0xcbd7(&mut self) {
+    fn set_2_a_0xcbd7(&mut self) -> u8 {
         println!("SET 2, A");
         self.registers.a = self.registers.a | (0b1 << 2);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_3_b_0xcbd8(&mut self) {
+    fn set_3_b_0xcbd8(&mut self) -> u8 {
         println!("SET 3, B");
         self.registers.b = self.registers.b | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_3_c_0xcbd9(&mut self) {
+    fn set_3_c_0xcbd9(&mut self) -> u8 {
         println!("SET 3, C");
         self.registers.c = self.registers.c | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_3_d_0xcbda(&mut self) {
+    fn set_3_d_0xcbda(&mut self) -> u8 {
         println!("SET 3, D");
         self.registers.d = self.registers.d | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_3_e_0xcbdb(&mut self) {
+    fn set_3_e_0xcbdb(&mut self) -> u8 {
         println!("SET 3, E");
         self.registers.e = self.registers.e | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_3_h_0xcbdc(&mut self) {
+    fn set_3_h_0xcbdc(&mut self) -> u8 {
         println!("SET 3, H");
         self.registers.h = self.registers.h | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_3_l_0xcbdd(&mut self) {
+    fn set_3_l_0xcbdd(&mut self) -> u8 {
         println!("SET 3, L");
         self.registers.l = self.registers.l | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_3_hl_0xcbde(&mut self) {
+    fn set_3_hl_0xcbde(&mut self) -> u8 {
         println!("SET 3, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 3),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_3_a_0xcbdf(&mut self) {
+    fn set_3_a_0xcbdf(&mut self) -> u8 {
         println!("SET 3, A");
         self.registers.a = self.registers.a | (0b1 << 3);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_4_b_0xcbe0(&mut self) {
+    fn set_4_b_0xcbe0(&mut self) -> u8 {
         println!("SET 4, B");
         self.registers.b = self.registers.b | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_4_c_0xcbe1(&mut self) {
+    fn set_4_c_0xcbe1(&mut self) -> u8 {
         println!("SET 4, C");
         self.registers.c = self.registers.c | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_4_d_0xcbe2(&mut self) {
+    fn set_4_d_0xcbe2(&mut self) -> u8 {
         println!("SET 4, D");
         self.registers.d = self.registers.d | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_4_e_0xcbe3(&mut self) {
+    fn set_4_e_0xcbe3(&mut self) -> u8 {
         println!("SET 4, E");
         self.registers.e = self.registers.e | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_4_h_0xcbe4(&mut self) {
+    fn set_4_h_0xcbe4(&mut self) -> u8 {
         println!("SET 4, H");
         self.registers.h = self.registers.h | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_4_l_0xcbe5(&mut self) {
+    fn set_4_l_0xcbe5(&mut self) -> u8 {
         println!("SET 4, L");
         self.registers.l = self.registers.l | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_4_hl_0xcbe6(&mut self) {
+    fn set_4_hl_0xcbe6(&mut self) -> u8 {
         println!("SET 4, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 4),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_4_a_0xcbe7(&mut self) {
+    fn set_4_a_0xcbe7(&mut self) -> u8 {
         println!("SET 4, A");
         self.registers.a = self.registers.a | (0b1 << 4);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_5_b_0xcbe8(&mut self) {
+    fn set_5_b_0xcbe8(&mut self) -> u8 {
         println!("SET 5, B");
         self.registers.b = self.registers.b | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_5_c_0xcbe9(&mut self) {
+    fn set_5_c_0xcbe9(&mut self) -> u8 {
         println!("SET 5, C");
         self.registers.c = self.registers.c | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_5_d_0xcbea(&mut self) {
+    fn set_5_d_0xcbea(&mut self) -> u8 {
         println!("SET 5, D");
         self.registers.d = self.registers.d | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_5_e_0xcbeb(&mut self) {
+    fn set_5_e_0xcbeb(&mut self) -> u8 {
         println!("SET 5, E");
         self.registers.e = self.registers.e | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_5_h_0xcbec(&mut self) {
+    fn set_5_h_0xcbec(&mut self) -> u8 {
         println!("SET 5, H");
         self.registers.h = self.registers.h | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_5_l_0xcbed(&mut self) {
+    fn set_5_l_0xcbed(&mut self) -> u8 {
         println!("SET 5, L");
         self.registers.l = self.registers.l | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_5_hl_0xcbee(&mut self) {
+    fn set_5_hl_0xcbee(&mut self) -> u8 {
         println!("SET 5, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 5),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_5_a_0xcbef(&mut self) {
+    fn set_5_a_0xcbef(&mut self) -> u8 {
         println!("SET 5, A");
         self.registers.a = self.registers.a | (0b1 << 5);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_6_b_0xcbf0(&mut self) {
+    fn set_6_b_0xcbf0(&mut self) -> u8 {
         println!("SET 6, B");
         self.registers.b = self.registers.b | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_6_c_0xcbf1(&mut self) {
+    fn set_6_c_0xcbf1(&mut self) -> u8 {
         println!("SET 6, C");
         self.registers.c = self.registers.c | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_6_d_0xcbf2(&mut self) {
+    fn set_6_d_0xcbf2(&mut self) -> u8 {
         println!("SET 6, D");
         self.registers.d = self.registers.d | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_6_e_0xcbf3(&mut self) {
+    fn set_6_e_0xcbf3(&mut self) -> u8 {
         println!("SET 6, E");
         self.registers.e = self.registers.e | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_6_h_0xcbf4(&mut self) {
+    fn set_6_h_0xcbf4(&mut self) -> u8 {
         println!("SET 6, H");
         self.registers.h = self.registers.h | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_6_l_0xcbf5(&mut self) {
+    fn set_6_l_0xcbf5(&mut self) -> u8 {
         println!("SET 6, L");
         self.registers.l = self.registers.l | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_6_hl_0xcbf6(&mut self) {
+    fn set_6_hl_0xcbf6(&mut self) -> u8 {
         println!("SET 6, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 6),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_6_a_0xcbf7(&mut self) {
+    fn set_6_a_0xcbf7(&mut self) -> u8 {
         println!("SET 6, A");
         self.registers.a = self.registers.a | (0b1 << 6);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_7_b_0xcbf8(&mut self) {
+    fn set_7_b_0xcbf8(&mut self) -> u8 {
         println!("SET 7, B");
         self.registers.b = self.registers.b | (0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_7_c_0xcbf9(&mut self) {
+    fn set_7_c_0xcbf9(&mut self) -> u8 {
         println!("SET 7, C");
         self.registers.c = self.registers.c | (0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_7_d_0xcbfa(&mut self) {
+    fn set_7_d_0xcbfa(&mut self) -> u8 {
         println!("SET 7, D");
         self.registers.d = self.registers.d | (0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_7_e_0xcbfb(&mut self) {
+    fn set_7_e_0xcbfb(&mut self) -> u8 {
         println!("SET 7, E");
         self.registers.e = self.registers.e | (0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_7_h_0xcbfc(&mut self) {
+    fn set_7_h_0xcbfc(&mut self) -> u8 {
         println!("SET 7, H");
         self.registers.h = self.registers.h | (0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [8]
-    fn set_7_l_0xcbfd(&mut self) {
+    fn set_7_l_0xcbfd(&mut self) -> u8 {
         println!("SET 7, L");
         self.registers.l = self.registers.l | (0b1 << 7);
+        8
     }
     // bytes: 2 cycles: [16]
-    fn set_7_hl_0xcbfe(&mut self) {
+    fn set_7_hl_0xcbfe(&mut self) -> u8 {
         println!("SET 7, (HL)");
         self.write(
             self.registers.hl(),
             self.read(self.registers.hl()) | (0b1 << 7),
         );
+        16
     }
     // bytes: 2 cycles: [8]
-    fn set_7_a_0xcbff(&mut self) {
+    fn set_7_a_0xcbff(&mut self) -> u8 {
         println!("SET 7, A");
         self.registers.a = self.registers.a | (0b1 << 7);
+        8
     }
 }

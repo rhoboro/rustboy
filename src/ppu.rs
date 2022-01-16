@@ -4,12 +4,31 @@ use crate::Address;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
 
-trait LCD {
-    fn draw_line(&mut self);
+pub trait LCD {
+    fn draw(&mut self, frame_buffer: &[PixelData; 160 * 144]);
+}
+
+struct Terminal;
+
+impl LCD for Terminal {
+    fn draw(&mut self, frame_buffer: &[PixelData; 160 * 144]) {
+        for y in 0..144 {
+            for x in 0..160 {
+                print!("{:?}", frame_buffer[x + (y * 160)]);
+            }
+            println!();
+        }
+    }
 }
 
 // RGBA
 struct PixelData(u8, u8, u8, u8);
+
+impl Debug for PixelData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
 
 const WHITE: PixelData = PixelData(255, 255, 255, 0);
 const LIGHT_GRAY: PixelData = PixelData(170, 170, 170, 0);
@@ -105,6 +124,7 @@ struct VRAM {
 }
 
 pub struct PPU {
+    lcd: Box<dyn LCD>,
     // 実際の画面と対応
     frame_buffer: [PixelData; 160 * 144],
     // スプライト属性テーブル (OAM - Object Attribute Memory)
@@ -150,6 +170,7 @@ pub struct PPU {
 impl PPU {
     pub fn new() -> Self {
         Self {
+            lcd: Box::new(Terminal {}),
             frame_buffer: [WHITE; 160 * 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],
@@ -170,6 +191,10 @@ impl PPU {
         }
     }
 
+    pub fn tick(&mut self, cycle: u8) {
+        println!("{}", cycle);
+    }
+
     fn scan_lines(&mut self) {
         loop {
             // ly レジスタが現在処理中の行
@@ -181,8 +206,9 @@ impl PPU {
         }
     }
 
-    /// 1行(= 160 pixel)の描画
-    /// ここでは frame_buffer に書き込む
+    // 1行(= 160 pixel)の描画
+    // 1行のスキャンラインは 456 T-Cycle
+    // ここでは frame_buffer に書き込む
     fn scan_line(&mut self) {
         // OAMをスキャンしてスプライトバッファに格納
         // 背景描画。Pixel Fetcher が背景FIFOに描画するピクセルを供給し続ける。
@@ -194,17 +220,20 @@ impl PPU {
                 self.x_position_counter = 0;
                 break;
             }
+            // TODO: OAMスキャン
             let tile_number = self.fetch_tile_number();
             let tile_data = self.fetch_tile_data(tile_number);
             if self.fifo_background.is_empty() {
                 self.push_fifo(tile_data);
-
                 if !self.fifo_background.is_empty() {
                     // push Pixel to LCD
                     let offset = (160 * (self.ly as u16) + (8 * self.x_position_counter)) as usize;
                     for i in 0..=7 {
                         let pixel = self.fifo_background.pop_front();
                         self.frame_buffer[offset + i] = pixel.unwrap().color.to_rgba();
+                    }
+                    if offset + 7 == self.frame_buffer.len() - 1 {
+                        self.lcd.draw(&self.frame_buffer);
                     }
                 }
             }
@@ -293,7 +322,6 @@ impl IO for PPU {
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
-                println!("vram: {:?}", self.vram);
                 self.vram[(address - 0x8000) as usize] = data;
             }
             0xFF40..=0xFF4B => {
