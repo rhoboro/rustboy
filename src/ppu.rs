@@ -30,7 +30,7 @@ struct PixelData(u8, u8, u8, u8);
 impl Debug for PixelData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PixelData(255, 255, 255, 0) => write!(f, "A"),
+            PixelData(255, 255, 255, 0) => write!(f, " "),
             PixelData(170, 170, 170, 0) => write!(f, "B"),
             PixelData(85, 85, 85, 0) => write!(f, "C"),
             PixelData(0, 0, 0, 0) => write!(f, "D"),
@@ -270,17 +270,22 @@ impl PPU {
 
     fn fetch_tile_number(&self) -> u8 {
         // ウィンドウは無視
-        let base_address: u16 = if (self.lcdc & 0b00000100) != 0 {
+        let base_address: u16 = if (self.lcdc & 0b00001000) != 0 {
             0x9C00
         } else {
             0x9800
         };
         // オフセット計算
         let mut tile_address = base_address + self.x_position_counter;
-        tile_address.wrapping_add(((self.scx / 8) & 0x1F) as u16);
-        tile_address.wrapping_add((32 * (((self.ly + self.scy) as u16) & 0xFF) / 8) as u16);
-        debug_log!("tile_address: {:X?}", tile_address);
-        self.read(tile_address)
+        let offset_x = ((self.scx / 8) & 0x1F) as u16;
+        tile_address += offset_x;
+        let offset_y = (32 * (((self.ly + self.scy) as u16) & 0xFF) / 8) as u16;
+        debug_log!("tile_address: before: {} {}", tile_address, offset_y);
+        tile_address += offset_y;
+        debug_log!("tile_address: after: {:X?} {}", tile_address, offset_y);
+        let tile_number = self.read(tile_address);
+        debug_log!("tile_address: {:X?} tile_number: {}, {}, {}, {}", tile_address, tile_number, self.ly, self.x_position_counter, offset_y);
+        tile_number
     }
     fn fetch_tile_data(&self, tile_number: u8) -> (u8, u8) {
         let offset = 2 * ((self.ly + self.scy) % 8);
@@ -319,10 +324,16 @@ impl IO for PPU {
     fn read(&self, address: Address) -> u8 {
         // debug_log!("Read: {:X?}", address);
         match address {
-            0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
+            0xFE00..=0xFE9F => {
+                let data = self.oam[(address - 0xFE00) as usize];
+                debug_log!("Read Vram: {:X?}, Data: {}", address, data);
+                data
+            },
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
-                self.vram[(address - 0x8000) as usize]
+                let data = self.vram[(address - 0x8000) as usize];
+                debug_log!("Read Vram: {:X?}, Data: {}", address, data);
+                data
             }
             0xFF40..=0xFF4B => {
                 // レジスタ
@@ -352,6 +363,7 @@ impl IO for PPU {
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
+                debug_log!("Write Vram: {:X?}, Data: {}", address, data);
                 self.vram[(address - 0x8000) as usize] = data;
             }
             0xFF40..=0xFF4B => {
