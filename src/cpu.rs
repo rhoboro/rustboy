@@ -1294,9 +1294,9 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_nz_r8_0x20(&mut self) -> u8 {
         println!("JR NZ, r8");
-        let r8: i8 = self.fetch() as i8;
+        let r8: u16 = 0xFF00 | self.fetch() as u16;
         if !self.registers.f.z {
-            self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            self.registers.pc = self.registers.pc.wrapping_add(r8);
             12
         } else {
             8
@@ -1382,9 +1382,9 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_z_r8_0x28(&mut self) -> u8 {
         println!("JR Z, r8");
-        let r8: i8 = self.fetch() as i8;
+        let r8: u16 = 0xFF00 | self.fetch() as u16;
         if self.registers.f.z {
-            self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            self.registers.pc = self.registers.pc.wrapping_add(r8);
             12
         } else {
             8
@@ -1450,9 +1450,9 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_nc_r8_0x30(&mut self) -> u8 {
         println!("JR NC, r8");
-        let r8: i8 = self.fetch() as i8;
+        let r8: u16 = 0xFF00 | self.fetch() as u16;
         if !self.registers.f.c {
-            self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            self.registers.pc = self.registers.pc.wrapping_add(r8);
             12
         } else {
             8
@@ -1520,11 +1520,11 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_c_r8_0x38(&mut self) -> u8 {
         println!("JR C, r8");
-        let r8: i8 = self.fetch() as i8;
+        let r8: u16 = 0xFF00 | self.fetch() as u16;
         if self.registers.f.c {
             println!("r8: {}", r8);
             println!("after pc: {}", self.registers.pc);
-            self.registers.pc = self.registers.pc.wrapping_add(r8 as u16);
+            self.registers.pc = self.registers.pc.wrapping_add(r8);
             println!("before pc: {}", self.registers.pc);
             12
         } else {
@@ -3211,13 +3211,13 @@ impl CPU {
     // bytes: 2 cycles: [12]
     fn ld_hl_sp_r8_0xf8(&mut self) -> u8 {
         println!("LD HL, SP+r8");
-        let r8: i8 = self.fetch() as i8;
+        let r8: u16 = 0xFF00 | self.fetch() as u16;
         self.registers
-            .set_hl(self.registers.sp.wrapping_add(r8 as u16));
+            .set_hl(self.registers.sp.wrapping_add(r8));
         self.registers.f.z = false;
         self.registers.f.n = false;
-        self.registers.f.h = self.registers.sp.calc_half_carry(r8 as u16);
-        self.registers.f.c = self.registers.sp.calc_carry(r8 as u16);
+        self.registers.f.h = self.registers.sp.calc_half_carry(r8);
+        self.registers.f.c = self.registers.sp.calc_carry(r8);
         12
     }
     // bytes: 1 cycles: [8]
