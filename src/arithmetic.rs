@@ -71,7 +71,6 @@ impl AddSigned for u16 {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

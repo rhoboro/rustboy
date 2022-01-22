@@ -3,6 +3,7 @@ mod cartridges;
 mod cpu;
 mod debugger;
 mod io;
+mod lcd;
 mod mother_board;
 mod ppu;
 mod sound;

@@ -2,6 +2,7 @@ use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
 use crate::debug_log;
 use crate::io::IO;
+use crate::lcd::Terminal;
 use crate::ppu::PPU;
 use crate::sound::Sound;
 use crate::timer::Timer;
@@ -48,7 +49,7 @@ impl MotherBoard {
     pub fn new(config: &Config) -> Rc<RefCell<Self>> {
         let cartridge = RefCell::new(Cartridge::new(&config.romfile));
         debug_log!("{:?}", cartridge);
-        let ppu = RefCell::new(Box::new(PPU::new()));
+        let ppu = RefCell::new(Box::new(PPU::new(Box::new(Terminal {}))));
         let timer = RefCell::new(Box::new(Timer {}));
         let sound = RefCell::new(Box::new(Sound {}));
         let mb = Rc::new(RefCell::new(Self {

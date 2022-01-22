@@ -1,14 +1,13 @@
+use crate::arithmetic::{AddSigned, ArithmeticUtil};
 use crate::debug_log;
 #[allow(overflowing_literals)]
 use crate::Address;
-use crate::arithmetic::{ArithmeticUtil, AddSigned};
 use core::fmt::Debug;
 use std::cell::RefCell;
 use std::convert::Into;
 use std::default::Default;
 use std::fmt::Formatter;
 use std::rc::Weak;
-
 
 // アドレスバスは16bit
 // データバスは8bit
