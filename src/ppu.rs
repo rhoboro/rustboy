@@ -139,7 +139,7 @@ pub struct PPU {
     frame_buffer: FrameBuffer,
     // スプライト属性テーブル (OAM - Object Attribute Memory)
     oam: [u8; 4 * 40],
-    // TODO: VRAM 構造体にしたい
+    // VRAM は 0x8000 - 0x9FFF の 8KB
     vram: [u8; 8 * 1024],
     // スキャンラインごとのpushしたピクセル(0 - 160)
     x_position_counter: u16,
@@ -182,7 +182,7 @@ impl PPU {
         Self {
             lcd,
             clock: 0,
-            clock_next_target: 70224,
+            clock_next_target: REFRESH_CYCLE,
             frame_buffer: [[WHITE; 160]; 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],

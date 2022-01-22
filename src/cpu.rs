@@ -307,7 +307,6 @@ impl CPU {
             p1: 0,
             sb: 0,
             sc: 0,
-
             div: 0,
             ifg: InterruptFlags::default(),
             dma: 0,
@@ -1278,7 +1277,6 @@ impl CPU {
     fn ld_hl_a_0x22(&mut self) -> u8 {
         debug_log!("LD (HL+), A");
         self.write(self.registers.hl(), self.registers.a);
-        self.registers.a = self.read(self.registers.hl());
         self.registers.set_hl(self.registers.hl() + 1);
         8
     }
@@ -1485,10 +1483,7 @@ impl CPU {
         debug_log!("JR C, r8");
         let r8 = self.fetch();
         if self.registers.f.c {
-            debug_log!("r8: {}", r8);
-            debug_log!("after pc: {}", self.registers.pc);
             self.registers.pc = self.registers.pc.add_signed_u8(r8);
-            debug_log!("before pc: {}", self.registers.pc);
             12
         } else {
             8
@@ -2982,7 +2977,7 @@ impl CPU {
     }
     // bytes: 2 cycles: [12]
     fn ldh_a8_a_0xe0(&mut self) -> u8 {
-        debug_log!("LD (a8), A");
+        debug_log!("LDH (a8), A");
         let a8: u16 = self.fetch().into();
         self.write(0xFF00 + a8, self.registers.a);
         12
@@ -3111,7 +3106,7 @@ impl CPU {
     fn ldh_a_a8_0xf0(&mut self) -> u8 {
         debug_log!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
-        self.registers.a = self.read(a8 + 0xFF00);
+        self.registers.a = self.read(0xFF00 + a8);
         12
     }
     // bytes: 1 cycles: [12]
