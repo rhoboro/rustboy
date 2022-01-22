@@ -1,6 +1,7 @@
 use crate::debug_log;
 use crate::io::IO;
 use crate::Address;
+use crate::arithmetic::{AddSigned, ToSigned};
 
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
@@ -61,6 +62,11 @@ enum PPUMode {
     OAMScan,
     // LCDにピクセルを転送
     Drawing,
+}
+
+enum TileDataSelect {
+    Method8000,
+    Method8800,
 }
 
 #[derive(PartialEq)]
@@ -162,12 +168,12 @@ pub struct PPU {
     // 0xFF41: LCDステータス
     stat: u8,
     // 0xFF42: スクロールY座標
-    scy: u8,
+    scy: u16,
     // 0xFF43: スクロールX座標
-    scx: u8,
+    scx: u16,
     // 0xFF44: LCD Y座標
     // LCDの縦サイズは144だが10本の擬似スキャンラインがあるので 1 - 153 になる
-    ly: u8,
+    ly: u16,
     // 0xFF45: LY比較
     lyc: u8,
     // 0xFF47: 背景パレットデータ
@@ -205,6 +211,23 @@ impl PPU {
             x_position_counter: 0,
             fifo_background: VecDeque::with_capacity(8),
             fifo_sprite: VecDeque::with_capacity(8),
+        }
+    }
+
+    fn tile_data_select(&self) -> TileDataSelect {
+        if (self.lcdc & 0b00010000) != 0 {
+            TileDataSelect::Method8000
+        } else {
+            TileDataSelect::Method8800
+        }
+    }
+    fn background_data_select(&self) -> Address {
+        if (self.lcdc & 0b00001000) != 0 {
+            // 0x9C00 - 0x9FFF の1024個
+            0x9C00
+        } else {
+            // 0x9800 - 0x9BFF の1024個
+            0x9800
         }
     }
 
@@ -252,12 +275,12 @@ impl PPU {
                 self.push_fifo(tile_data);
                 if !self.fifo_background.is_empty() {
                     // push Pixel to LCD
-                    let offset = (WIDTH_LCD * (self.ly as u16) + self.x_position_counter) as usize;
+                    assert_eq!(self.x_position_counter % 8, 0);
+                    let offset = (WIDTH_LCD * self.ly + self.x_position_counter.wrapping_sub(8)) as usize;
                     // debug_log!("{} {} {}", self.ly, self.x_position_counter, offset);
                     for i in 0..=7 {
                         let pixel = self.fifo_background.pop_front();
-                        let index = (offset + i - 1).wrapping_sub(7);
-                        self.frame_buffer[index] = pixel.unwrap().color.to_rgba();
+                        self.frame_buffer[offset + i] = pixel.unwrap().color.to_rgba();
                     }
                     // debug_log!("offset + 7 = {}", offset + 7);
                     if offset + 7 == self.frame_buffer.len() - 1 {
@@ -269,35 +292,15 @@ impl PPU {
     }
 
     fn fetch_tile_number(&self) -> u8 {
-        // ウィンドウは無視
-        let base_address: u16 = if (self.lcdc & 0b00001000) != 0 {
-            0x9C00
-        } else {
-            0x9800
-        };
-        // オフセット計算
-        let mut tile_address = base_address + self.x_position_counter;
-        let offset_x = ((self.scx / 8) & 0x1F) as u16;
-        tile_address += offset_x;
-        let offset_y = (32 * (((self.ly + self.scy) as u16) & 0xFF) / 8) as u16;
-        debug_log!("tile_address: before: {} {}", tile_address, offset_y);
-        tile_address += offset_y;
-        debug_log!("tile_address: after: {:X?} {}", tile_address, offset_y);
-        let tile_number = self.read(tile_address);
-        debug_log!("tile_address: {:X?} tile_number: {}, {}, {}, {}", tile_address, tile_number, self.ly, self.x_position_counter, offset_y);
-        tile_number
+        self.read(tile_number_address(self.background_data_select(), self.ly, self.scx, self.scy, self.x_position_counter))
     }
     fn fetch_tile_data(&self, tile_number: u8) -> (u8, u8) {
+        let address = convert_tile_number_to_address(tile_number, self.tile_data_select());
         let offset = 2 * ((self.ly + self.scy) % 8);
-        let address = if (self.lcdc & 0b00010000) != 0 {
-            0x8000 + ((tile_number as u16) * 16) + (offset as u16)
-        } else {
-            let base: u16 = 0x9000;
-            ((base as i16) + ((tile_number as i16) * 16)) as u16 + (offset as u16)
-        };
+        let address = address + offset;
         let low = self.read(address);
         let high = self.read(address + 1);
-        debug_log!("tile: {}, low {}, high {}", tile_number, low, high);
+        debug_log!("tile_number: {:X?}, address: 0x{:X?}, high: 0x{:X?}, low: 0x{:X?}", tile_number, address, high, low);
         (low, high)
     }
     fn push_fifo(&mut self, pixel: (u8, u8)) {
@@ -340,9 +343,9 @@ impl IO for PPU {
                 match address {
                     0xFF40 => self.lcdc,
                     0xFF41 => self.stat,
-                    0xFF42 => self.scy,
-                    0xFF43 => self.scx,
-                    0xFF44 => self.ly,
+                    0xFF42 => self.scy.try_into().unwrap(),
+                    0xFF43 => self.scx.try_into().unwrap(),
+                    0xFF44 => self.ly.try_into().unwrap(),
                     0xFF45 => self.lyc,
                     0xFF47 => self.bgp,
                     0xFF48 => self.obp0,
@@ -371,9 +374,9 @@ impl IO for PPU {
                 match address {
                     0xFF40 => self.lcdc = data,
                     0xFF41 => self.stat = data,
-                    0xFF42 => self.scy = data,
-                    0xFF43 => self.scx = data,
-                    0xFF44 => self.ly = data,
+                    0xFF42 => self.scy = data as u16,
+                    0xFF43 => self.scx = data as u16,
+                    0xFF44 => self.ly = data as u16,
                     0xFF45 => self.lyc = data,
                     0xFF47 => self.bgp = data,
                     0xFF48 => self.obp0 = data,
@@ -392,5 +395,55 @@ impl Debug for PPU {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // rom_data は表示しない
         write!(f, "Lcd")
+    }
+}
+
+fn tile_number_address(base_address: Address, ly: u16, scx: u16, scy: u16, x_position_counter: u16) -> Address {
+    // オフセット計算
+    let offset_x = (x_position_counter + (scx / 8)) & 0x001F;
+    let offset_y = 32 * ((ly + scy) & 0xFF) / 8;
+    let tile_address = base_address + ((offset_x + offset_y) & 0x03FF);
+    debug_log!("tile_address: after: {:X?} {:?}", tile_address, offset_y);
+    tile_address
+}
+
+fn convert_tile_number_to_address(tile_number: u8, method: TileDataSelect) -> Address {
+    match method {
+        TileDataSelect::Method8000 => {
+            0x8000 + tile_number.to_unsigned_u16().wrapping_mul(16)
+        },
+        TileDataSelect::Method8800 => {
+            let base: u16 = 0x9000;
+            base.add_signed_u16(tile_number.to_signed_u16().wrapping_mul(16))
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tile_number_address() {
+       assert_eq!(tile_number_address(0x9800, 0, 0, 0, 0), 0x9800);
+       assert_eq!(tile_number_address(0x9800, 1, 1, 1, 1), 0x9809);
+       assert_eq!(tile_number_address(0x9800, 8, 0, 0, 1), 0x9821);
+    }
+
+    #[test]
+    fn test_tile_data_address_m8800() {
+        assert_eq!(convert_tile_number_to_address(0x00, TileDataSelect::Method8800), 0x9000);
+        assert_eq!(convert_tile_number_to_address(0x01, TileDataSelect::Method8800), 0x9010);
+        assert_eq!(convert_tile_number_to_address(0x20, TileDataSelect::Method8800), 0x9200);
+        assert_eq!(convert_tile_number_to_address(0xFF, TileDataSelect::Method8800), 0x8FF0);
+        assert_eq!(convert_tile_number_to_address(0xFE, TileDataSelect::Method8800), 0x8FE0);
+    }
+
+    #[test]
+    fn test_tile_data_address_m8000() {
+        assert_eq!(convert_tile_number_to_address(0x00, TileDataSelect::Method8000), 0x8000);
+        assert_eq!(convert_tile_number_to_address(0x02, TileDataSelect::Method8000), 0x8020);
+        assert_eq!(convert_tile_number_to_address(0xFF, TileDataSelect::Method8000), 0x8FF0);
     }
 }

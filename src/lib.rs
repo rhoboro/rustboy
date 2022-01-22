@@ -1,3 +1,4 @@
+mod arithmetic;
 mod cartridges;
 mod cpu;
 mod debugger;

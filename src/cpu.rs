@@ -1,6 +1,7 @@
 use crate::debug_log;
 #[allow(overflowing_literals)]
 use crate::Address;
+use crate::arithmetic::{ArithmeticUtil, AddSigned};
 use core::fmt::Debug;
 use std::cell::RefCell;
 use std::convert::Into;
@@ -8,45 +9,6 @@ use std::default::Default;
 use std::fmt::Formatter;
 use std::rc::Weak;
 
-// &, + 演算子をサポートする型にデフォルト実装を自動で付与したい
-trait ArithmeticUtil<RHS = Self> {
-    // TODO: 加算しつつ結果を返したほうが良さそう
-    fn calc_half_carry(&self, rhs: RHS) -> bool;
-    fn calc_carry(&self, rhs: RHS) -> bool;
-    fn calc_half_borrow(&self, rhs: RHS) -> bool;
-    fn calc_borrow(&self, rhs: RHS) -> bool;
-}
-
-// TODO: 正しいか自信ないのでテスト書く
-impl ArithmeticUtil<u8> for u8 {
-    fn calc_half_carry(&self, rhs: u8) -> bool {
-        ((self & 0x0F) + (rhs & 0x0F)) & 0x10 == 0x10
-    }
-    fn calc_carry(&self, rhs: u8) -> bool {
-        ((*self as u16 & 0x00FF) + (rhs as u16 & 0x00FF)) & 0x0100 == 0x0100
-    }
-    fn calc_half_borrow(&self, rhs: u8) -> bool {
-        (*self & 0x0F) < (rhs & 0x0F)
-    }
-    fn calc_borrow(&self, rhs: u8) -> bool {
-        *self < rhs
-    }
-}
-// TODO: 正しいか自信ないのでテスト書く
-impl ArithmeticUtil<u16> for u16 {
-    fn calc_half_carry(&self, rhs: u16) -> bool {
-        ((self & 0x000F) + (rhs & 0x000F)) & 0x0010 == 0x0010
-    }
-    fn calc_carry(&self, rhs: u16) -> bool {
-        ((*self as u32 & 0x0000FFFF) + (rhs as u32 & 0x0000FFFF)) & 0x00010000 == 0x00010000
-    }
-    fn calc_half_borrow(&self, rhs: u16) -> bool {
-        (*self & 0x00FF) < (rhs & 0x00FF)
-    }
-    fn calc_borrow(&self, rhs: u16) -> bool {
-        *self < rhs
-    }
-}
 
 // アドレスバスは16bit
 // データバスは8bit
@@ -1230,8 +1192,8 @@ impl CPU {
     // bytes: 2 cycles: [12]
     fn jr_r8_0x18(&mut self) -> u8 {
         debug_log!("JR r8");
-        let r8: u16 = 0xFF00 | self.fetch() as u16;
-        self.registers.pc = self.registers.pc.wrapping_add(r8);
+        let r8 = self.fetch();
+        self.registers.pc = self.registers.pc.add_signed_u8(r8);
         12
     }
     // bytes: 1 cycles: [8]
@@ -1296,9 +1258,9 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_nz_r8_0x20(&mut self) -> u8 {
         debug_log!("JR NZ, r8");
-        let r8: u16 = 0xFF00 | self.fetch() as u16;
+        let r8 = self.fetch();
         if !self.registers.f.z {
-            self.registers.pc = self.registers.pc.wrapping_add(r8);
+            self.registers.pc = self.registers.pc.add_signed_u8(r8);
             12
         } else {
             8
@@ -1384,9 +1346,9 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_z_r8_0x28(&mut self) -> u8 {
         debug_log!("JR Z, r8");
-        let r8: u16 = 0xFF00 | self.fetch() as u16;
+        let r8 = self.fetch();
         if self.registers.f.z {
-            self.registers.pc = self.registers.pc.wrapping_add(r8);
+            self.registers.pc = self.registers.pc.add_signed_u8(r8);
             12
         } else {
             8
@@ -1452,9 +1414,9 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_nc_r8_0x30(&mut self) -> u8 {
         debug_log!("JR NC, r8");
-        let r8: u16 = 0xFF00 | self.fetch() as u16;
+        let r8 = self.fetch();
         if !self.registers.f.c {
-            self.registers.pc = self.registers.pc.wrapping_add(r8);
+            self.registers.pc = self.registers.pc.add_signed_u8(r8);
             12
         } else {
             8
@@ -1522,11 +1484,11 @@ impl CPU {
     // bytes: 2 cycles: [12, 8]
     fn jr_c_r8_0x38(&mut self) -> u8 {
         debug_log!("JR C, r8");
-        let r8: u16 = 0xFF00 | self.fetch() as u16;
+        let r8 = self.fetch();
         if self.registers.f.c {
             debug_log!("r8: {}", r8);
             debug_log!("after pc: {}", self.registers.pc);
-            self.registers.pc = self.registers.pc.wrapping_add(r8);
+            self.registers.pc = self.registers.pc.add_signed_u8(r8);
             debug_log!("before pc: {}", self.registers.pc);
             12
         } else {
