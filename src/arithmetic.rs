@@ -6,7 +6,6 @@ pub trait ArithmeticUtil<RHS = Self> {
     fn calc_borrow(&self, rhs: RHS) -> bool;
 }
 
-// TODO: 正しいか自信ないのでテスト書く
 impl ArithmeticUtil<u8> for u8 {
     fn calc_half_carry(&self, rhs: u8) -> bool {
         ((self & 0x0F) + (rhs & 0x0F)) & 0x10 == 0x10
@@ -74,6 +73,36 @@ impl AddSigned for u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_u8_calc_half_carry() {
+        assert_eq!(0b0000_1000u8.calc_half_carry(0b0000_1000), true);
+        assert_eq!(0b0000_1110u8.calc_half_carry(0b0000_0001), false);
+        assert_eq!(0b0000_1111u8.calc_half_carry(0b0000_0001), true);
+    }
+
+    #[test]
+    fn test_u8_calc_carry() {
+        assert_eq!(0b1000_0000u8.calc_carry(0b1000_0000), true);
+        assert_eq!(0b1111_1110u8.calc_carry(0b0000_0001), false);
+        assert_eq!(0b1111_1111u8.calc_carry(0b0000_0001), true);
+    }
+
+    #[test]
+    fn test_u8_calc_half_borrow() {
+        assert_eq!(0b0000_1000u8.calc_half_borrow(0b0000_1000), false);
+        assert_eq!(0b0000_0000u8.calc_half_borrow(0b0000_0001), true);
+        assert_eq!(0b0000_1000u8.calc_half_borrow(0b0000_1001), true);
+        assert_eq!(0b0000_1110u8.calc_half_borrow(0b0000_1111), true);
+    }
+
+    #[test]
+    fn test_u8_calc_borrow() {
+        assert_eq!(0b1000_0000u8.calc_borrow(0b1000_0000), false);
+        assert_eq!(0b0000_0000u8.calc_borrow(0b0000_0001), true);
+        assert_eq!(0b1000_0000u8.calc_borrow(0b1000_0001), true);
+        assert_eq!(0b1111_1110u8.calc_borrow(0b1111_1111), true);
+    }
 
     #[test]
     fn test_to_signed_u16() {
