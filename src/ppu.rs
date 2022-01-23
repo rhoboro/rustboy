@@ -5,6 +5,7 @@ use crate::Address;
 
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
+use std::vec::IntoIter;
 
 const REFRESH_CYCLE: u64 = 70224;
 const WHITE: PixelData = PixelData(255, 255, 255, 0);
@@ -14,6 +15,8 @@ const BLACK: PixelData = PixelData(0, 0, 0, 0);
 
 const WIDTH_LCD: u16 = 160;
 const HEIGHT_LCD: u16 = 144;
+const WIDTH_TILE: u16 = 8;
+const HEIGHT_TILE: u16 = 8;
 const WIDTH_BG: u16 = 256;
 const HEIGHT_BG: u16 = 256;
 const WIDTH_WINDOW: u16 = 256;
@@ -57,7 +60,7 @@ enum TileDataSelect {
     Method8800,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum Color {
     // 00
     White,
@@ -80,7 +83,7 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 struct Pixel {
     // パレット適用前の値
     color: Color,
@@ -97,7 +100,43 @@ struct Pixel {
 // バイトごとのbitの位置が列に相当（0ビット目が一番右）
 type Tile = [u8; 8 * 2];
 
-struct VRAM {
+struct TileLine {
+    low: u8,
+    high: u8,
+}
+
+impl IntoIterator for TileLine {
+    type Item = Color;
+    type IntoIter = IntoIter<Color>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        // TODO: 効率が良くない
+        let mut v = Vec::with_capacity(8);
+        for offset in (0..WIDTH_TILE).rev() {
+            let color = match (((self.low >> offset) & 0b1), ((self.high >> offset) & 0b1)) {
+                (0, 0) => Color::White,
+                (1, 0) => Color::LightGray,
+                (0, 1) => Color::DarkGray,
+                (1, 1) => Color::Black,
+                _ => unreachable!(),
+            };
+            v.push(color)
+        }
+        v.into_iter()
+    }
+}
+
+pub struct PPU {
+    lcd: Box<dyn LCD>,
+    // ずっと起動していると溢れる
+    clock: u64,
+    // 70224 T-cycle ごとに1回描画するため、次の描画時の clock を記録する
+    clock_next_target: u64,
+    // 実際の画面と対応
+    frame_buffer: FrameBuffer,
+    // スプライト属性テーブル (OAM - Object Attribute Memory)
+    oam: [u8; 4 * 40],
+    // VRAM は 0x8000 - 0x9FFF の 8KB
     // タイルパターンテーブル
     // 0x8000 - 0x97FF
     // 下記の2パターンでアクセスされる
@@ -118,31 +157,11 @@ struct VRAM {
     // 0x9010: 1
     // ...
     // 0x97FF: 127
-    // TODO: 16 はハードコードせずに Tile から取得したい
-    tile_pattern: [Tile; ((0x97FF + 1) - 0x8000) / 16],
-
     // 背景データ(32 x 32タイル)の格納先は2つあり、背景/ウィンドウで利用できる
     // 格納される値はタイルパターンテーブルのタイル番号
     // 0x9800 - 0x9BFF
     // 0x9C00 - 0x9FFF
-    background_map_1: [u8; 32 * 32],
-    background_map_2: [i8; 32 * 32],
-}
-
-pub struct PPU {
-    lcd: Box<dyn LCD>,
-    // TODO: ずっと起動してたら溢れる
-    clock: u64,
-    // 70224 T-cycle ごとに1回描画するため、次の描画時の clock を記録する
-    clock_next_target: u64,
-    // 実際の画面と対応
-    frame_buffer: FrameBuffer,
-    // スプライト属性テーブル (OAM - Object Attribute Memory)
-    oam: [u8; 4 * 40],
-    // VRAM は 0x8000 - 0x9FFF の 8KB
     vram: [u8; 8 * 1024],
-    // スキャンラインごとのpushしたピクセル(0 - 160)
-    x_position_counter: u16,
     // 8画素分の背景用FIFO
     fifo_background: VecDeque<Pixel>,
     // 8画素分のスプライト用FIFO(スプライトバッファ)
@@ -197,9 +216,8 @@ impl PPU {
             obp1: 0,
             wy: 0,
             wx: 0,
-            x_position_counter: 0,
-            fifo_background: VecDeque::with_capacity(8),
-            fifo_sprite: VecDeque::with_capacity(8),
+            fifo_background: VecDeque::with_capacity(WIDTH_TILE as usize),
+            fifo_sprite: VecDeque::with_capacity(WIDTH_TILE as usize),
         }
     }
 
@@ -235,10 +253,9 @@ impl PPU {
             // 1画面は154行（LCD144行 + 擬似スキャンライン10行）
             if self.ly >= HEIGHT_LCD {
                 self.ly = 0;
-                self.x_position_counter = 0;
                 break;
             }
-            self.scan_line();
+            self.scan_line(self.ly);
             self.ly += 1;
         }
     }
@@ -246,32 +263,34 @@ impl PPU {
     // 1行(= 160 pixel)の描画
     // 1行のスキャンラインは 456 T-Cycle
     // ここでは frame_buffer に書き込む
-    fn scan_line(&mut self) {
+    fn scan_line(&mut self, ly: u16) {
         // OAMをスキャンしてスプライトバッファに格納
         // 背景描画。Pixel Fetcher が背景FIFOに描画するピクセルを供給し続ける。
         // タイル番号を取得、タイルデータの1バイト目を取得、タイルデータの2バイト目を取得、対応するFIFOにプッシュ
         // FIFOは2つある（背景ウィンドウ用とスプライト用）
         // FIFOが埋まったらLCDにプッシュ。（2つのFIFOをマージすることもある）
+
+        // スキャンラインごとのpushしたピクセル数(0 - 160)
+        let mut rx = 0u16;
         loop {
-            if self.x_position_counter >= WIDTH_LCD - 1 {
-                self.x_position_counter = 0;
+            if rx >= WIDTH_LCD - 1 {
                 break;
             }
             // TODO: OAMスキャン
-            let tile_number = self.fetch_tile_number();
-            let tile_data = self.fetch_tile_data(tile_number);
+            // 1回のループで8画素(タイルの幅)分処理する
+            let tile_number = self.fetch_tile_number(ly, rx);
+            let tile_data = self.fetch_tile_data(tile_number, ly);
             if self.fifo_background.is_empty() {
-                self.push_fifo(tile_data);
+                assert_eq!(self.fifo_background.len(), 0);
+                rx += self.push_fifo(tile_data);
                 if !self.fifo_background.is_empty() {
                     // push Pixel to LCD
-                    assert_eq!(self.x_position_counter % 8, 0);
-                    for i in 0..=7 {
-                        let offset_x = (self.x_position_counter.wrapping_sub(8) + i) as usize;
+                    for i in 0..WIDTH_TILE {
+                        let offset_x = (rx.wrapping_sub(WIDTH_TILE) + i) as usize;
                         let pixel = self.fifo_background.pop_front();
-                        self.frame_buffer[self.ly as usize][offset_x] =
-                            pixel.unwrap().color.to_rgba();
+                        self.frame_buffer[ly as usize][offset_x] = pixel.unwrap().color.to_rgba();
                     }
-                    if (self.ly == HEIGHT_LCD - 1) && (self.x_position_counter == WIDTH_LCD) {
+                    if (ly == HEIGHT_LCD - 1) && (rx == WIDTH_LCD) {
                         self.lcd.draw(&self.frame_buffer);
                     }
                 }
@@ -279,40 +298,33 @@ impl PPU {
         }
     }
 
-    fn fetch_tile_number(&self) -> u8 {
+    fn fetch_tile_number(&self, ly: u16, rx: u16) -> u8 {
         self.read(tile_number_address(
             self.background_data_select(),
-            self.ly,
+            ly,
+            rx,
             self.scx,
             self.scy,
-            self.x_position_counter,
         ))
     }
-    fn fetch_tile_data(&self, tile_number: u8) -> (u8, u8) {
-        let address = convert_tile_number_to_address(tile_number, self.tile_data_select());
-        let offset = 2 * ((self.ly + self.scy) % 8);
-        let address = address + offset;
+    fn fetch_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
+        assert_eq!(self.scy, 0);
+        let address = tile_number_to_address(tile_number, self.tile_data_select(), ly, self.scy);
         let low = self.read(address);
         let high = self.read(address + 1);
-        (low, high)
+        TileLine { low, high }
     }
-    fn push_fifo(&mut self, pixel: (u8, u8)) {
-        // fifoにいれる
-        for offset in (0..=7).rev() {
-            let color = match (((pixel.0 >> offset) & 0b1), ((pixel.1 >> offset) & 0b1)) {
-                (0, 0) => Color::White,
-                (1, 0) => Color::LightGray,
-                (0, 1) => Color::DarkGray,
-                (1, 1) => Color::Black,
-                _ => unreachable!(),
-            };
+    fn push_fifo(&mut self, tile_line: TileLine) -> u16 {
+        // 8画素分のピクセルデータを fifo にいれ、pushしたピクセル数を返す
+        for color in tile_line {
             self.fifo_background.push_back(Pixel {
                 color,
                 palette: self.obp0,
                 background_priority: 0,
             });
-            self.x_position_counter += 1;
         }
+        // tile_line.len() にしたい
+        WIDTH_TILE
     }
 }
 
@@ -390,28 +402,26 @@ impl Debug for PPU {
     }
 }
 
-fn tile_number_address(
-    base_address: Address,
-    ly: u16,
-    scx: u16,
-    scy: u16,
-    x_position_counter: u16,
-) -> Address {
+fn tile_number_address(base_address: Address, ly: u16, rx: u16, scx: u16, scy: u16) -> Address {
     // オフセット計算
-    let offset_x = (x_position_counter + (scx / 8)) & 0x001F;
-    let offset_y = 32 * ((ly + scy) & 0xFF) / 8;
+    assert_eq!(scx, 0);
+    assert_eq!(scy, 0);
+    let offset_x = rx + ((scx / WIDTH_TILE) & 0x001F);
+    let offset_y = 32 * (((ly + scy) & 0xFF) / HEIGHT_TILE);
     let tile_address = base_address + ((offset_x + offset_y) & 0x03FF);
     tile_address
 }
 
-fn convert_tile_number_to_address(tile_number: u8, method: TileDataSelect) -> Address {
-    match method {
+fn tile_number_to_address(tile_number: u8, method: TileDataSelect, ly: u16, scy: u16) -> Address {
+    let base_address = match method {
         TileDataSelect::Method8000 => 0x8000 + tile_number.to_unsigned_u16().wrapping_mul(16),
         TileDataSelect::Method8800 => {
-            let base: u16 = 0x9000;
-            base.add_signed_u16(tile_number.to_signed_u16().wrapping_mul(16))
+            0x9000u16.add_signed_u16(tile_number.to_signed_u16().wrapping_mul(16))
         }
-    }
+    };
+    // 1画素あたり2bitなので1行ズレると2バイト後ろのデータになる
+    let offset = 2 * ((ly + scy) % HEIGHT_TILE);
+    base_address + offset
 }
 
 #[cfg(test)]
@@ -421,30 +431,35 @@ mod tests {
     #[test]
     fn test_tile_number_address() {
         assert_eq!(tile_number_address(0x9800, 0, 0, 0, 0), 0x9800);
-        assert_eq!(tile_number_address(0x9800, 1, 1, 1, 1), 0x9809);
-        assert_eq!(tile_number_address(0x9800, 8, 0, 0, 1), 0x9821);
+        assert_eq!(tile_number_address(0x9800, 1, 1, 0, 0), 0x9801);
+        assert_eq!(tile_number_address(0x9800, 8, 1, 0, 0), 0x9821);
+        assert_eq!(tile_number_address(0x9800, 20, 2, 0, 0), 0x9842);
     }
 
     #[test]
     fn test_tile_data_address_m8800() {
         assert_eq!(
-            convert_tile_number_to_address(0x00, TileDataSelect::Method8800),
+            tile_number_to_address(0x00, TileDataSelect::Method8800, 0, 0),
             0x9000
         );
         assert_eq!(
-            convert_tile_number_to_address(0x01, TileDataSelect::Method8800),
+            tile_number_to_address(0x01, TileDataSelect::Method8800, 0, 0),
             0x9010
         );
         assert_eq!(
-            convert_tile_number_to_address(0x20, TileDataSelect::Method8800),
-            0x9200
+            tile_number_to_address(0x01, TileDataSelect::Method8800, 2, 0),
+            0x9014
         );
         assert_eq!(
-            convert_tile_number_to_address(0xFF, TileDataSelect::Method8800),
+            tile_number_to_address(0x20, TileDataSelect::Method8800, 5, 0),
+            0x920A
+        );
+        assert_eq!(
+            tile_number_to_address(0xFF, TileDataSelect::Method8800, 0, 0),
             0x8FF0
         );
         assert_eq!(
-            convert_tile_number_to_address(0xFE, TileDataSelect::Method8800),
+            tile_number_to_address(0xFE, TileDataSelect::Method8800, 0, 0),
             0x8FE0
         );
     }
@@ -452,16 +467,34 @@ mod tests {
     #[test]
     fn test_tile_data_address_m8000() {
         assert_eq!(
-            convert_tile_number_to_address(0x00, TileDataSelect::Method8000),
+            tile_number_to_address(0x00, TileDataSelect::Method8000, 0, 0),
             0x8000
         );
         assert_eq!(
-            convert_tile_number_to_address(0x02, TileDataSelect::Method8000),
+            tile_number_to_address(0x02, TileDataSelect::Method8000, 0, 0),
             0x8020
         );
         assert_eq!(
-            convert_tile_number_to_address(0xFF, TileDataSelect::Method8000),
+            tile_number_to_address(0xFF, TileDataSelect::Method8000, 0, 0),
             0x8FF0
         );
+    }
+
+    #[test]
+    fn test_tile_line() {
+        let tl = TileLine {
+            low: 0b11001100,
+            high: 0b10101010,
+        };
+        let mut it = tl.into_iter();
+        assert_eq!(it.next(), Some(Color::Black));
+        assert_eq!(it.next(), Some(Color::LightGray));
+        assert_eq!(it.next(), Some(Color::DarkGray));
+        assert_eq!(it.next(), Some(Color::White));
+        assert_eq!(it.next(), Some(Color::Black));
+        assert_eq!(it.next(), Some(Color::LightGray));
+        assert_eq!(it.next(), Some(Color::DarkGray));
+        assert_eq!(it.next(), Some(Color::White));
+        assert_eq!(it.next(), None);
     }
 }
