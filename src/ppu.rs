@@ -258,6 +258,7 @@ impl PPU {
             self.scan_line(self.ly);
             self.ly += 1;
         }
+        self.lcd.draw(&self.frame_buffer);
     }
 
     // 1行(= 160 pixel)の描画
@@ -270,29 +271,31 @@ impl PPU {
         // FIFOは2つある（背景ウィンドウ用とスプライト用）
         // FIFOが埋まったらLCDにプッシュ。（2つのFIFOをマージすることもある）
 
-        // スキャンラインごとのpushしたピクセル数(0 - 160)
+        // スキャンラインごとのLCDにpushしたピクセル数(0 - 160)
         let mut rx = 0u16;
         loop {
             if rx >= WIDTH_LCD - 1 {
                 break;
             }
             // TODO: OAMスキャン
-            // 1回のループで8画素(タイルの幅)分処理する
             let tile_number = self.fetch_tile_number(ly, rx);
             let tile_data = self.fetch_tile_data(tile_number, ly);
             if self.fifo_background.is_empty() {
                 assert_eq!(self.fifo_background.len(), 0);
-                rx += self.push_fifo(tile_data);
-                if !self.fifo_background.is_empty() {
-                    // push Pixel to LCD
-                    for i in 0..WIDTH_TILE {
-                        let offset_x = (rx.wrapping_sub(WIDTH_TILE) + i) as usize;
-                        let pixel = self.fifo_background.pop_front();
-                        self.frame_buffer[ly as usize][offset_x] = pixel.unwrap().color.to_rgba();
+                self.push_fifo(tile_data);
+            }
+            assert_eq!(self.scx, 0);
+            if !self.fifo_background.is_empty() {
+                // Push Pixel to LCD
+                let mut discarded = self.scx % 8;
+                while self.fifo_background.len() > 0 {
+                    let pixel = self.fifo_background.pop_front();
+                    if discarded > 0 {
+                        discarded -= 1;
+                        continue;
                     }
-                    if (ly == HEIGHT_LCD - 1) && (rx == WIDTH_LCD) {
-                        self.lcd.draw(&self.frame_buffer);
-                    }
+                    self.frame_buffer[ly as usize][rx as usize] = pixel.unwrap().color.to_rgba();
+                    rx += 1;
                 }
             }
         }
@@ -314,7 +317,7 @@ impl PPU {
         let high = self.read(address + 1);
         TileLine { low, high }
     }
-    fn push_fifo(&mut self, tile_line: TileLine) -> u16 {
+    fn push_fifo(&mut self, tile_line: TileLine) {
         // 8画素分のピクセルデータを fifo にいれ、pushしたピクセル数を返す
         for color in tile_line {
             self.fifo_background.push_back(Pixel {
@@ -323,8 +326,6 @@ impl PPU {
                 background_priority: 0,
             });
         }
-        // tile_line.len() にしたい
-        WIDTH_TILE
     }
 }
 
@@ -406,7 +407,7 @@ fn tile_number_address(base_address: Address, ly: u16, rx: u16, scx: u16, scy: u
     // オフセット計算
     assert_eq!(scx, 0);
     assert_eq!(scy, 0);
-    let offset_x = rx + ((scx / WIDTH_TILE) & 0x001F);
+    let offset_x = (rx / WIDTH_TILE) + ((scx / WIDTH_TILE) & 0x001F);
     let offset_y = 32 * (((ly + scy) & 0xFF) / HEIGHT_TILE);
     let tile_address = base_address + ((offset_x + offset_y) & 0x03FF);
     tile_address
@@ -431,36 +432,45 @@ mod tests {
     #[test]
     fn test_tile_number_address() {
         assert_eq!(tile_number_address(0x9800, 0, 0, 0, 0), 0x9800);
-        assert_eq!(tile_number_address(0x9800, 1, 1, 0, 0), 0x9801);
-        assert_eq!(tile_number_address(0x9800, 8, 1, 0, 0), 0x9821);
-        assert_eq!(tile_number_address(0x9800, 20, 2, 0, 0), 0x9842);
+        assert_eq!(tile_number_address(0x9800, 1, 1, 0, 0), 0x9800);
+        assert_eq!(tile_number_address(0x9800, 8, 1, 0, 0), 0x9820);
+        assert_eq!(tile_number_address(0x9800, 20, 2, 0, 0), 0x9840);
+        assert_eq!(tile_number_address(0x9800, 144, 0, 0, 0), 0x9A40);
     }
 
     #[test]
     fn test_tile_data_address_m8800() {
         assert_eq!(
-            tile_number_to_address(0x00, TileDataSelect::Method8800, 0, 0),
+            tile_number_to_address(127, TileDataSelect::Method8800, 0, 0),
+            0x97F0,
+        );
+        assert_eq!(
+            tile_number_to_address(0, TileDataSelect::Method8800, 0, 0),
             0x9000
         );
         assert_eq!(
-            tile_number_to_address(0x01, TileDataSelect::Method8800, 0, 0),
+            tile_number_to_address(1, TileDataSelect::Method8800, 0, 0),
             0x9010
         );
         assert_eq!(
-            tile_number_to_address(0x01, TileDataSelect::Method8800, 2, 0),
+            tile_number_to_address(1, TileDataSelect::Method8800, 2, 0),
             0x9014
         );
         assert_eq!(
-            tile_number_to_address(0x20, TileDataSelect::Method8800, 5, 0),
+            tile_number_to_address(32, TileDataSelect::Method8800, 5, 0),
             0x920A
         );
         assert_eq!(
-            tile_number_to_address(0xFF, TileDataSelect::Method8800, 0, 0),
+            tile_number_to_address(-1i8 as u8, TileDataSelect::Method8800, 0, 0),
             0x8FF0
         );
         assert_eq!(
-            tile_number_to_address(0xFE, TileDataSelect::Method8800, 0, 0),
+            tile_number_to_address(-2i8 as u8, TileDataSelect::Method8800, 0, 0),
             0x8FE0
+        );
+        assert_eq!(
+            tile_number_to_address(-128i8 as u8, TileDataSelect::Method8800, 0, 0),
+            0x8800,
         );
     }
 
