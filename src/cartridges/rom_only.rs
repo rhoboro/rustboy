@@ -4,7 +4,6 @@ use crate::Address;
 
 pub struct RomOnly {
     rom_banks: Vec<RomBank>,
-    #[allow(dead_code)]
     ram_banks: Vec<RamBank>,
     current_bank: usize,
 }
@@ -20,8 +19,11 @@ impl RomOnly {
 }
 
 impl Mbc for RomOnly {
-    fn current_bank(&self) -> usize {
+    fn current_rom_bank(&self) -> usize {
         self.current_bank
+    }
+    fn current_ram_bank(&self) -> usize {
+        todo!();
     }
     fn read(&self, address: Address) -> u8 {
         debug_log!("Read Rom: {:04X?}", address);

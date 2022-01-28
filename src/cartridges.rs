@@ -11,8 +11,9 @@ use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 
-// バンク1つのサイズは16KB
+// ROMバンク1つのサイズは16KB
 pub const BANK_SIZE_ROM: usize = 16 * 1024;
+// RAMバンク1つのサイズは8KB
 pub const BANK_SIZE_RAM: usize = 8 * 1024;
 
 pub type RomBank = [u8; BANK_SIZE_ROM];
@@ -33,7 +34,7 @@ impl Debug for Cartridge {
             "{:?}, num_of_banks: {}, current_bank_num: {}",
             self.header,
             self.header.rom_size.num_of_banks(),
-            self.mbc.current_bank()
+            self.mbc.current_rom_bank()
         )
     }
 }
@@ -95,7 +96,8 @@ impl Cartridge {
 
 pub trait Mbc {
     // デバッグ用
-    fn current_bank(&self) -> usize;
+    fn current_rom_bank(&self) -> usize;
+    fn current_ram_bank(&self) -> usize;
     // ROM/RAMの読み込み
     fn read(&self, address: Address) -> u8;
     // ROM/RAMの書き込み（ROM内の一部がMBC制御レジスタへの書き込みにも利用される）
