@@ -317,15 +317,15 @@ impl CPU {
         // fetch
         let opcode = self.fetch();
         // decode & execute
-        if opcode == 0xCB {
+        let cycle = if opcode == 0xCB {
             // CBの場合は16bit命令になる
             let opcode = self.fetch();
-            let cycle = self.execute_cb(opcode);
-            Ok((opcode, cycle))
+            self.execute_cb(opcode)
         } else {
-            let cycle = self.execute(opcode);
-            Ok((opcode, cycle))
-        }
+            self.execute(opcode)
+        };
+        debug_log!("{:?}", &self.registers);
+        Ok((opcode, cycle))
     }
     // PCの位置から1バイト読み取り、PCをインクリメントする
     fn fetch(&mut self) -> u8 {
@@ -1126,9 +1126,9 @@ impl CPU {
     // bytes: 2 cycles: [4]
     fn stop_d8_0x10(&mut self) -> u8 {
         debug_log!("STOP");
-        // ボタンが押されるまでCPUとLCDをHALT
+        // TODO: ボタンが押されるまでCPUとLCDをHALT
         let _ = self.fetch();
-        todo!();
+        4
     }
     // bytes: 3 cycles: [12]
     fn ld_de_d16_0x11(&mut self) -> u8 {

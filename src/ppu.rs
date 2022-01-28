@@ -364,9 +364,9 @@ impl IO for PPU {
         }
     }
     fn write(&mut self, address: Address, data: u8) {
-        debug_log!("Write: {:X?}, Data: {}", address, data);
         match address {
             0xFE00..=0xFE9F => {
+                debug_log!("Write Vram: {:X?}, Data: {}", address, data);
                 self.oam[(address - 0xFE00) as usize] = data;
             }
             0x8000..=0x9FFF => {
