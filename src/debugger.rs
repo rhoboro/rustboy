@@ -33,6 +33,8 @@ fn prompt(message: String) -> String {
 pub struct BreakPoint {
     breakpoints: Vec<u16>,
     should_stop: bool,
+    counts: Vec<u64>,
+    counter: u64,
 }
 
 impl BreakPoint {
@@ -40,11 +42,18 @@ impl BreakPoint {
         Self {
             // breakpoints: vec![0x0000],
             breakpoints: vec![],
+            counts: vec![],
             should_stop: false,
+            counter: 0,
         }
     }
     pub fn breakpoint(&mut self, opcode: u16, cpu: &CPU, stack: &Stack, ppu: &PPU) {
-        if !self.should_stop & !self.breakpoints.contains(&opcode) {
+        debug_log!("OPCODE: 0x{:04X?}", opcode);
+        self.counter += 1;
+        if !self.should_stop
+            & !self.breakpoints.contains(&opcode)
+            & !self.counts.contains(&self.counter)
+        {
             return;
         }
         self.should_stop = false;
@@ -81,11 +90,20 @@ impl BreakPoint {
                         println!("Remove breakpoint: {:04X?}", point);
                     }
                 }
+                "count" | "bc" => {
+                    if let Some(arg) = commands.get(1) {
+                        let without_prefix = arg.trim_start_matches("0x");
+                        let point = u64::from_str_radix(without_prefix, 10).unwrap();
+                        self.counts.push(point);
+                        println!("Add breakpoint: {:}", point);
+                    }
+                }
                 "print" | "p" => match commands.get(1) {
                     Some(&"reg") => cpu.print_registers(),
                     Some(&"vram") => ppu.print_vram(),
                     Some(&"stack") => println!("{:?}", stack),
-                    _ => println!("available: reg, stack, vram"),
+                    Some(&"count") => println!("{:?}", self.counter),
+                    _ => println!("available: reg, stack, vram, count"),
                 },
                 "quit" | "q" => {
                     println!("Bye");
