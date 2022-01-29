@@ -122,7 +122,7 @@ impl Mbc for Mbc1 {
                 RamMode::Disable => {}
             },
             _ => {
-                println!("address {:X?}", address);
+                debug_log!("address {:X?}", address);
                 unreachable!();
             }
         }

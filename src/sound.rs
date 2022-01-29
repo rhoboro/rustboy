@@ -1,4 +1,5 @@
 use crate::io::IO;
+use crate::debug_log;
 use crate::Address;
 use std::fmt::{Debug, Formatter};
 
@@ -6,11 +7,11 @@ pub struct Sound {}
 
 impl IO for Sound {
     fn read(&self, address: Address) -> u8 {
-        println!("Read: {:X?}", address);
+        debug_log!("Read: {:X?}", address);
         0
     }
     fn write(&mut self, address: Address, data: u8) {
-        println!("Write: {:X?}, Data: {}", address, data);
+        debug_log!("Write: {:X?}, Data: {}", address, data);
     }
 }
 
