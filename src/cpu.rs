@@ -313,19 +313,22 @@ impl CPU {
             ie: InterruptEnables::default(),
         }
     }
-    pub fn tick(&mut self) -> Result<(u8, u8), &str> {
+    pub fn tick(&mut self) -> Result<(u16, u8), &str> {
         // fetch
         let opcode = self.fetch();
         // decode & execute
-        let cycle = if opcode == 0xCB {
+        if opcode == 0xCB {
             // CBの場合は16bit命令になる
             let opcode = self.fetch();
-            self.execute_cb(opcode)
+            let cycle = self.execute_cb(opcode);
+            Ok((0xCB00 | opcode as u16, cycle))
         } else {
-            self.execute(opcode)
-        };
-        debug_log!("{:?}", &self.registers);
-        Ok((opcode, cycle))
+            let cycle = self.execute(opcode);
+            Ok((opcode as u16, cycle))
+        }
+    }
+    pub fn print_registers(&self) {
+        println!("{:?}", &self.registers);
     }
     // PCの位置から1バイト読み取り、PCをインクリメントする
     fn fetch(&mut self) -> u8 {

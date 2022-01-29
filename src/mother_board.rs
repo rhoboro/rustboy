@@ -1,6 +1,7 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
 use crate::debug_log;
+use crate::debugger::BreakPoint;
 use crate::io::IO;
 use crate::lcd::Terminal;
 use crate::ppu::PPU;
@@ -33,13 +34,16 @@ pub fn run(config: Config) -> Result<(), &'static str> {
     Ok(())
 }
 
+// 0xFFFE - 0xFF80
+pub type Stack = [u8; 128];
+
 #[derive(Debug)]
 pub struct MotherBoard {
     cpu: Option<RefCell<CPU>>,
     // joypad
     cartridge: RefCell<Cartridge>,
     ram: RefCell<[u8; 4 * 1024 * 2]>,
-    stack: RefCell<[u8; 0xFFFE - 0xFF80 + 1]>,
+    stack: RefCell<Stack>,
     ppu: RefCell<Box<PPU>>,
     timer: RefCell<Box<dyn IO>>,
     sound: RefCell<Box<dyn IO>>,
@@ -58,7 +62,7 @@ impl MotherBoard {
             timer,
             sound,
             ram: RefCell::new([0; 4 * 1024 * 2]),
-            stack: RefCell::new([0; 127]),
+            stack: RefCell::new([0; 128]),
             cpu: Option::None,
         }));
         let weak_ref = Rc::<RefCell<MotherBoard>>::downgrade(&mb);
@@ -68,16 +72,20 @@ impl MotherBoard {
     }
 
     fn run(&self) -> Result<(), &str> {
+        let mut bp = BreakPoint::new();
         let mut cpu = self.cpu.as_ref().unwrap().borrow_mut();
         cpu.reset();
         loop {
             let (opcode, cycle) = cpu.tick().unwrap();
-            debug_log!("OPCODE: 0x{:04X?}", opcode);
+            println!("OPCODE: 0x{:04X?}", opcode);
             if opcode == 0x76 {
                 // HALT
                 break;
             }
-            self.ppu.borrow_mut().tick(cycle);
+            {
+                self.ppu.borrow_mut().tick(cycle);
+            }
+            bp.breakpoint(opcode, &cpu, &self.stack.borrow(), &self.ppu.borrow());
         }
         Ok(())
     }

@@ -238,6 +238,10 @@ impl PPU {
         }
     }
 
+    pub fn print_vram(&self) {
+        println!("{:?}", self.vram);
+    }
+
     pub fn tick(&mut self, cycle: u8) {
         self.clock += cycle as u64;
         if self.clock_next_target <= self.clock {
