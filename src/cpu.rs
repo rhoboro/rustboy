@@ -2643,12 +2643,9 @@ impl CPU {
         if !self.registers.f.z {
             self.write(
                 self.registers.sp - 1,
-                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+                ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(
-                self.registers.sp - 2,
-                ((self.registers.pc + 1) & 0x00FF) as u8,
-            );
+            self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
             24
@@ -2680,12 +2677,9 @@ impl CPU {
         debug_log!("RST 00H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0000;
         16
@@ -2738,12 +2732,9 @@ impl CPU {
         if self.registers.f.z {
             self.write(
                 self.registers.sp - 1,
-                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+                ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(
-                self.registers.sp - 2,
-                ((self.registers.pc + 1) & 0x00FF) as u8,
-            );
+            self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
             24
@@ -2758,12 +2749,9 @@ impl CPU {
         let upper: u16 = self.fetch().into();
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = upper << 8 | lower;
         24
@@ -2784,12 +2772,9 @@ impl CPU {
         debug_log!("RST 08H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0008;
         16
@@ -2840,12 +2825,9 @@ impl CPU {
         if !self.registers.f.c {
             self.write(
                 self.registers.sp - 1,
-                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+                ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(
-                self.registers.sp - 2,
-                ((self.registers.pc + 1) & 0x00FF) as u8,
-            );
+            self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
             24
@@ -2877,12 +2859,9 @@ impl CPU {
         debug_log!("RST 10H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0010;
         16
@@ -2935,12 +2914,9 @@ impl CPU {
         if self.registers.f.c {
             self.write(
                 self.registers.sp - 1,
-                (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+                ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(
-                self.registers.sp - 2,
-                ((self.registers.pc + 1) & 0x00FF) as u8,
-            );
+            self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
             self.registers.sp -= 2;
             self.registers.pc = upper << 8 | lower;
             24
@@ -2968,12 +2944,9 @@ impl CPU {
         debug_log!("RST 18H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0018;
         16
@@ -3030,12 +3003,9 @@ impl CPU {
         debug_log!("RST 20H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0020;
         16
@@ -3095,12 +3065,9 @@ impl CPU {
         debug_log!("RST 28H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0028;
         16
@@ -3159,12 +3126,9 @@ impl CPU {
         debug_log!("RST 30H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0030;
         16
@@ -3224,12 +3188,9 @@ impl CPU {
         debug_log!("RST 38H");
         self.write(
             self.registers.sp - 1,
-            (((self.registers.pc + 1) & 0xFF00) >> 8) as u8,
+            ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(
-            self.registers.sp - 2,
-            ((self.registers.pc + 1) & 0x00FF) as u8,
-        );
+        self.write(self.registers.sp - 2, (self.registers.pc & 0x00FF) as u8);
         self.registers.sp -= 2;
         self.registers.pc = 0x0000 + 0x0038;
         16

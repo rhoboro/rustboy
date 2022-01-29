@@ -38,7 +38,8 @@ pub struct BreakPoint {
 impl BreakPoint {
     pub fn new() -> Self {
         Self {
-            breakpoints: vec![0x0000],
+            // breakpoints: vec![0x0000],
+            breakpoints: vec![],
             should_stop: false,
         }
     }

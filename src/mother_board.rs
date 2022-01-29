@@ -77,7 +77,7 @@ impl MotherBoard {
         cpu.reset();
         loop {
             let (opcode, cycle) = cpu.tick().unwrap();
-            println!("OPCODE: 0x{:04X?}", opcode);
+            debug_log!("OPCODE: 0x{:04X?}", opcode);
             if opcode == 0x76 {
                 // HALT
                 break;
