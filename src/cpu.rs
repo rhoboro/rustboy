@@ -1019,14 +1019,14 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn inc_bc_0x03(&mut self) -> u8 {
         debug_log!("INC BC");
-        self.registers.set_bc(self.registers.bc() + 1);
+        self.registers.set_bc(self.registers.bc().wrapping_add(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_b_0x04(&mut self) -> u8 {
         debug_log!("INC B");
         self.registers.f.h = self.registers.b.calc_half_carry(1);
-        self.registers.b += 1;
+        self.registers.b.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.b == 0;
         4
@@ -1035,7 +1035,7 @@ impl CPU {
     fn dec_b_0x05(&mut self) -> u8 {
         debug_log!("DEC B");
         self.registers.f.h = self.registers.b.calc_half_borrow(1);
-        self.registers.b -= 1;
+        self.registers.b.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.b == 0;
         4
@@ -1087,14 +1087,14 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn dec_bc_0x0b(&mut self) -> u8 {
         debug_log!("DEC BC");
-        self.registers.set_bc(self.registers.bc() - 1);
+        self.registers.set_bc(self.registers.bc().wrapping_sub(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_c_0x0c(&mut self) -> u8 {
         debug_log!("INC C");
         self.registers.f.h = self.registers.c.calc_half_carry(1);
-        self.registers.c += 1;
+        self.registers.c.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.c == 0;
         4
@@ -1103,7 +1103,7 @@ impl CPU {
     fn dec_c_0x0d(&mut self) -> u8 {
         debug_log!("DEC C");
         self.registers.f.h = self.registers.c.calc_half_borrow(1);
-        self.registers.c -= 1;
+        self.registers.c.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.c == 0;
         4
@@ -1151,14 +1151,14 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn inc_de_0x13(&mut self) -> u8 {
         debug_log!("INC DE");
-        self.registers.set_de(self.registers.de() + 1);
+        self.registers.set_de(self.registers.de().wrapping_add(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_d_0x14(&mut self) -> u8 {
         debug_log!("INC D");
         self.registers.f.h = self.registers.d.calc_half_carry(1);
-        self.registers.d += 1;
+        self.registers.d.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.d == 0;
         4
@@ -1167,7 +1167,7 @@ impl CPU {
     fn dec_d_0x15(&mut self) -> u8 {
         debug_log!("DEC D");
         self.registers.f.h = self.registers.d.calc_half_borrow(1);
-        self.registers.d -= 1;
+        self.registers.d.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.d == 0;
         4
@@ -1217,14 +1217,14 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn dec_de_0x1b(&mut self) -> u8 {
         debug_log!("DEC DE");
-        self.registers.set_de(self.registers.de() - 1);
+        self.registers.set_de(self.registers.de().wrapping_sub(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_e_0x1c(&mut self) -> u8 {
         debug_log!("INC E");
         self.registers.f.h = self.registers.e.calc_half_carry(1);
-        self.registers.e += 1;
+        self.registers.e.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.e == 0;
         4
@@ -1233,7 +1233,7 @@ impl CPU {
     fn dec_e_0x1d(&mut self) -> u8 {
         debug_log!("DEC E");
         self.registers.f.h = self.registers.e.calc_half_borrow(1);
-        self.registers.e -= 1;
+        self.registers.e.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.e == 0;
         4
@@ -1280,20 +1280,20 @@ impl CPU {
     fn ld_hl_a_0x22(&mut self) -> u8 {
         debug_log!("LD (HL+), A");
         self.write(self.registers.hl(), self.registers.a);
-        self.registers.set_hl(self.registers.hl() + 1);
+        self.registers.set_hl(self.registers.hl().wrapping_add(1));
         8
     }
     // bytes: 1 cycles: [8]
     fn inc_hl_0x23(&mut self) -> u8 {
         debug_log!("INC HL");
-        self.registers.set_hl(self.registers.hl() + 1);
+        self.registers.set_hl(self.registers.hl().wrapping_add(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_h_0x24(&mut self) -> u8 {
         debug_log!("INC H");
         self.registers.f.h = self.registers.h.calc_half_carry(1);
-        self.registers.h += 1;
+        self.registers.h.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.h == 0;
         4
@@ -1302,7 +1302,7 @@ impl CPU {
     fn dec_h_0x25(&mut self) -> u8 {
         debug_log!("DEC H");
         self.registers.f.h = self.registers.h.calc_half_borrow(1);
-        self.registers.h -= 1;
+        self.registers.h.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.h == 0;
         4
@@ -1369,20 +1369,20 @@ impl CPU {
     fn ld_a_hl_0x2a(&mut self) -> u8 {
         debug_log!("LD A, (HL+)");
         self.registers.a = self.read(self.registers.hl());
-        self.registers.set_hl(self.registers.hl() + 1);
+        self.registers.set_hl(self.registers.hl().wrapping_add(1));
         8
     }
     // bytes: 1 cycles: [8]
     fn dec_hl_0x2b(&mut self) -> u8 {
         debug_log!("DEC HL");
-        self.registers.set_hl(self.registers.hl() - 1);
+        self.registers.set_hl(self.registers.hl().wrapping_sub(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_l_0x2c(&mut self) -> u8 {
         debug_log!("INC L");
         self.registers.f.h = self.registers.l.calc_half_carry(1);
-        self.registers.l += 1;
+        self.registers.l.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.l == 0;
         4
@@ -1391,7 +1391,7 @@ impl CPU {
     fn dec_l_0x2d(&mut self) -> u8 {
         debug_log!("DEC L");
         self.registers.f.h = self.registers.l.calc_half_borrow(1);
-        self.registers.l -= 1;
+        self.registers.l.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.l == 0;
         4
@@ -1436,14 +1436,14 @@ impl CPU {
         debug_log!("LD (HL-), A");
         self.write(self.registers.hl(), self.registers.a);
         self.registers.a = self.read(self.registers.hl());
-        self.registers.set_hl(self.registers.hl() - 1);
+        self.registers.set_hl(self.registers.hl().wrapping_sub(1));
         8
     }
     // bytes: 1 cycles: [8]
     fn inc_sp_0x33(&mut self) -> u8 {
         debug_log!("INC SP");
         let spv = self.read(self.registers.sp);
-        self.write(self.registers.sp, spv + 1);
+        self.write(self.registers.sp, spv.wrapping_add(1));
         8
     }
     // bytes: 1 cycles: [12]
@@ -1451,9 +1451,9 @@ impl CPU {
         debug_log!("INC (HL)");
         let hl = self.read(self.registers.hl());
         self.registers.f.h = hl.calc_half_carry(1);
-        self.write(self.registers.hl(), hl + 1);
+        self.write(self.registers.hl(), hl.wrapping_add(1));
         self.registers.f.n = false;
-        self.registers.f.z = (hl + 1) == 0;
+        self.registers.f.z = (hl.wrapping_add(1)) == 0;
         12
     }
     // bytes: 1 cycles: [12]
@@ -1461,9 +1461,9 @@ impl CPU {
         debug_log!("DEC (HL)");
         let hl = self.read(self.registers.hl());
         self.registers.f.h = hl.calc_half_borrow(1);
-        self.write(self.registers.hl(), hl - 1);
+        self.write(self.registers.hl(), hl.wrapping_sub(1));
         self.registers.f.n = true;
-        self.registers.f.z = (hl - 1) == 0;
+        self.registers.f.z = (hl.wrapping_sub(1)) == 0;
         12
     }
     // bytes: 2 cycles: [12]
@@ -1507,21 +1507,21 @@ impl CPU {
     fn ld_a_hl_0x3a(&mut self) -> u8 {
         debug_log!("LD A, (HL-)");
         self.registers.a = self.read(self.registers.hl());
-        self.registers.set_hl(self.registers.hl() - 1);
+        self.registers.set_hl(self.registers.hl().wrapping_sub(1));
         8
     }
     // bytes: 1 cycles: [8]
     fn dec_sp_0x3b(&mut self) -> u8 {
         debug_log!("DEC SP");
         let spv = self.read(self.registers.sp);
-        self.write(self.registers.sp, spv - 1);
+        self.write(self.registers.sp, spv.wrapping_sub(1));
         8
     }
     // bytes: 1 cycles: [4]
     fn inc_a_0x3c(&mut self) -> u8 {
         debug_log!("INC A");
         self.registers.f.h = self.registers.a.calc_half_carry(1);
-        self.registers.a += 1;
+        self.registers.a.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.a == 0;
         4
@@ -1530,7 +1530,7 @@ impl CPU {
     fn dec_a_0x3d(&mut self) -> u8 {
         debug_log!("DEC A");
         self.registers.f.h = self.registers.a.calc_half_borrow(1);
-        self.registers.a -= 1;
+        self.registers.a.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.a == 0;
         4
