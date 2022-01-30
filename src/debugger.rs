@@ -1,4 +1,4 @@
-use crate::cpu::{Bus, CPU};
+use crate::cpu::CPU;
 use crate::mother_board::Stack;
 use crate::ppu::PPU;
 use std::io::{stdin, stdout, Write};

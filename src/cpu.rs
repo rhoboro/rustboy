@@ -126,14 +126,6 @@ impl Registers {
         self.pc = 0x0100;
         self.sp = 0xFFFE;
     }
-    fn af(&self) -> u16 {
-        let f: u8 = self.f.into();
-        ((self.a as u16) << 8) | f as u16
-    }
-    fn set_af(&mut self, v: u16) {
-        self.a = ((v & 0xFF00) >> 8) as u8;
-        self.f = Flags::from((v & 0x00FF) as u8);
-    }
     fn bc(&self) -> u16 {
         ((self.b as u16) << 8) | self.c as u16
     }
@@ -1026,7 +1018,7 @@ impl CPU {
     fn inc_b_0x04(&mut self) -> u8 {
         debug_log!("INC B");
         self.registers.f.h = self.registers.b.calc_half_carry(1);
-        self.registers.b.wrapping_add(1);
+        self.registers.b = self.registers.b.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.b == 0;
         4
@@ -1035,7 +1027,7 @@ impl CPU {
     fn dec_b_0x05(&mut self) -> u8 {
         debug_log!("DEC B");
         self.registers.f.h = self.registers.b.calc_half_borrow(1);
-        self.registers.b.wrapping_sub(1);
+        self.registers.b = self.registers.b.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.b == 0;
         4
@@ -1094,7 +1086,7 @@ impl CPU {
     fn inc_c_0x0c(&mut self) -> u8 {
         debug_log!("INC C");
         self.registers.f.h = self.registers.c.calc_half_carry(1);
-        self.registers.c.wrapping_add(1);
+        self.registers.c = self.registers.c.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.c == 0;
         4
@@ -1103,7 +1095,7 @@ impl CPU {
     fn dec_c_0x0d(&mut self) -> u8 {
         debug_log!("DEC C");
         self.registers.f.h = self.registers.c.calc_half_borrow(1);
-        self.registers.c.wrapping_sub(1);
+        self.registers.c = self.registers.c.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.c == 0;
         4
@@ -1158,7 +1150,7 @@ impl CPU {
     fn inc_d_0x14(&mut self) -> u8 {
         debug_log!("INC D");
         self.registers.f.h = self.registers.d.calc_half_carry(1);
-        self.registers.d.wrapping_add(1);
+        self.registers.d = self.registers.d.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.d == 0;
         4
@@ -1167,7 +1159,7 @@ impl CPU {
     fn dec_d_0x15(&mut self) -> u8 {
         debug_log!("DEC D");
         self.registers.f.h = self.registers.d.calc_half_borrow(1);
-        self.registers.d.wrapping_sub(1);
+        self.registers.d = self.registers.d.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.d == 0;
         4
@@ -1224,7 +1216,7 @@ impl CPU {
     fn inc_e_0x1c(&mut self) -> u8 {
         debug_log!("INC E");
         self.registers.f.h = self.registers.e.calc_half_carry(1);
-        self.registers.e.wrapping_add(1);
+        self.registers.e = self.registers.e.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.e == 0;
         4
@@ -1233,7 +1225,7 @@ impl CPU {
     fn dec_e_0x1d(&mut self) -> u8 {
         debug_log!("DEC E");
         self.registers.f.h = self.registers.e.calc_half_borrow(1);
-        self.registers.e.wrapping_sub(1);
+        self.registers.e = self.registers.e.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.e == 0;
         4
@@ -1293,7 +1285,7 @@ impl CPU {
     fn inc_h_0x24(&mut self) -> u8 {
         debug_log!("INC H");
         self.registers.f.h = self.registers.h.calc_half_carry(1);
-        self.registers.h.wrapping_add(1);
+        self.registers.h = self.registers.h.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.h == 0;
         4
@@ -1302,7 +1294,7 @@ impl CPU {
     fn dec_h_0x25(&mut self) -> u8 {
         debug_log!("DEC H");
         self.registers.f.h = self.registers.h.calc_half_borrow(1);
-        self.registers.h.wrapping_sub(1);
+        self.registers.h = self.registers.h.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.h == 0;
         4
@@ -1382,7 +1374,7 @@ impl CPU {
     fn inc_l_0x2c(&mut self) -> u8 {
         debug_log!("INC L");
         self.registers.f.h = self.registers.l.calc_half_carry(1);
-        self.registers.l.wrapping_add(1);
+        self.registers.l = self.registers.l.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.l == 0;
         4
@@ -1391,7 +1383,7 @@ impl CPU {
     fn dec_l_0x2d(&mut self) -> u8 {
         debug_log!("DEC L");
         self.registers.f.h = self.registers.l.calc_half_borrow(1);
-        self.registers.l.wrapping_sub(1);
+        self.registers.l = self.registers.l.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.l == 0;
         4
@@ -1453,7 +1445,7 @@ impl CPU {
         self.registers.f.h = hl.calc_half_carry(1);
         self.write(self.registers.hl(), hl.wrapping_add(1));
         self.registers.f.n = false;
-        self.registers.f.z = (hl.wrapping_add(1)) == 0;
+        self.registers.f.z = hl.wrapping_add(1) == 0;
         12
     }
     // bytes: 1 cycles: [12]
@@ -1463,7 +1455,7 @@ impl CPU {
         self.registers.f.h = hl.calc_half_borrow(1);
         self.write(self.registers.hl(), hl.wrapping_sub(1));
         self.registers.f.n = true;
-        self.registers.f.z = (hl.wrapping_sub(1)) == 0;
+        self.registers.f.z = hl.wrapping_sub(1) == 0;
         12
     }
     // bytes: 2 cycles: [12]
@@ -1521,7 +1513,7 @@ impl CPU {
     fn inc_a_0x3c(&mut self) -> u8 {
         debug_log!("INC A");
         self.registers.f.h = self.registers.a.calc_half_carry(1);
-        self.registers.a.wrapping_add(1);
+        self.registers.a = self.registers.a.wrapping_add(1);
         self.registers.f.n = false;
         self.registers.f.z = self.registers.a == 0;
         4
@@ -1530,7 +1522,7 @@ impl CPU {
     fn dec_a_0x3d(&mut self) -> u8 {
         debug_log!("DEC A");
         self.registers.f.h = self.registers.a.calc_half_borrow(1);
-        self.registers.a.wrapping_sub(1);
+        self.registers.a = self.registers.a.wrapping_sub(1);
         self.registers.f.n = true;
         self.registers.f.z = self.registers.a == 0;
         4
@@ -1939,7 +1931,7 @@ impl CPU {
         debug_log!("ADD A, B");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.b);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.b);
-        self.registers.a += self.registers.b;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.b);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -1949,7 +1941,7 @@ impl CPU {
         debug_log!("ADD A, C");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.c);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.c);
-        self.registers.a += self.registers.c;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.c);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -1959,7 +1951,7 @@ impl CPU {
         debug_log!("ADD A, D");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.d);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.d);
-        self.registers.a += self.registers.d;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.d);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -1969,7 +1961,7 @@ impl CPU {
         debug_log!("ADD A, E");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.e);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.e);
-        self.registers.a += self.registers.e;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.e);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -1979,7 +1971,7 @@ impl CPU {
         debug_log!("ADD A, H");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.h);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.h);
-        self.registers.a += self.registers.h;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.h);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -1989,7 +1981,7 @@ impl CPU {
         debug_log!("ADD A, L");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.l);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.l);
-        self.registers.a += self.registers.l;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.l);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2000,7 +1992,7 @@ impl CPU {
         let hl = self.read(self.registers.hl());
         self.registers.f.h = self.registers.a.calc_half_carry(hl);
         self.registers.f.c = self.registers.a.calc_carry(hl);
-        self.registers.a += hl;
+        self.registers.a = self.registers.a.wrapping_add(hl);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2010,7 +2002,7 @@ impl CPU {
         debug_log!("ADD A, A");
         self.registers.f.h = self.registers.a.calc_half_carry(self.registers.a);
         self.registers.f.c = self.registers.a.calc_carry(self.registers.a);
-        self.registers.a += self.registers.a;
+        self.registers.a = self.registers.a.wrapping_add(self.registers.a);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2021,7 +2013,7 @@ impl CPU {
         let rhs: u8 = self.registers.b + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2032,7 +2024,7 @@ impl CPU {
         let rhs: u8 = self.registers.c + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2043,7 +2035,7 @@ impl CPU {
         let rhs: u8 = self.registers.d + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2054,7 +2046,7 @@ impl CPU {
         let rhs: u8 = self.registers.e + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2065,7 +2057,7 @@ impl CPU {
         let rhs: u8 = self.registers.h + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2076,7 +2068,7 @@ impl CPU {
         let rhs: u8 = self.registers.l + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2087,7 +2079,7 @@ impl CPU {
         let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2098,7 +2090,7 @@ impl CPU {
         let rhs: u8 = self.registers.a + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2108,7 +2100,7 @@ impl CPU {
         debug_log!("SUB B");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.b);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.b);
-        self.registers.a -= self.registers.b;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.b);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2118,7 +2110,7 @@ impl CPU {
         debug_log!("SUB C");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.c);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.c);
-        self.registers.a -= self.registers.c;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.c);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2128,7 +2120,7 @@ impl CPU {
         debug_log!("SUB D");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.d);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.d);
-        self.registers.a -= self.registers.d;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.d);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2138,7 +2130,7 @@ impl CPU {
         debug_log!("SUB E");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.e);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.e);
-        self.registers.a -= self.registers.e;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.e);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2148,7 +2140,7 @@ impl CPU {
         debug_log!("SUB H");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.h);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.h);
-        self.registers.a -= self.registers.h;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.h);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2158,7 +2150,7 @@ impl CPU {
         debug_log!("SUB L");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.l);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.l);
-        self.registers.a -= self.registers.l;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.l);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2169,7 +2161,7 @@ impl CPU {
         let hl = self.read(self.registers.hl());
         self.registers.f.h = self.registers.a.calc_half_borrow(hl);
         self.registers.f.c = self.registers.a.calc_borrow(hl);
-        self.registers.a -= hl;
+        self.registers.a = self.registers.a.wrapping_sub(hl);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2179,7 +2171,7 @@ impl CPU {
         debug_log!("SUB A");
         self.registers.f.h = self.registers.a.calc_half_borrow(self.registers.a);
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.a);
-        self.registers.a -= self.registers.a;
+        self.registers.a = self.registers.a.wrapping_sub(self.registers.a);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2190,7 +2182,7 @@ impl CPU {
         let rhs: u8 = self.registers.b + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2201,7 +2193,7 @@ impl CPU {
         let rhs: u8 = self.registers.c + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2212,7 +2204,7 @@ impl CPU {
         let rhs: u8 = self.registers.d + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2223,7 +2215,7 @@ impl CPU {
         let rhs: u8 = self.registers.e + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2234,7 +2226,7 @@ impl CPU {
         let rhs: u8 = self.registers.h + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2245,7 +2237,7 @@ impl CPU {
         let rhs: u8 = self.registers.l + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2256,7 +2248,7 @@ impl CPU {
         let rhs: u8 = self.read(self.registers.hl()) + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2267,7 +2259,7 @@ impl CPU {
         let rhs: u8 = self.registers.a + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         4
@@ -2667,7 +2659,7 @@ impl CPU {
         let d8: u8 = self.fetch();
         self.registers.f.h = self.registers.a.calc_half_carry(d8);
         self.registers.f.c = self.registers.a.calc_carry(d8);
-        self.registers.a += d8;
+        self.registers.a = self.registers.a.wrapping_add(d8);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2762,7 +2754,7 @@ impl CPU {
         let rhs: u8 = self.fetch() + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
-        self.registers.a += rhs;
+        self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2849,7 +2841,7 @@ impl CPU {
         let d8 = self.fetch();
         self.registers.f.h = self.registers.a.calc_half_borrow(d8);
         self.registers.f.c = self.registers.a.calc_borrow(d8);
-        self.registers.a -= d8;
+        self.registers.a = self.registers.a.wrapping_sub(d8);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8
@@ -2934,7 +2926,7 @@ impl CPU {
         let rhs: u8 = self.fetch() + self.registers.f.c as u8;
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a -= rhs;
+        self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         8

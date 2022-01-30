@@ -72,7 +72,7 @@ impl MotherBoard {
     }
 
     fn run(&self) -> Result<(), &str> {
-        let mut bp = BreakPoint::new(&[0x0000]);
+        let mut bp = BreakPoint::new(&[]);
         let mut cpu = self.cpu.as_ref().unwrap().borrow_mut();
         cpu.reset();
         loop {

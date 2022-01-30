@@ -288,7 +288,6 @@ impl PPU {
                 assert_eq!(self.fifo_background.len(), 0);
                 self.push_fifo(tile_data);
             }
-            assert_eq!(self.scx, 0);
             if !self.fifo_background.is_empty() {
                 // Push Pixel to LCD
                 let mut discarded = self.scx % 8;
@@ -315,7 +314,6 @@ impl PPU {
         ))
     }
     fn fetch_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
-        assert_eq!(self.scy, 0);
         let address = tile_number_to_address(tile_number, self.tile_data_select(), ly, self.scy);
         let low = self.read(address);
         let high = self.read(address + 1);
@@ -409,8 +407,6 @@ impl Debug for PPU {
 
 fn tile_number_address(base_address: Address, ly: u16, rx: u16, scx: u16, scy: u16) -> Address {
     // オフセット計算
-    assert_eq!(scx, 0);
-    assert_eq!(scy, 0);
     let offset_x = (rx / WIDTH_TILE) + ((scx / WIDTH_TILE) & 0x001F);
     let offset_y = 32 * (((ly + scy) & 0xFF) / HEIGHT_TILE);
     let tile_address = base_address + ((offset_x + offset_y) & 0x03FF);
