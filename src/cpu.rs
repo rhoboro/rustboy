@@ -326,7 +326,7 @@ impl CPU {
     fn fetch(&mut self) -> u8 {
         let byte = self.read(self.registers.pc);
         // opcode実行前にインクリメントしておく
-        self.registers.pc += 0x01;
+        self.registers.pc = self.registers.pc.wrapping_add(1);
         byte
     }
     // https://gbdev.io/gb-opcodes/optables/
@@ -867,7 +867,7 @@ impl CPU {
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
                 println!("{:X?}", address);
-                unreachable!()
+                0
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
@@ -882,7 +882,10 @@ impl CPU {
                     0xFF46 => self.dma,
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().read(address),
-                    _ => unreachable!(),
+                    _ => {
+                        println!("{:X?}", address);
+                        0
+                    },
                 }
             }
             0xFF80..=0xFFFE => {
@@ -1530,8 +1533,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn ld_a_d8_0x3e(&mut self) -> u8 {
         debug_log!("LD A, d8");
-        let d8: u16 = self.fetch().into();
-        self.registers.a = self.read(d8);
+        let d8 = self.fetch().into();
+        self.registers.a = d8;
         8
     }
     // bytes: 1 cycles: [4]
