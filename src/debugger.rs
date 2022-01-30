@@ -22,8 +22,8 @@ macro_rules! debug_log {
         });
 }
 
-fn prompt(message: String) -> String {
-    print!("{}", &message);
+fn prompt(message: &String) -> String {
+    print!("{}", message);
     stdout().flush().ok();
     let mut input = String::new();
     stdin().read_line(&mut input).ok();
@@ -38,10 +38,9 @@ pub struct BreakPoint {
 }
 
 impl BreakPoint {
-    pub fn new() -> Self {
+    pub fn new(points: &[u16]) -> Self {
         Self {
-            // breakpoints: vec![0x0000],
-            breakpoints: vec![],
+            breakpoints: points.to_vec(),
             counts: vec![],
             should_stop: false,
             counter: 0,
@@ -59,7 +58,7 @@ impl BreakPoint {
         self.should_stop = false;
 
         loop {
-            let input = prompt("Breakpoint >>> ".to_string());
+            let input = prompt(&"Breakpoint >>> ".to_string());
             let commands: Vec<&str> = input.split(" ").collect();
             match commands[0] {
                 "continue" | "c" => {
@@ -109,6 +108,7 @@ impl BreakPoint {
                     println!("Bye");
                     exit(0);
                 }
+                "" => {}
                 _ => {
                     println!("Command not found");
                 }
