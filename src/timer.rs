@@ -7,11 +7,11 @@ pub struct Timer {}
 
 impl IO for Timer {
     fn read(&self, address: Address) -> u8 {
-        debug_log!("Read: {:X?}", address);
+        debug_log!("Read Timer: {:X?}", address);
         0
     }
     fn write(&mut self, address: Address, data: u8) {
-        debug_log!("Write: {:X?}, Data: {}", address, data);
+        debug_log!("Write Timer: {:X?}, Data: {}", address, data);
     }
 }
 

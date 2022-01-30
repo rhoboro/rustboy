@@ -866,7 +866,7 @@ impl CPU {
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                println!("{:X?}", address);
+                println!("ignored: {:X?}", address);
                 0
             }
             0xFF00..=0xFF7F => {
@@ -883,9 +883,9 @@ impl CPU {
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().read(address),
                     _ => {
-                        println!("{:X?}", address);
+                        println!("ignored: {:X?}", address);
                         0
-                    },
+                    }
                 }
             }
             0xFF80..=0xFFFE => {
@@ -908,7 +908,7 @@ impl CPU {
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                println!("{:X?}", address);
+                println!("ignored: {:X?}", address);
                 unreachable!()
             }
             0xFF00..=0xFF7F => {
@@ -925,7 +925,7 @@ impl CPU {
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().write(address, data),
                     _ => {
-                        println!("{:X?}", address);
+                        println!("ignored: {:X?}", address);
                         unreachable!()
                     }
                 }

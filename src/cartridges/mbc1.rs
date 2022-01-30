@@ -55,7 +55,7 @@ impl Mbc for Mbc1 {
             }
             0xA000..=0xBFFF => {
                 // カートリッジ内のRAM
-                self.ram_banks[self.current_rom_bank][(address - 0x4000) as usize]
+                self.ram_banks[self.current_ram_bank][(address - 0xA000) as usize]
             }
             _ => unreachable!(),
         }
