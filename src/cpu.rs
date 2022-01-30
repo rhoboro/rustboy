@@ -114,7 +114,7 @@ impl Registers {
         }
     }
     fn reset(&mut self) {
-        // https://w.atwiki.jp/gbspec/pages/26.html
+        // https://gbdev.io/pandocs/Power_Up_Sequence.html
         self.a = 0x01;
         self.f = Flags::from(0xB0);
         self.b = 0x00;
@@ -123,8 +123,8 @@ impl Registers {
         self.e = 0xD8;
         self.h = 0x01;
         self.l = 0x4D;
-        self.sp = 0xFFFF;
         self.pc = 0x0100;
+        self.sp = 0xFFFE;
     }
     fn af(&self) -> u16 {
         let f: u8 = self.f.into();
