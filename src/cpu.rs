@@ -866,7 +866,7 @@ impl CPU {
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                println!("ignored: {:X?}", address);
+                debug_log!("ignored: {:X?}", address);
                 0
             }
             0xFF00..=0xFF7F => {
@@ -883,7 +883,7 @@ impl CPU {
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().read(address),
                     _ => {
-                        println!("ignored: {:X?}", address);
+                        debug_log!("ignored: {:X?}", address);
                         0
                     }
                 }
@@ -908,14 +908,17 @@ impl CPU {
             }
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
-                println!("ignored: {:X?}", address);
+                debug_log!("ignored: {:X?}", address);
                 unreachable!()
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
                 match address {
                     0xFF00 => self.p1 = data,
-                    0xFF01 => self.sb = data,
+                    0xFF01 => {
+                        println!("SB: {}", char::from_u32(data as u32).unwrap());
+                        self.sb = data
+                    },
                     0xFF02 => self.sc = data,
                     0xFF04 => self.div = data,
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
@@ -925,7 +928,7 @@ impl CPU {
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().write(address, data),
                     _ => {
-                        println!("ignored: {:X?}", address);
+                        debug_log!("ignored: {:X?}", address);
                         unreachable!()
                     }
                 }
