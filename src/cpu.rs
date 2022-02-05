@@ -2108,7 +2108,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.b);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.b);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2118,7 +2118,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.c);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.c);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2128,7 +2128,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.d);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.d);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2138,7 +2138,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.e);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.e);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2148,7 +2148,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.h);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.h);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2158,7 +2158,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.l);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.l);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [8]
@@ -2169,7 +2169,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(hl);
         self.registers.a = self.registers.a.wrapping_sub(hl);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         8
     }
     // bytes: 1 cycles: [4]
@@ -2179,7 +2179,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(self.registers.a);
         self.registers.a = self.registers.a.wrapping_sub(self.registers.a);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2849,7 +2849,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(d8);
         self.registers.a = self.registers.a.wrapping_sub(d8);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         8
     }
     // bytes: 1 cycles: [16]
