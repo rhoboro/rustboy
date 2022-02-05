@@ -47,7 +47,9 @@ impl BreakPoint {
         }
     }
     pub fn breakpoint(&mut self, opcode: u16, cpu: &CPU, stack: &Stack, ppu: &PPU) {
-        debug_log!("OPCODE: 0x{:04X?}", opcode);
+        println!("COUNTS: {:}", self.counter);
+        println!("OPCODE: 0x{:04X?}", opcode);
+        cpu.print_registers();
         self.counter += 1;
         if !self.should_stop
             & !self.breakpoints.contains(&opcode)
