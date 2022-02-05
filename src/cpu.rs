@@ -47,10 +47,10 @@ struct Flags {
 impl From<u8> for Flags {
     fn from(v: u8) -> Self {
         Self {
-            z: (v & 0b10000000) == 0b10000000,
-            n: (v & 0b01000000) == 0b01000000,
-            h: (v & 0b00100000) == 0b00100000,
-            c: (v & 0b00010000) == 0b00010000,
+            z: (v & 0b_1000_0000) == 0b_1000_0000,
+            n: (v & 0b_0100_0000) == 0b_0100_0000,
+            h: (v & 0b_0010_0000) == 0b_0010_0000,
+            c: (v & 0b_0001_0000) == 0b_0001_0000,
         }
     }
 }
@@ -59,18 +59,18 @@ impl Into<u8> for Flags {
     fn into(self) -> u8 {
         let mut v;
         if self.z {
-            v = 0b10000000;
+            v = 0b_1000_0000;
         } else {
-            v = 0b00000000;
+            v = 0b_0000_0000;
         }
         if self.n {
-            v |= 0b010000000;
+            v |= 0b_0100_0000;
         }
         if self.h {
-            v |= 0b001000000;
+            v |= 0b_0010_0000;
         }
         if self.c {
-            v |= 0b000100000;
+            v |= 0b_0001_0000;
         }
         v
     }
@@ -1325,7 +1325,7 @@ impl CPU {
             corr |= 0x60;
         }
         if self.registers.f.n {
-            al -= corr;
+            al = al.wrapping_sub(corr);
         } else {
             if (al & 0x0F) > 0x09 {
                 corr |= 0x06;
@@ -1333,7 +1333,7 @@ impl CPU {
             if al > 0x99 {
                 corr |= 0x60;
             }
-            al += corr;
+            al = al.wrapping_add(corr);
         }
         self.registers.a = al;
         self.registers.f.z = self.registers.a == 0;
