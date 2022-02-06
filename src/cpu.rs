@@ -1437,7 +1437,6 @@ impl CPU {
     fn ld_hl_a_0x32(&mut self) -> u8 {
         debug_log!("LD (HL-), A");
         self.write(self.registers.hl(), self.registers.a);
-        self.registers.a = self.read(self.registers.hl());
         self.registers.set_hl(self.registers.hl().wrapping_sub(1));
         8
     }

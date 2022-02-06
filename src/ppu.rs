@@ -252,11 +252,11 @@ impl PPU {
     }
 
     fn scan_lines(&mut self) {
+        self.ly = 0;
         loop {
             // ly レジスタが現在処理中の行
             // 1画面は154行（LCD144行 + 擬似スキャンライン10行）
             if self.ly >= HEIGHT_LCD {
-                self.ly = 0;
                 break;
             }
             self.scan_line(self.ly);
