@@ -917,7 +917,7 @@ impl CPU {
                     0xFF00 => self.p1 = data,
                     0xFF01 => {
                         if let Some(c) = char::from_u32(data as u32) {
-                            if c.is_ascii_graphic() {
+                            if c.is_ascii() && data != 0 {
                                 println!("SB: {}", char::from_u32(data as u32).unwrap());
                             }
                         }
@@ -1324,24 +1324,32 @@ impl CPU {
         let mut corr = 0x00;
         if self.registers.f.h {
             corr |= 0x06;
+        } else {
+            corr |= 0x00;
         }
         if self.registers.f.c {
             corr |= 0x60;
+        } else {
+            corr |= 0x00;
         }
         if self.registers.f.n {
             al = al.wrapping_sub(corr);
         } else {
             if (al & 0x0F) > 0x09 {
                 corr |= 0x06;
+            } else {
+                corr |= 0x00;
             }
             if al > 0x99 {
                 corr |= 0x60;
+            } else {
+                corr |= 0x00;
             }
             al = al.wrapping_add(corr);
         }
         self.registers.a = al;
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.c = (corr & 0x60) == 0;
+        self.registers.f.c = (corr & 0x60) != 0;
         self.registers.f.h = false;
         4
     }
