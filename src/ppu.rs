@@ -262,7 +262,7 @@ impl PPU {
             self.scan_line(self.ly);
             self.ly += 1;
         }
-        // self.lcd.draw(&self.frame_buffer);
+        self.lcd.draw(&self.frame_buffer);
     }
 
     // 1行(= 160 pixel)の描画
