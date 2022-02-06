@@ -3479,7 +3479,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_b_0xcb18(&mut self) -> u8 {
         debug_log!("RR B");
-        let c = (self.registers.b >> 7) == 1;
+        let c = (self.registers.b & 0x01) == 0x01;
         self.registers.b = (self.registers.f.c as u8) << 7 | self.registers.b >> 1;
         self.registers.f.z = self.registers.b == 0;
         self.registers.f.n = false;
@@ -3490,7 +3490,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_c_0xcb19(&mut self) -> u8 {
         debug_log!("RR C");
-        let c = (self.registers.c >> 7) == 1;
+        let c = (self.registers.c & 0x01) == 0x01;
         self.registers.c = (self.registers.f.c as u8) << 7 | self.registers.c >> 1;
         self.registers.f.z = self.registers.c == 0;
         self.registers.f.n = false;
@@ -3501,7 +3501,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_d_0xcb1a(&mut self) -> u8 {
         debug_log!("RR D");
-        let c = (self.registers.d >> 7) == 1;
+        let c = (self.registers.d & 0x01) == 0x01;
         self.registers.d = (self.registers.f.c as u8) << 7 | self.registers.d >> 1;
         self.registers.f.z = self.registers.d == 0;
         self.registers.f.n = false;
@@ -3512,7 +3512,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_e_0xcb1b(&mut self) -> u8 {
         debug_log!("RR E");
-        let c = (self.registers.e >> 7) == 1;
+        let c = (self.registers.e & 0x01) == 0x01;
         self.registers.e = (self.registers.f.c as u8) << 7 | self.registers.e >> 1;
         self.registers.f.z = self.registers.e == 0;
         self.registers.f.n = false;
@@ -3523,7 +3523,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_h_0xcb1c(&mut self) -> u8 {
         debug_log!("RR H");
-        let c = (self.registers.h >> 7) == 1;
+        let c = (self.registers.h & 0x01) == 0x01;
         self.registers.h = (self.registers.f.c as u8) << 7 | self.registers.h >> 1;
         self.registers.f.z = self.registers.h == 0;
         self.registers.f.n = false;
@@ -3534,7 +3534,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_l_0xcb1d(&mut self) -> u8 {
         debug_log!("RR L");
-        let c = (self.registers.l >> 7) == 1;
+        let c = (self.registers.l & 0x01) == 0x01;
         self.registers.l = (self.registers.f.c as u8) << 7 | self.registers.l >> 1;
         self.registers.f.z = self.registers.l == 0;
         self.registers.f.n = false;
@@ -3545,7 +3545,7 @@ impl CPU {
     // bytes: 2 cycles: [16]
     fn rr_hl_0xcb1e(&mut self) -> u8 {
         debug_log!("RR (HL)");
-        let c = (self.read(self.registers.hl()) >> 7) == 1;
+        let c = (self.read(self.registers.hl()) & 0x01) == 0x01;
         self.write(
             self.registers.hl(),
             (self.registers.f.c as u8) << 7 | self.read(self.registers.hl()) >> 1,
@@ -3559,7 +3559,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rr_a_0xcb1f(&mut self) -> u8 {
         debug_log!("RR A");
-        let c = (self.registers.a >> 7) == 1;
+        let c = (self.registers.a & 0x01) == 0x01;
         self.registers.a = (self.registers.f.c as u8) << 7 | self.registers.a >> 1;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -3845,9 +3845,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_b_0xcb38(&mut self) -> u8 {
         debug_log!("SRL B");
-        let c = (self.registers.b >> 7) == 0x1;
-        let msb = self.registers.b & 0x80;
-        self.registers.b = msb | self.registers.b >> 1;
+        let c = (self.registers.b & 0x01) == 0x01;
+        self.registers.b = self.registers.b >> 1;
         self.registers.f.z = self.registers.b == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3857,9 +3856,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_c_0xcb39(&mut self) -> u8 {
         debug_log!("SRL C");
-        let c = (self.registers.c >> 7) == 0x1;
-        let msb = self.registers.c & 0x80;
-        self.registers.c = msb | self.registers.c >> 1;
+        let c = (self.registers.c & 0x01) == 0x01;
+        self.registers.c = self.registers.c >> 1;
         self.registers.f.z = self.registers.c == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3869,9 +3867,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_d_0xcb3a(&mut self) -> u8 {
         debug_log!("SRL D");
-        let c = (self.registers.d >> 7) == 0x1;
-        let msb = self.registers.d & 0x80;
-        self.registers.d = msb | self.registers.d >> 1;
+        let c = (self.registers.d & 0x01) == 0x01;
+        self.registers.d = self.registers.d >> 1;
         self.registers.f.z = self.registers.d == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3881,9 +3878,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_e_0xcb3b(&mut self) -> u8 {
         debug_log!("SRL E");
-        let c = (self.registers.e >> 7) == 0x1;
-        let msb = self.registers.e & 0x80;
-        self.registers.e = msb | self.registers.e >> 1;
+        let c = (self.registers.e & 0x01) == 0x01;
+        self.registers.e = self.registers.e >> 1;
         self.registers.f.z = self.registers.e == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3893,9 +3889,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_h_0xcb3c(&mut self) -> u8 {
         debug_log!("SRL H");
-        let c = (self.registers.h >> 7) == 0x1;
-        let msb = self.registers.h & 0x80;
-        self.registers.h = msb | self.registers.h >> 1;
+        let c = (self.registers.h & 0x01) == 0x01;
+        self.registers.h = self.registers.h >> 1;
         self.registers.f.z = self.registers.h == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3905,9 +3900,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_l_0xcb3d(&mut self) -> u8 {
         debug_log!("SRL L");
-        let c = (self.registers.l >> 7) == 0x1;
-        let msb = self.registers.l & 0x80;
-        self.registers.l = msb | self.registers.l >> 1;
+        let c = (self.registers.l & 0x01) == 0x01;
+        self.registers.l = self.registers.l >> 1;
         self.registers.f.z = self.registers.l == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
@@ -3917,11 +3911,10 @@ impl CPU {
     // bytes: 2 cycles: [16]
     fn srl_hl_0xcb3e(&mut self) -> u8 {
         debug_log!("SRL (HL)");
-        let c = (self.read(self.registers.hl()) >> 7) == 0x1;
-        let msb = self.read(self.registers.hl()) & 0x80;
+        let c = (self.read(self.registers.hl()) & 0x01) == 0x01;
         self.write(
             self.registers.hl(),
-            msb | self.read(self.registers.hl()) >> 1,
+            self.read(self.registers.hl()) >> 1,
         );
         self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
@@ -3932,9 +3925,8 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn srl_a_0xcb3f(&mut self) -> u8 {
         debug_log!("SRL A");
-        let c = (self.registers.a >> 7) == 0x1;
-        let msb = self.registers.a & 0x80;
-        self.registers.a = msb | self.registers.a >> 1;
+        let c = (self.registers.a & 0x01) == 0x01;
+        self.registers.a = self.registers.a >> 1;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
