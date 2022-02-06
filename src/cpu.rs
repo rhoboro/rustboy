@@ -1361,8 +1361,7 @@ impl CPU {
         debug_log!("ADD HL, HL");
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.hl());
         // ここのハーフキャリーは変則的
-        self.registers.f.h =
-            ((self.registers.hl() & 0x3FF) + (self.registers.hl() & 0x3FF)) & 0x400 == 0x400;
+        self.registers.f.h = ((self.registers.hl() & 0x1FFF).wrapping_add(self.registers.hl() & 0x1FFF)) & 0x1000 == 0x1000;
         self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.hl()));
         self.registers.f.n = false;
         8
