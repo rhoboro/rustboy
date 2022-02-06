@@ -167,11 +167,11 @@ struct InterruptEnables {
 impl From<u8> for InterruptEnables {
     fn from(v: u8) -> Self {
         Self {
-            joypad: (v & 0b0010000) == 0b0010000,
-            serial: (v & 0b0001000) == 0b0001000,
-            timer: (v & 0b0000100) == 0b0000100,
-            lcd_stat: (v & 0b0000010) == 0b0000010,
-            v_blank: (v & 0b0000001) == 0b0000001,
+            joypad: (v & 0b_0001_0000) == 0b_001_0000,
+            serial: (v & 0b_000_1000) == 0b_000_1000,
+            timer: (v & 0b_0000_0100) == 0b_0000_0100,
+            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
+            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
         }
     }
 }
@@ -179,21 +179,21 @@ impl From<u8> for InterruptEnables {
 // TODO: Into でなく From を実装する（と Into も使える）
 impl Into<u8> for InterruptEnables {
     fn into(self) -> u8 {
-        let mut v = 0b00000000;
+        let mut v = 0b0000_0000;
         if self.joypad {
-            v |= 0b00010000;
+            v |= 0b_0001_0000;
         }
         if self.serial {
-            v |= 0b000001000;
+            v |= 0b_0000_01000;
         }
         if self.timer {
-            v |= 0b000000100;
+            v |= 0b_0000_0100;
         }
         if self.lcd_stat {
-            v |= 0b000000010;
+            v |= 0b_0000_0010;
         }
         if self.v_blank {
-            v |= 0b000000001;
+            v |= 0b_0000_00001;
         }
         v
     }
@@ -217,11 +217,11 @@ struct InterruptFlags {
 impl From<u8> for InterruptFlags {
     fn from(v: u8) -> Self {
         Self {
-            joypad: (v & 0b0010000) == 0b0010000,
-            serial: (v & 0b0001000) == 0b0001000,
-            timer: (v & 0b0000100) == 0b0000100,
-            lcd_stat: (v & 0b0000010) == 0b0000010,
-            v_blank: (v & 0b0000001) == 0b0000001,
+            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
+            serial: (v & 0b_0000_1000) == 0b_0000_1000,
+            timer: (v & 0b_0000_0100) == 0b_0000_0100,
+            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
+            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
         }
     }
 }
@@ -229,21 +229,21 @@ impl From<u8> for InterruptFlags {
 // TODO: Into でなく From を実装する（と Into も使える）
 impl Into<u8> for InterruptFlags {
     fn into(self) -> u8 {
-        let mut v = 0b00000000;
+        let mut v = 0b_0000_0000;
         if self.joypad {
-            v |= 0b00010000;
+            v |= 0b_0001_0000;
         }
         if self.serial {
-            v |= 0b000001000;
+            v |= 0b_0000_1000;
         }
         if self.timer {
-            v |= 0b000000100;
+            v |= 0b_0000_00100;
         }
         if self.lcd_stat {
-            v |= 0b000000010;
+            v |= 0b_0000_0010;
         }
         if self.v_blank {
-            v |= 0b000000001;
+            v |= 0b_0000_0001;
         }
         v
     }
@@ -916,7 +916,11 @@ impl CPU {
                 match address {
                     0xFF00 => self.p1 = data,
                     0xFF01 => {
-                        println!("SB: {}", char::from_u32(data as u32).unwrap());
+                        if let Some(c) = char::from_u32(data as u32) {
+                            if c.is_ascii_graphic() {
+                                println!("SB: {}", char::from_u32(data as u32).unwrap());
+                            }
+                        }
                         self.sb = data
                     },
                     0xFF02 => self.sc = data,
@@ -1359,7 +1363,7 @@ impl CPU {
         // ここのハーフキャリーは変則的
         self.registers.f.h =
             ((self.registers.hl() & 0x3FF) + (self.registers.hl() & 0x3FF)) & 0x400 == 0x400;
-        self.registers.set_hl(self.registers.hl());
+        self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.hl()));
         self.registers.f.n = false;
         8
     }
@@ -2757,7 +2761,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn adc_a_d8_0xce(&mut self) -> u8 {
         debug_log!("ADC A, d8");
-        let rhs: u8 = self.fetch() + self.registers.f.c as u8;
+        let rhs: u8 = self.fetch().wrapping_add(self.registers.f.c as u8);
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
         self.registers.a = self.registers.a.wrapping_add(rhs);
