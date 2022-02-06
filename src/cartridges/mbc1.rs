@@ -29,7 +29,7 @@ impl Mbc1 {
             rom_banks: banks,
             ram_banks: vec![[0; BANK_SIZE_RAM]; ram_size.num_of_banks()],
             current_rom_bank: 1,
-            current_ram_bank: if ram_size.num_of_banks() > 0 { 1} else { 0 },
+            current_ram_bank: if ram_size.num_of_banks() > 0 { 1 } else { 0 },
             bank_mode: BankMode::Rom,
             ram_mode: RamMode::Disable,
         }

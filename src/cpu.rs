@@ -918,11 +918,11 @@ impl CPU {
                     0xFF01 => {
                         if let Some(c) = char::from_u32(data as u32) {
                             if c.is_ascii() && data != 0 {
-                                println!("SB: {}", char::from_u32(data as u32).unwrap());
+                                debug_log!("SB: {}", char::from_u32(data as u32).unwrap());
                             }
                         }
                         self.sb = data
-                    },
+                    }
                     0xFF02 => self.sc = data,
                     0xFF04 => self.div = data,
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
@@ -1369,8 +1369,11 @@ impl CPU {
         debug_log!("ADD HL, HL");
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.hl());
         // ここのハーフキャリーは変則的
-        self.registers.f.h = ((self.registers.hl() & 0x1FFF).wrapping_add(self.registers.hl() & 0x1FFF)) & 0x1000 == 0x1000;
-        self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.hl()));
+        self.registers.f.h =
+            ((self.registers.hl() & 0x1FFF).wrapping_add(self.registers.hl() & 0x1FFF)) & 0x1000
+                == 0x1000;
+        self.registers
+            .set_hl(self.registers.hl().wrapping_add(self.registers.hl()));
         self.registers.f.n = false;
         8
     }
@@ -2653,7 +2656,10 @@ impl CPU {
                 self.registers.sp.wrapping_sub(1),
                 ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+            self.write(
+                self.registers.sp.wrapping_sub(2),
+                (self.registers.pc & 0x00FF) as u8,
+            );
             self.registers.sp = self.registers.sp.wrapping_sub(2);
             self.registers.pc = upper << 8 | lower;
             24
@@ -2664,6 +2670,16 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn push_bc_0xc5(&mut self) -> u8 {
         debug_log!("PUSH BC");
+        debug_log!(
+            "PUSH BC Stack {:04X?} {:04X?}",
+            self.registers.sp.wrapping_sub(1),
+            self.registers.b
+        );
+        debug_log!(
+            "PUSH BC Stack {:04X?} {:04X?}",
+            self.registers.sp.wrapping_sub(2),
+            self.registers.c
+        );
         self.write(self.registers.sp.wrapping_sub(1), self.registers.b);
         self.write(self.registers.sp.wrapping_sub(2), self.registers.c);
         self.registers.sp = self.registers.sp.wrapping_sub(2);
@@ -2687,7 +2703,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0000;
         16
@@ -2742,7 +2761,10 @@ impl CPU {
                 self.registers.sp.wrapping_sub(1),
                 ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+            self.write(
+                self.registers.sp.wrapping_sub(2),
+                (self.registers.pc & 0x00FF) as u8,
+            );
             self.registers.sp = self.registers.sp.wrapping_sub(2);
             self.registers.pc = upper << 8 | lower;
             24
@@ -2759,7 +2781,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = upper << 8 | lower;
         24
@@ -2782,7 +2807,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0008;
         16
@@ -2835,7 +2863,10 @@ impl CPU {
                 self.registers.sp.wrapping_sub(1),
                 ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+            self.write(
+                self.registers.sp.wrapping_sub(2),
+                (self.registers.pc & 0x00FF) as u8,
+            );
             self.registers.sp = self.registers.sp.wrapping_sub(2);
             self.registers.pc = upper << 8 | lower;
             24
@@ -2869,7 +2900,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0010;
         16
@@ -2924,7 +2958,10 @@ impl CPU {
                 self.registers.sp.wrapping_sub(1),
                 ((self.registers.pc & 0xFF00) >> 8) as u8,
             );
-            self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+            self.write(
+                self.registers.sp.wrapping_sub(2),
+                (self.registers.pc & 0x00FF) as u8,
+            );
             self.registers.sp = self.registers.sp.wrapping_sub(2);
             self.registers.pc = upper << 8 | lower;
             24
@@ -2954,7 +2991,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0018;
         16
@@ -3013,7 +3053,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0020;
         16
@@ -3075,7 +3118,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0028;
         16
@@ -3084,6 +3130,8 @@ impl CPU {
     fn ldh_a_a8_0xf0(&mut self) -> u8 {
         debug_log!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
+        debug_log!("LDH A, (a8): {:04X?}", 0xFF00 + a8);
+        debug_log!("LDH A, (a8): {:08b}", self.read(0xFF00 + a8));
         self.registers.a = self.read(0xFF00 + a8);
         12
     }
@@ -3114,6 +3162,17 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn push_af_0xf5(&mut self) -> u8 {
         debug_log!("PUSH AF");
+        let x: u8 = self.registers.f.into();
+        debug_log!(
+            "PUSH AF Stack {:04X?} {:04X?}",
+            self.registers.sp.wrapping_sub(1),
+            self.registers.a
+        );
+        debug_log!(
+            "PUSH AF Stack {:04X?} {:04X?}",
+            self.registers.sp.wrapping_sub(2),
+            x
+        );
         self.write(self.registers.sp.wrapping_sub(1), self.registers.a);
         self.write(self.registers.sp.wrapping_sub(2), self.registers.f.into());
         self.registers.sp = self.registers.sp.wrapping_sub(2);
@@ -3136,7 +3195,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0030;
         16
@@ -3198,7 +3260,10 @@ impl CPU {
             self.registers.sp.wrapping_sub(1),
             ((self.registers.pc & 0xFF00) >> 8) as u8,
         );
-        self.write(self.registers.sp.wrapping_sub(2), (self.registers.pc & 0x00FF) as u8);
+        self.write(
+            self.registers.sp.wrapping_sub(2),
+            (self.registers.pc & 0x00FF) as u8,
+        );
         self.registers.sp = self.registers.sp.wrapping_sub(2);
         self.registers.pc = 0x0000 + 0x0038;
         16
@@ -3912,10 +3977,7 @@ impl CPU {
     fn srl_hl_0xcb3e(&mut self) -> u8 {
         debug_log!("SRL (HL)");
         let c = (self.read(self.registers.hl()) & 0x01) == 0x01;
-        self.write(
-            self.registers.hl(),
-            self.read(self.registers.hl()) >> 1,
-        );
+        self.write(self.registers.hl(), self.read(self.registers.hl()) >> 1);
         self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
