@@ -55,22 +55,120 @@ impl From<u8> for Flags {
     }
 }
 
-impl Into<u8> for Flags {
-    fn into(self) -> u8 {
+impl From<Flags> for u8 {
+    fn from(flags: Flags) -> Self {
         let mut v;
-        if self.z {
+        if flags.z {
             v = 0b_1000_0000;
         } else {
             v = 0b_0000_0000;
         }
-        if self.n {
+        if flags.n {
             v |= 0b_0100_0000;
         }
-        if self.h {
+        if flags.h {
             v |= 0b_0010_0000;
         }
-        if self.c {
+        if flags.c {
             v |= 0b_0001_0000;
+        }
+        v
+    }
+}
+
+#[derive(Default, Copy, Clone, Debug)]
+struct InterruptEnables {
+    // https://gbdev.io/pandocs/Interrupts.html
+    // Bit 4: Joypad   Interrupt Enable (INT $60)  (1=Enable)
+    joypad: bool,
+    // Bit 3: Serial   Interrupt Enable (INT $58)  (1=Enable)
+    serial: bool,
+    // Bit 2: Timer    Interrupt Enable (INT $50)  (1=Enable)
+    timer: bool,
+    // Bit 1: LCD STAT Interrupt Enable (INT $48)  (1=Enable)
+    lcd_stat: bool,
+    // Bit 0: VBlank   Interrupt Enable (INT $40)  (1=Enable)
+    v_blank: bool,
+}
+
+impl From<u8> for InterruptEnables {
+    fn from(v: u8) -> Self {
+        Self {
+            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
+            serial: (v & 0b_0000_1000) == 0b_0000_1000,
+            timer: (v & 0b_0000_0100) == 0b_0000_0100,
+            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
+            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
+        }
+    }
+}
+
+impl From<InterruptEnables> for u8 {
+    fn from(enables: InterruptEnables) -> Self {
+        let mut v = 0b_0000_0000;
+        if enables.joypad {
+            v |= 0b_0001_0000;
+        }
+        if enables.serial {
+            v |= 0b_0000_1000;
+        }
+        if enables.timer {
+            v |= 0b_0000_0100;
+        }
+        if enables.lcd_stat {
+            v |= 0b_0000_0010;
+        }
+        if enables.v_blank {
+            v |= 0b_0000_0001;
+        }
+        v
+    }
+}
+
+#[derive(Default, Copy, Clone, Debug)]
+struct InterruptFlags {
+    // https://gbdev.io/pandocs/Interrupts.html
+    // Bit 4: Joypad   Interrupt Request (INT $60)  (1=Request)
+    joypad: bool,
+    // Bit 3: Serial   Interrupt Request (INT $58)  (1=Request)
+    serial: bool,
+    // Bit 2: Timer    Interrupt Request (INT $50)  (1=Request)
+    timer: bool,
+    // Bit 1: LCD STAT Interrupt Request (INT $48)  (1=Request)
+    lcd_stat: bool,
+    // Bit 0: VBlank   Interrupt Request (INT $40)  (1=Request)
+    v_blank: bool,
+}
+
+impl From<u8> for InterruptFlags {
+    fn from(v: u8) -> Self {
+        Self {
+            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
+            serial: (v & 0b_0000_1000) == 0b_0000_1000,
+            timer: (v & 0b_0000_0100) == 0b_0000_0100,
+            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
+            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
+        }
+    }
+}
+
+impl From<InterruptFlags> for u8 {
+    fn from(flags: InterruptFlags) -> Self {
+        let mut v = 0b_0000_0000;
+        if flags.joypad {
+            v |= 0b_0001_0000;
+        }
+        if flags.serial {
+            v |= 0b_0000_1000;
+        }
+        if flags.timer {
+            v |= 0b_0000_0100;
+        }
+        if flags.lcd_stat {
+            v |= 0b_0000_0010;
+        }
+        if flags.v_blank {
+            v |= 0b_0000_0001;
         }
         v
     }
@@ -146,106 +244,6 @@ impl Registers {
     fn set_hl(&mut self, v: u16) {
         self.h = ((v & 0xFF00) >> 8) as u8;
         self.l = (v & 0x00FF) as u8;
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct InterruptEnables {
-    // https://gbdev.io/pandocs/Interrupts.html
-    // Bit 4: Joypad   Interrupt Enable (INT $60)  (1=Enable)
-    joypad: bool,
-    // Bit 3: Serial   Interrupt Enable (INT $58)  (1=Enable)
-    serial: bool,
-    // Bit 2: Timer    Interrupt Enable (INT $50)  (1=Enable)
-    timer: bool,
-    // Bit 1: LCD STAT Interrupt Enable (INT $48)  (1=Enable)
-    lcd_stat: bool,
-    // Bit 0: VBlank   Interrupt Enable (INT $40)  (1=Enable)
-    v_blank: bool,
-}
-
-impl From<u8> for InterruptEnables {
-    fn from(v: u8) -> Self {
-        Self {
-            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
-            serial: (v & 0b_0000_1000) == 0b_0000_1000,
-            timer: (v & 0b_0000_0100) == 0b_0000_0100,
-            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
-            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
-        }
-    }
-}
-
-// TODO: Into でなく From を実装する（と Into も使える）
-impl Into<u8> for InterruptEnables {
-    fn into(self) -> u8 {
-        let mut v = 0b_0000_0000;
-        if self.joypad {
-            v |= 0b_0001_0000;
-        }
-        if self.serial {
-            v |= 0b_0000_1000;
-        }
-        if self.timer {
-            v |= 0b_0000_0100;
-        }
-        if self.lcd_stat {
-            v |= 0b_0000_0010;
-        }
-        if self.v_blank {
-            v |= 0b_0000_0001;
-        }
-        v
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct InterruptFlags {
-    // https://gbdev.io/pandocs/Interrupts.html
-    // Bit 4: Joypad   Interrupt Request (INT $60)  (1=Request)
-    joypad: bool,
-    // Bit 3: Serial   Interrupt Request (INT $58)  (1=Request)
-    serial: bool,
-    // Bit 2: Timer    Interrupt Request (INT $50)  (1=Request)
-    timer: bool,
-    // Bit 1: LCD STAT Interrupt Request (INT $48)  (1=Request)
-    lcd_stat: bool,
-    // Bit 0: VBlank   Interrupt Request (INT $40)  (1=Request)
-    v_blank: bool,
-}
-
-impl From<u8> for InterruptFlags {
-    fn from(v: u8) -> Self {
-        Self {
-            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
-            serial: (v & 0b_0000_1000) == 0b_0000_1000,
-            timer: (v & 0b_0000_0100) == 0b_0000_0100,
-            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
-            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
-        }
-    }
-}
-
-// TODO: Into でなく From を実装する（と Into も使える）
-impl Into<u8> for InterruptFlags {
-    fn into(self) -> u8 {
-        let mut v = 0b_0000_0000;
-        if self.joypad {
-            v |= 0b_0001_0000;
-        }
-        if self.serial {
-            v |= 0b_0000_1000;
-        }
-        if self.timer {
-            v |= 0b_0000_0100;
-        }
-        if self.lcd_stat {
-            v |= 0b_0000_0010;
-        }
-        if self.v_blank {
-            v |= 0b_0000_0001;
-        }
-        v
     }
 }
 
