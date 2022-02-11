@@ -101,6 +101,8 @@ impl BreakPoint {
                 }
                 "print" | "p" => match commands.get(1) {
                     Some(&"reg") => cpu.print_registers(),
+                    Some(&"ifg") => cpu.print_interrupt_flags(),
+                    Some(&"ie") => cpu.print_interrupt_enables(),
                     Some(&"vram") => ppu.print_vram(),
                     Some(&"stack") => println!("{:?}", stack),
                     Some(&"count") => println!("{:?}", self.counter),

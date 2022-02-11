@@ -322,6 +322,12 @@ impl CPU {
     pub fn print_registers(&self) {
         println!("{:?}", &self.registers);
     }
+    pub fn print_interrupt_flags(&self) {
+        println!("{:?}", &self.ifg);
+    }
+    pub fn print_interrupt_enables(&self) {
+        println!("{:?}", &self.ie);
+    }
     // PCの位置から1バイト読み取り、PCをインクリメントする
     fn fetch(&mut self) -> u8 {
         let byte = self.read(self.registers.pc);
