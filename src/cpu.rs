@@ -167,8 +167,8 @@ struct InterruptEnables {
 impl From<u8> for InterruptEnables {
     fn from(v: u8) -> Self {
         Self {
-            joypad: (v & 0b_0001_0000) == 0b_001_0000,
-            serial: (v & 0b_000_1000) == 0b_000_1000,
+            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
+            serial: (v & 0b_0000_1000) == 0b_0000_1000,
             timer: (v & 0b_0000_0100) == 0b_0000_0100,
             lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
             v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
@@ -179,12 +179,12 @@ impl From<u8> for InterruptEnables {
 // TODO: Into でなく From を実装する（と Into も使える）
 impl Into<u8> for InterruptEnables {
     fn into(self) -> u8 {
-        let mut v = 0b0000_0000;
+        let mut v = 0b_0000_0000;
         if self.joypad {
             v |= 0b_0001_0000;
         }
         if self.serial {
-            v |= 0b_0000_01000;
+            v |= 0b_0000_1000;
         }
         if self.timer {
             v |= 0b_0000_0100;
@@ -193,7 +193,7 @@ impl Into<u8> for InterruptEnables {
             v |= 0b_0000_0010;
         }
         if self.v_blank {
-            v |= 0b_0000_00001;
+            v |= 0b_0000_0001;
         }
         v
     }
@@ -237,7 +237,7 @@ impl Into<u8> for InterruptFlags {
             v |= 0b_0000_1000;
         }
         if self.timer {
-            v |= 0b_0000_00100;
+            v |= 0b_0000_0100;
         }
         if self.lcd_stat {
             v |= 0b_0000_0010;
