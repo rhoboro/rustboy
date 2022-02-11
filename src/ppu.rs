@@ -110,7 +110,6 @@ impl IntoIterator for TileLine {
     type IntoIter = IntoIter<Color>;
 
     fn into_iter(self) -> Self::IntoIter {
-        // TODO: 効率が良くない
         let mut v = Vec::with_capacity(8);
         for offset in (0..WIDTH_TILE).rev() {
             let color = match (((self.low >> offset) & 0b1), ((self.high >> offset) & 0b1)) {

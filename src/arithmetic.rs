@@ -21,7 +21,6 @@ impl ArithmeticUtil<u8> for u8 {
     }
 }
 
-// TODO: 正しいか自信ないのでテスト書く
 impl ArithmeticUtil<u16> for u16 {
     fn calc_half_carry(&self, rhs: u16) -> bool {
         ((self & 0x000F) + (rhs & 0x000F)) & 0x0010 == 0x0010

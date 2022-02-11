@@ -1322,7 +1322,6 @@ impl CPU {
     }
     // bytes: 1 cycles: [4]
     fn daa_0x27(&mut self) -> u8 {
-        // TODO: テストを書く
         // https://github.com/Baekalfen/PyBoy/blob/96d2b3d54fe73a6030ff61b6c70952b8e6aa6299/pyboy/core/opcodes.py#L412
         let mut al = self.registers.a;
         let mut corr = 0x00;
@@ -3067,7 +3066,6 @@ impl CPU {
     }
     // bytes: 2 cycles: [16]
     fn add_sp_r8_0xe8(&mut self) -> u8 {
-        // TODO: 符号周り要確認
         debug_log!("ADD SP, r8");
         let r8 = self.fetch() as i8;
         let spv = self.read(self.registers.sp);
