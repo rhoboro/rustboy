@@ -1,6 +1,7 @@
 use crate::debug_log;
 use crate::ppu::{FrameBuffer, PixelData, LCD};
 use std::fmt::{Debug, Formatter};
+use std::io::{stdout, BufWriter, Write};
 
 impl Debug for PixelData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -47,20 +48,23 @@ impl Terminal {
 impl LCD for Terminal {
     fn draw(&self, frame_buffer: &FrameBuffer) {
         debug_log!("draw");
+        let mut buf = BufWriter::new(stdout());
+
         // clear
-        println!("\x1b[2J");
+        write!(buf, "\x1b[2J").unwrap();
         for (i, line) in frame_buffer.iter().enumerate() {
-            print!("{:03?} ", i);
+            write!(buf, "{:03?} ", i).unwrap();
             for pixel in line {
-                print!("{:?}", pixel);
+                write!(buf, "{:?}", pixel).unwrap();
             }
-            println!();
+            write!(buf, "\n").unwrap();
         }
+        buf.flush().unwrap();
     }
 }
 
+/// 8点点字で標準出力に描画する
 pub struct BrailleTerminal {
-    // 8点点字の配列。配列の添字が点の位置に相当する。
     brailles: [[u32; 2]; 4],
 }
 
@@ -68,26 +72,16 @@ impl BrailleTerminal {
     pub fn new() -> Self {
         BrailleTerminal {
             brailles: [
-                // [
-                //     char::from_u32(0x2801).unwrap(),
-                //     char::from_u32(0x2808).unwrap(),
-                // ],
-                // [
-                //     char::from_u32(0x2802).unwrap(),
-                //     char::from_u32(0x2810).unwrap(),
-                // ],
-                // [
-                //     char::from_u32(0x2804).unwrap(),
-                //     char::from_u32(0x2820).unwrap(),
-                // ],
-                // [
-                //     char::from_u32(0x2840).unwrap(),
-                //     char::from_u32(0x2880).unwrap(),
-                // ],
-                [0x2801, 0x2808],
-                [0x2802, 0x2810],
-                [0x2804, 0x2820],
-                [0x2840, 0x2880],
+                // Unicodeの8点点字の配列。配列の添字が点の位置に相当。
+                // 下位8bitが点の位置を表し、論理和がとれる。
+                // [0x2801, 0x2808],
+                // [0x2802, 0x2810],
+                // [0x2804, 0x2820],
+                // [0x2840, 0x2880],
+                ['⠁' as u32, '⠈' as u32],
+                ['⠂' as u32, '⠐' as u32],
+                ['⠄' as u32, '⠠' as u32],
+                ['⡀' as u32, '⢀' as u32],
             ],
         }
     }
@@ -96,24 +90,30 @@ impl BrailleTerminal {
 impl LCD for BrailleTerminal {
     fn draw(&self, frame_buffer: &FrameBuffer) {
         debug_log!("draw");
+        // TODO: 出力先はnew()で受け取りたい
+        let mut buf = BufWriter::new(stdout());
+
         // clear
-        println!("\x1b[2J");
+        write!(buf, "\x1b[2J").unwrap();
+
+        // 点のない点字で初期化
         let mut line_buffer = [0x2800; 80];
         for (y, line) in frame_buffer.iter().enumerate() {
             for (x, pixel) in line.iter().enumerate() {
                 match pixel.bi_color() {
                     BiColor::Black => line_buffer[x / 2] |= self.brailles[y % 4][x % 2],
-                    _ => (),
+                    BiColor::White => (),
                 }
             }
             if y % 4 == 3 {
-                print!("{:03?} ", y - 3);
+                write!(buf, "{:03?} ", y - 3).unwrap();
                 for c in line_buffer {
-                    print!("{:}", char::from_u32(c).unwrap());
+                    write!(buf, "{:}", char::from_u32(c).unwrap()).unwrap();
                 }
-                println!();
+                write!(buf, "\n").unwrap();
                 line_buffer = [0x2800; 80];
             }
         }
+        buf.flush().unwrap();
     }
 }
