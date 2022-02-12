@@ -48,18 +48,18 @@ impl Terminal {
 impl LCD for Terminal {
     fn draw(&self, frame_buffer: &FrameBuffer) {
         debug_log!("draw");
-        let mut buf = BufWriter::new(stdout());
+        let mut buf = String::new();
 
         // clear
-        write!(buf, "\x1b[2J").unwrap();
+        buf += "\x1b[2J";
         for (i, line) in frame_buffer.iter().enumerate() {
-            write!(buf, "{:03?} ", i).unwrap();
+            buf += &format!("{:03?}", i);
             for pixel in line {
-                write!(buf, "{:?}", pixel).unwrap();
+                buf += &format!("{:?}", pixel);
             }
-            write!(buf, "\n").unwrap();
+            buf += &format!("\n");
         }
-        buf.flush().unwrap();
+        println!("{}", buf);
     }
 }
 
@@ -90,12 +90,10 @@ impl BrailleTerminal {
 impl LCD for BrailleTerminal {
     fn draw(&self, frame_buffer: &FrameBuffer) {
         debug_log!("draw");
-        // TODO: 出力先はnew()で受け取りたい
-        let mut buf = BufWriter::new(stdout());
-
+        // TODO: capacityの指定
+        let mut buf = String::new();
         // clear
-        write!(buf, "\x1b[2J").unwrap();
-
+        buf += "\x1b[2J";
         // 点のない点字で初期化
         let mut line_buffer = [0x2800; 80];
         for (y, line) in frame_buffer.iter().enumerate() {
@@ -106,14 +104,14 @@ impl LCD for BrailleTerminal {
                 }
             }
             if y % 4 == 3 {
-                write!(buf, "{:03?} ", y - 3).unwrap();
+                buf += &format!("{:03?}", y - 3);
                 for c in line_buffer {
-                    write!(buf, "{:}", char::from_u32(c).unwrap()).unwrap();
+                    buf += &format!("{:}", char::from_u32(c).unwrap());
                 }
-                write!(buf, "\n").unwrap();
+                buf += &format!("\n");
                 line_buffer = [0x2800; 80];
             }
         }
-        buf.flush().unwrap();
+        println!("{}", buf);
     }
 }
