@@ -59,7 +59,7 @@ impl LCD for Terminal {
             }
             buf += &format!("\n");
         }
-        println!("{}", buf);
+        eprintln!("{}", buf);
     }
 }
 
@@ -112,6 +112,6 @@ impl LCD for BrailleTerminal {
                 line_buffer = [0x2800; 80];
             }
         }
-        println!("{}", buf);
+        eprintln!("{}", buf);
     }
 }
