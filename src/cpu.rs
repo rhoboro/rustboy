@@ -76,6 +76,26 @@ impl From<Flags> for u8 {
     }
 }
 
+enum Interruption {
+    Joypad,
+    Serial,
+    Timer,
+    LcdStatus,
+    VBlank,
+}
+
+impl Interruption {
+    fn jump_address(&self) -> Address {
+        match self {
+            Interruption::Joypad => 0x0060,
+            Interruption::Serial => 0x0058,
+            Interruption::Timer => 0x0050,
+            Interruption::LcdStatus => 0x0048,
+            Interruption::VBlank => 0x0040,
+        }
+    }
+}
+
 #[derive(Default, Copy, Clone, Debug)]
 struct InterruptEnables {
     // https://gbdev.io/pandocs/Interrupts.html
@@ -138,6 +158,39 @@ struct InterruptFlags {
     lcd_stat: bool,
     // Bit 0: VBlank   Interrupt Request (INT $40)  (1=Request)
     v_blank: bool,
+}
+
+impl InterruptFlags {
+    // 実行する割り込みがあるか確認
+    fn check_interrupt(&self, ime: bool, ie: InterruptEnables) -> Option<Interruption> {
+        if !ime {
+            return None;
+        }
+        // ビット 0 (V-Blank) か最高、ビット 4 (Joypad) が最低の優先度
+        if self.v_blank && ie.v_blank {
+            Some(Interruption::VBlank)
+        } else if self.lcd_stat && ie.lcd_stat {
+            Some(Interruption::LcdStatus)
+        } else if self.timer && ie.timer {
+            Some(Interruption::Timer)
+        } else if self.serial && ie.serial {
+            Some(Interruption::Serial)
+        } else if self.joypad && ie.joypad {
+            Some(Interruption::Joypad)
+        } else {
+            None
+        }
+    }
+    // 該当するフラグをリセットする
+    fn reset_interrupt(&mut self, i: &Interruption) {
+        match i {
+            Interruption::VBlank => self.v_blank = false,
+            Interruption::LcdStatus => self.lcd_stat = false,
+            Interruption::Timer => self.timer = false,
+            Interruption::Serial => self.serial = false,
+            Interruption::Joypad => self.joypad = false,
+        }
+    }
 }
 
 impl From<u8> for InterruptFlags {
@@ -304,6 +357,8 @@ impl CPU {
         }
     }
     pub fn tick(&mut self) -> Result<(u16, u8), &str> {
+        // 割り込み処理
+        self.handle_interruption();
         // fetch
         let opcode = self.fetch();
         // decode & execute
@@ -332,6 +387,26 @@ impl CPU {
         // opcode実行前にインクリメントしておく
         self.registers.pc = self.registers.pc.wrapping_add(1);
         byte
+    }
+    // 割り込み処理
+    fn handle_interruption(&mut self) {
+        if let Some(interrupt) = self.ifg.check_interrupt(self.ime, self.ie) {
+            // スタックにリターンアドレスを保存
+            self.write(
+                self.registers.sp.wrapping_sub(1),
+                ((self.registers.pc & 0xFF00) >> 8) as u8,
+            );
+            self.write(
+                self.registers.sp.wrapping_sub(2),
+                (self.registers.pc & 0x00FF) as u8,
+            );
+            self.registers.sp = self.registers.sp.wrapping_sub(2);
+            // 割り込み処理中は他の割り込みを禁止。通常は RETI で戻される
+            self.ime = false;
+            // フラグをリセットしてPCを更新
+            self.ifg.reset_interrupt(&interrupt);
+            self.registers.pc = interrupt.jump_address();
+        }
     }
     // https://gbdev.io/gb-opcodes/optables/
     fn execute(&mut self, opcode: u8) -> u8 {
