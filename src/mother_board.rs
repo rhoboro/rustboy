@@ -45,7 +45,7 @@ pub struct MotherBoard {
     ram: RefCell<[u8; 4 * 1024 * 2]>,
     stack: RefCell<Stack>,
     ppu: RefCell<Box<PPU>>,
-    timer: RefCell<Box<dyn IO>>,
+    timer: Option<RefCell<Timer>>,
     sound: RefCell<Box<dyn IO>>,
 }
 
@@ -54,20 +54,20 @@ impl MotherBoard {
         let cartridge = RefCell::new(Cartridge::new(&config.romfile));
         debug_log!("{:?}", cartridge);
         let ppu = RefCell::new(Box::new(PPU::new(Box::new(BrailleTerminal::new()))));
-        let timer = RefCell::new(Box::new(Timer {}));
         let sound = RefCell::new(Box::new(Sound {}));
         let mb = Rc::new(RefCell::new(Self {
             cartridge,
             ppu,
-            timer,
             sound,
+            timer: Option::None,
             ram: RefCell::new([0; 4 * 1024 * 2]),
             stack: RefCell::new([0; 128]),
             cpu: Option::None,
         }));
-        let weak_ref = Rc::<RefCell<MotherBoard>>::downgrade(&mb);
-        let cpu = RefCell::new(CPU::new(weak_ref));
+        let timer = RefCell::new(Timer::new(Rc::<RefCell<MotherBoard>>::downgrade(&mb)));
+        let cpu = RefCell::new(CPU::new(Rc::<RefCell<MotherBoard>>::downgrade(&mb)));
         mb.borrow_mut().cpu = Option::Some(cpu);
+        mb.borrow_mut().timer = Option::Some(timer);
         mb
     }
 
@@ -121,7 +121,7 @@ impl Bus for MotherBoard {
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
             0xFE00..=0xFE9F => self.ppu.borrow().read(address),
             // 以下はI/Oポート
-            0xFF05..=0xFF07 => self.timer.borrow().read(address),
+            0xFF05..=0xFF07 => self.timer.as_ref().unwrap().borrow().read(address),
             0xFF10..=0xFF3F => self.sound.borrow().read(address),
             0xFF40..=0xFF4B => self.ppu.borrow().read(address),
             0xFF80..=0xFFFE => {
@@ -161,7 +161,12 @@ impl Bus for MotherBoard {
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
             0xFE00..=0xFE9F => self.ppu.borrow_mut().write(address, data),
             // 以下はI/Oポート
-            0xFF05..=0xFF07 => self.timer.borrow_mut().write(address, data),
+            0xFF05..=0xFF07 => self
+                .timer
+                .as_ref()
+                .unwrap()
+                .borrow_mut()
+                .write(address, data),
             0xFF10..=0xFF3F => self.sound.borrow_mut().write(address, data),
             0xFF40..=0xFF4B => self.ppu.borrow_mut().write(address, data),
             0xFF80..=0xFFFE => {
