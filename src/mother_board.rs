@@ -83,6 +83,7 @@ impl MotherBoard {
             }
             {
                 self.ppu.borrow_mut().tick(cycle);
+                self.timer.as_ref().unwrap().borrow_mut().tick(cycle);
             }
             bp.breakpoint(opcode, &cpu, &self.stack.borrow(), &self.ppu.borrow());
         }

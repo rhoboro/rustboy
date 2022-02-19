@@ -18,12 +18,16 @@ enum TimerStatus {
 #[derive(Debug, Clone, Copy)]
 enum Clock {
     // 00
+    // 4096Hz
     Hz4096,
     // 01
+    // 4096Hz * 64
     Hz262144,
     // 10
+    // 4096Hz * 16
     Hz65536,
     // 11
+    // 4096Hz * 4
     Hz16384,
 }
 
@@ -104,13 +108,22 @@ impl Timer {
             tac: TAC::from(0),
         }
     }
-    fn increment_div(&mut self) {
-        // TODO: 16384Hz でインクリメントする
-        self.div = self.div.wrapping_add(1)
+    pub fn tick(&mut self, cycle: u8) {
+        self.increment_div(cycle);
+        self.increment_tima(cycle);
     }
-    fn increment_tima(&mut self) {
-        // TODO: self.tac.clock のタイミングでインクリメントする
-        if self.tima.calc_carry(1) {
+    fn increment_div(&mut self, cycle: u8) {
+        // 16384Hz でインクリメントする
+        self.div = self.div.wrapping_add(cycle.wrapping_mul(4))
+    }
+    fn increment_tima(&mut self, cycle: u8) {
+        let timer_cycle = match self.tac.clock {
+            Clock::Hz4096 => cycle,
+            Clock::Hz16384 => cycle.wrapping_mul(4),
+            Clock::Hz65536 => cycle.wrapping_mul(16),
+            Clock::Hz262144 => cycle.wrapping_mul(64),
+        };
+        if self.tima.calc_carry(timer_cycle) {
             self.tima = self.tma;
             // 割り込み
             let value = self.bus.upgrade().unwrap().borrow().read(0xFF0F) & 0b00000100;
