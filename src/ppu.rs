@@ -1,10 +1,10 @@
-use crate::arithmetic::{AddSigned, ToSigned};
-use crate::io::IO;
-use crate::Address;
-
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
 use std::vec::IntoIter;
+
+use crate::arithmetic::{AddSigned, ToSigned};
+use crate::io::IO;
+use crate::Address;
 
 const REFRESH_CYCLE: u64 = 70224;
 const WHITE: PixelData = PixelData(255, 255, 255, 0);

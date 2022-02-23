@@ -1,6 +1,7 @@
+use std::fmt::{Debug, Formatter};
+
 use crate::io::IO;
 use crate::Address;
-use std::fmt::{Debug, Formatter};
 
 pub struct Sound {}
 

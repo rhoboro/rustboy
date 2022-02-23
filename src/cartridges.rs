@@ -1,15 +1,17 @@
-mod header;
-mod mbc1;
-mod rom_only;
-
-use crate::Address;
-use header::{CartridgeHeader, CartridgeType, RamSize};
-use mbc1::Mbc1;
-use rom_only::RomOnly;
 use std::convert::TryInto;
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
+
+use header::{CartridgeHeader, CartridgeType, RamSize};
+use mbc1::Mbc1;
+use rom_only::RomOnly;
+
+use crate::Address;
+
+mod header;
+mod mbc1;
+mod rom_only;
 
 // ROMバンク1つのサイズは16KB
 pub const BANK_SIZE_ROM: usize = 16 * 1024;

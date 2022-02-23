@@ -1,3 +1,5 @@
+pub use mother_board::{run, Config};
+
 #[macro_use]
 mod debugger;
 mod arithmetic;
@@ -12,5 +14,3 @@ mod sound;
 mod timer;
 
 type Address = u16;
-
-pub use mother_board::{run, Config};

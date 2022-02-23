@@ -1,5 +1,6 @@
-use crate::ppu::{FrameBuffer, PixelData, LCD};
 use std::fmt::{Debug, Formatter};
+
+use crate::ppu::{FrameBuffer, PixelData, LCD};
 
 impl Debug for PixelData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

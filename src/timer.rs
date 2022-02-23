@@ -1,10 +1,10 @@
-use crate::arithmetic::ArithmeticUtil;
-use crate::cpu::Bus;
-use crate::io::IO;
-use crate::Address;
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Weak;
+
+use crate::arithmetic::ArithmeticUtil;
+use crate::io::{Bus, IO};
+use crate::Address;
 
 #[derive(Debug, Clone, Copy)]
 enum TimerStatus {

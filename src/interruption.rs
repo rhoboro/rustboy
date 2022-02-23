@@ -1,7 +1,8 @@
-use crate::io::IO;
-use crate::Address;
 use std::convert::Into;
 use std::fmt::{Debug, Formatter};
+
+use crate::io::IO;
+use crate::Address;
 
 pub enum Peripheral {
     Joypad,
@@ -122,7 +123,9 @@ impl From<InterruptFlags> for u8 {
 }
 
 pub struct Interruption {
+    // 0xFF0F: 割り込みフラグ
     interrupts: InterruptFlags,
+    // 0xFFFF: 割り込み有効フラグ
     enables: InterruptEnables,
 }
 
@@ -144,27 +147,19 @@ impl Interruption {
 impl IO for Interruption {
     fn read(&self, address: Address) -> u8 {
         match address {
-            0xFF0F => {
-                // 割り込みフラグ
-                self.interrupts.into()
-            }
-            0xFFFF => {
-                // 割り込み有効
-                self.interrupts.into()
-            }
+            // 割り込みフラグ
+            0xFF0F => self.interrupts.into(),
+            // 割り込み有効
+            0xFFFF => self.interrupts.into(),
             _ => unreachable!(),
         }
     }
     fn write(&mut self, address: Address, data: u8) {
         match address {
-            0xFF0F => {
-                // 割り込みフラグ
-                self.interrupts = InterruptFlags::from(data)
-            }
-            0xFFFF => {
-                // 割り込み有効
-                self.enables = InterruptEnables::from(data)
-            }
+            // 割り込みフラグ
+            0xFF0F => self.interrupts = InterruptFlags::from(data),
+            // 割り込み有効
+            0xFFFF => self.enables = InterruptEnables::from(data),
             _ => unreachable!(),
         }
     }

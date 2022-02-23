@@ -1,9 +1,10 @@
+use std::io::{stdin, stdout, Write};
+use std::process::exit;
+
 use crate::cpu::CPU;
 use crate::interruption::Interruption;
 use crate::mother_board::Stack;
 use crate::ppu::PPU;
-use std::io::{stdin, stdout, Write};
-use std::process::exit;
 
 macro_rules! debug_log {
     () => (

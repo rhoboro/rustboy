@@ -1,26 +1,14 @@
-use crate::arithmetic::{AddSigned, ArithmeticUtil};
-use crate::interruption::{InterruptEnables, InterruptFlags, Interruption, Peripheral};
-#[allow(overflowing_literals)]
-use crate::Address;
 use core::fmt::Debug;
 use std::cell::RefCell;
 use std::convert::Into;
 use std::default::Default;
-use std::fmt::Formatter;
 use std::rc::Weak;
 
-// アドレスバスは16bit
-// データバスは8bit
-pub trait Bus {
-    fn read(&self, _address: Address) -> u8;
-    fn write(&self, _address: Address, _data: u8);
-}
-
-impl Debug for dyn Bus {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
-    }
-}
+#[allow(overflowing_literals)]
+use crate::arithmetic::{AddSigned, ArithmeticUtil};
+use crate::interruption::{InterruptEnables, InterruptFlags, Peripheral};
+use crate::io::Bus;
+use crate::Address;
 
 #[derive(Default, Copy, Clone, Debug)]
 struct Flags {
@@ -243,6 +231,7 @@ impl CPU {
         }
     }
     fn check_interrupt(&self) -> Option<Peripheral> {
+        // このロジックは Interruption に持たせたいが、共有参照が必要になるので一旦ここで定義する
         if !self.ime {
             return None;
         }
@@ -264,6 +253,7 @@ impl CPU {
         }
     }
     fn reset_interrupt(&mut self, p: &Peripheral) {
+        // このロジックは Interruption に持たせたいが、可変参照が必要になるので一旦ここで定義する
         let data = match p {
             Peripheral::VBlank => self.read(0xFF0F) & 0b_0000_0000,
             Peripheral::LcdStatus => self.read(0xFF0F) & 0b_0000_0000,
