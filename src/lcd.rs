@@ -1,4 +1,3 @@
-use crate::debug_log;
 use crate::ppu::{FrameBuffer, PixelData, LCD};
 use std::fmt::{Debug, Formatter};
 use std::io::{stdout, BufWriter, Write};

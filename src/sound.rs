@@ -1,4 +1,3 @@
-use crate::debug_log;
 use crate::io::IO;
 use crate::Address;
 use std::fmt::{Debug, Formatter};

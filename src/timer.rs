@@ -1,6 +1,5 @@
 use crate::arithmetic::ArithmeticUtil;
 use crate::cpu::Bus;
-use crate::debug_log;
 use crate::io::IO;
 use crate::Address;
 use std::cell::RefCell;

@@ -1,5 +1,4 @@
 use super::{Mbc, RamBank, RamSize, RomBank, BANK_SIZE_RAM};
-use crate::debug_log;
 use crate::Address;
 
 pub struct RomOnly {

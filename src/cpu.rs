@@ -1,5 +1,4 @@
 use crate::arithmetic::{AddSigned, ArithmeticUtil};
-use crate::debug_log;
 #[allow(overflowing_literals)]
 use crate::Address;
 use core::fmt::Debug;

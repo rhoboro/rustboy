@@ -1,6 +1,5 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
-use crate::debug_log;
 use crate::debugger::BreakPoint;
 use crate::io::IO;
 use crate::lcd::BrailleTerminal;

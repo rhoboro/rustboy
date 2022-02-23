@@ -3,7 +3,7 @@ use crate::mother_board::Stack;
 use crate::ppu::PPU;
 use std::io::{stdin, stdout, Write};
 use std::process::exit;
-#[macro_export]
+
 macro_rules! debug_log {
     () => (
         let debug_mode = false;

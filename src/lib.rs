@@ -1,7 +1,8 @@
+#[macro_use]
+mod debugger;
 mod arithmetic;
 mod cartridges;
 mod cpu;
-mod debugger;
 mod io;
 mod lcd;
 mod mother_board;
