@@ -1,4 +1,5 @@
 use crate::arithmetic::{AddSigned, ArithmeticUtil};
+use crate::interruption::{InterruptEnables, InterruptFlags, Interruption, Peripheral};
 #[allow(overflowing_literals)]
 use crate::Address;
 use core::fmt::Debug;
@@ -70,157 +71,6 @@ impl From<Flags> for u8 {
         }
         if flags.c {
             v |= 0b_0001_0000;
-        }
-        v
-    }
-}
-
-enum Interruption {
-    Joypad,
-    Serial,
-    Timer,
-    LcdStatus,
-    VBlank,
-}
-
-impl Interruption {
-    fn jump_address(&self) -> Address {
-        match self {
-            Interruption::Joypad => 0x0060,
-            Interruption::Serial => 0x0058,
-            Interruption::Timer => 0x0050,
-            Interruption::LcdStatus => 0x0048,
-            Interruption::VBlank => 0x0040,
-        }
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct InterruptEnables {
-    // https://gbdev.io/pandocs/Interrupts.html
-    // Bit 4: Joypad   Interrupt Enable (INT $60)  (1=Enable)
-    joypad: bool,
-    // Bit 3: Serial   Interrupt Enable (INT $58)  (1=Enable)
-    serial: bool,
-    // Bit 2: Timer    Interrupt Enable (INT $50)  (1=Enable)
-    timer: bool,
-    // Bit 1: LCD STAT Interrupt Enable (INT $48)  (1=Enable)
-    lcd_stat: bool,
-    // Bit 0: VBlank   Interrupt Enable (INT $40)  (1=Enable)
-    v_blank: bool,
-}
-
-impl From<u8> for InterruptEnables {
-    fn from(v: u8) -> Self {
-        Self {
-            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
-            serial: (v & 0b_0000_1000) == 0b_0000_1000,
-            timer: (v & 0b_0000_0100) == 0b_0000_0100,
-            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
-            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
-        }
-    }
-}
-
-impl From<InterruptEnables> for u8 {
-    fn from(enables: InterruptEnables) -> Self {
-        let mut v = 0b_0000_0000;
-        if enables.joypad {
-            v |= 0b_0001_0000;
-        }
-        if enables.serial {
-            v |= 0b_0000_1000;
-        }
-        if enables.timer {
-            v |= 0b_0000_0100;
-        }
-        if enables.lcd_stat {
-            v |= 0b_0000_0010;
-        }
-        if enables.v_blank {
-            v |= 0b_0000_0001;
-        }
-        v
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct InterruptFlags {
-    // https://gbdev.io/pandocs/Interrupts.html
-    // Bit 4: Joypad   Interrupt Request (INT $60)  (1=Request)
-    joypad: bool,
-    // Bit 3: Serial   Interrupt Request (INT $58)  (1=Request)
-    serial: bool,
-    // Bit 2: Timer    Interrupt Request (INT $50)  (1=Request)
-    timer: bool,
-    // Bit 1: LCD STAT Interrupt Request (INT $48)  (1=Request)
-    lcd_stat: bool,
-    // Bit 0: VBlank   Interrupt Request (INT $40)  (1=Request)
-    v_blank: bool,
-}
-
-impl InterruptFlags {
-    // 実行する割り込みがあるか確認
-    fn check_interrupt(&self, ime: bool, ie: InterruptEnables) -> Option<Interruption> {
-        if !ime {
-            return None;
-        }
-        // ビット 0 (V-Blank) か最高、ビット 4 (Joypad) が最低の優先度
-        if self.v_blank && ie.v_blank {
-            Some(Interruption::VBlank)
-        } else if self.lcd_stat && ie.lcd_stat {
-            Some(Interruption::LcdStatus)
-        } else if self.timer && ie.timer {
-            Some(Interruption::Timer)
-        } else if self.serial && ie.serial {
-            Some(Interruption::Serial)
-        } else if self.joypad && ie.joypad {
-            Some(Interruption::Joypad)
-        } else {
-            None
-        }
-    }
-    // 該当するフラグをリセットする
-    fn reset_interrupt(&mut self, i: &Interruption) {
-        match i {
-            Interruption::VBlank => self.v_blank = false,
-            Interruption::LcdStatus => self.lcd_stat = false,
-            Interruption::Timer => self.timer = false,
-            Interruption::Serial => self.serial = false,
-            Interruption::Joypad => self.joypad = false,
-        }
-    }
-}
-
-impl From<u8> for InterruptFlags {
-    fn from(v: u8) -> Self {
-        Self {
-            joypad: (v & 0b_0001_0000) == 0b_0001_0000,
-            serial: (v & 0b_0000_1000) == 0b_0000_1000,
-            timer: (v & 0b_0000_0100) == 0b_0000_0100,
-            lcd_stat: (v & 0b_0000_0010) == 0b_0000_0010,
-            v_blank: (v & 0b_0000_0001) == 0b_0000_0001,
-        }
-    }
-}
-
-impl From<InterruptFlags> for u8 {
-    fn from(flags: InterruptFlags) -> Self {
-        let mut v = 0b_0000_0000;
-        if flags.joypad {
-            v |= 0b_0001_0000;
-        }
-        if flags.serial {
-            v |= 0b_0000_1000;
-        }
-        if flags.timer {
-            v |= 0b_0000_0100;
-        }
-        if flags.lcd_stat {
-            v |= 0b_0000_0010;
-        }
-        if flags.v_blank {
-            v |= 0b_0000_0001;
         }
         v
     }
@@ -321,23 +171,16 @@ pub struct CPU {
     // 0xFF05 - 0xFF07
     // timer: Box<dyn IO>,
 
-    // 0xFF0F 割り込みフラグ
-    ifg: InterruptFlags,
-
     // 0xFF10 - FF3F
     // sound: Box<dyn IO>,
 
     // 0xFF46 DMA(Direct Memory Access)
     dma: u8,
-
     // 0xFF40 - 0xFF4B
     // lcd: Box<dyn IO>,
 
     // 0xFF80 - 0xFFFE はSPが指すスタック領域
     // stack: [u8; 0xFFFE - 0xFF80 + 1],
-
-    // 0xFFFF 割り込みマスク
-    ie: InterruptEnables,
 }
 
 impl CPU {
@@ -350,9 +193,7 @@ impl CPU {
             sb: 0,
             sc: 0,
             div: 0,
-            ifg: InterruptFlags::default(),
             dma: 0,
-            ie: InterruptEnables::default(),
         }
     }
     pub fn tick(&mut self) -> Result<(u16, u8), &str> {
@@ -374,12 +215,6 @@ impl CPU {
     pub fn print_registers(&self) {
         println!("{:?}", &self.registers);
     }
-    pub fn print_interrupt_flags(&self) {
-        println!("{:?}", &self.ifg);
-    }
-    pub fn print_interrupt_enables(&self) {
-        println!("{:?}", &self.ie);
-    }
     // PCの位置から1バイト読み取り、PCをインクリメントする
     fn fetch(&mut self) -> u8 {
         let byte = self.read(self.registers.pc);
@@ -389,7 +224,7 @@ impl CPU {
     }
     // 割り込み処理
     fn handle_interruption(&mut self) {
-        if let Some(interrupt) = self.ifg.check_interrupt(self.ime, self.ie) {
+        if let Some(interrupt) = self.check_interrupt() {
             // スタックにリターンアドレスを保存
             self.write(
                 self.registers.sp.wrapping_sub(1),
@@ -403,9 +238,40 @@ impl CPU {
             // 割り込み処理中は他の割り込みを禁止。通常は RETI で戻される
             self.ime = false;
             // フラグをリセットしてPCを更新
-            self.ifg.reset_interrupt(&interrupt);
+            self.reset_interrupt(&interrupt);
             self.registers.pc = interrupt.jump_address();
         }
+    }
+    fn check_interrupt(&self) -> Option<Peripheral> {
+        if !self.ime {
+            return None;
+        }
+        let interrupts = InterruptFlags::from(self.read(0xFF0F));
+        let enables = InterruptEnables::from(self.read(0xFFFF));
+        // ビット 0 (V-Blank) か最高、ビット 4 (Joypad) が最低の優先度
+        if interrupts.v_blank && enables.v_blank {
+            Some(Peripheral::VBlank)
+        } else if interrupts.lcd_stat && enables.lcd_stat {
+            Some(Peripheral::LcdStatus)
+        } else if interrupts.timer && enables.timer {
+            Some(Peripheral::Timer)
+        } else if interrupts.serial && enables.serial {
+            Some(Peripheral::Serial)
+        } else if interrupts.joypad && enables.joypad {
+            Some(Peripheral::Joypad)
+        } else {
+            None
+        }
+    }
+    fn reset_interrupt(&mut self, p: &Peripheral) {
+        let data = match p {
+            Peripheral::VBlank => self.read(0xFF0F) & 0b_0000_0000,
+            Peripheral::LcdStatus => self.read(0xFF0F) & 0b_0000_0000,
+            Peripheral::Timer => self.read(0xFF0F) & 0b_0000_0000,
+            Peripheral::Serial => self.read(0xFF0F) & 0b_0000_0000,
+            Peripheral::Joypad => self.read(0xFF0F) & 0b_0000_0000,
+        };
+        self.write(0xFF0F, data);
     }
     // https://gbdev.io/gb-opcodes/optables/
     fn execute(&mut self, opcode: u8) -> u8 {
@@ -955,7 +821,7 @@ impl CPU {
                     0xFF02 => self.sc,
                     0xFF04 => self.div,
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().read(address),
-                    0xFF0F => self.ifg.into(),
+                    0xFF0F => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF46 => self.dma,
                     // LCD
@@ -972,7 +838,7 @@ impl CPU {
             }
             0xFFFF => {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
-                self.ie.into()
+                self.bus.upgrade().unwrap().borrow().read(address)
             }
             // 0x0000 - 0xFDFF は ROM/RAM へのアクセス
             _ => self.bus.upgrade().unwrap().borrow().read(address),
@@ -1004,7 +870,7 @@ impl CPU {
                     0xFF02 => self.sc = data,
                     0xFF04 => self.div = data,
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
-                    0xFF0F => self.ifg = InterruptFlags::from(data),
+                    0xFF0F => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF46 => self.dma = data,
                     // LCD
@@ -1021,7 +887,7 @@ impl CPU {
             }
             0xFFFF => {
                 // 0xFFFF - 0xFFFF: 割り込み有効レジスタ
-                self.ie = InterruptEnables::from(data);
+                self.bus.upgrade().unwrap().borrow().write(address, data)
             }
             // 0x0000 - 0xFDFF は ROM/RAM へのアクセス
             _ => self.bus.upgrade().unwrap().borrow().write(address, data),

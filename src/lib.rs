@@ -3,6 +3,7 @@ mod debugger;
 mod arithmetic;
 mod cartridges;
 mod cpu;
+mod interruption;
 mod io;
 mod lcd;
 mod mother_board;

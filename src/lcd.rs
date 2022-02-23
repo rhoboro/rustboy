@@ -1,6 +1,5 @@
 use crate::ppu::{FrameBuffer, PixelData, LCD};
 use std::fmt::{Debug, Formatter};
-use std::io::{stdout, BufWriter, Write};
 
 impl Debug for PixelData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

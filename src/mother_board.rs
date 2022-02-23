@@ -1,11 +1,13 @@
 use crate::cartridges::Cartridge;
 use crate::cpu::{Bus, CPU};
 use crate::debugger::BreakPoint;
+use crate::interruption::Interruption;
 use crate::io::IO;
 use crate::lcd::BrailleTerminal;
 use crate::ppu::PPU;
 use crate::sound::Sound;
 use crate::timer::Timer;
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -44,6 +46,7 @@ pub struct MotherBoard {
     ram: RefCell<[u8; 4 * 1024 * 2]>,
     stack: RefCell<Stack>,
     ppu: RefCell<Box<PPU>>,
+    interruption: RefCell<Box<Interruption>>,
     timer: Option<RefCell<Timer>>,
     sound: RefCell<Box<dyn IO>>,
 }
@@ -53,20 +56,22 @@ impl MotherBoard {
         let cartridge = RefCell::new(Cartridge::new(&config.romfile));
         debug_log!("{:?}", cartridge);
         let ppu = RefCell::new(Box::new(PPU::new(Box::new(BrailleTerminal::new()))));
+        let interruption = RefCell::new(Box::new(Interruption::new()));
         let sound = RefCell::new(Box::new(Sound {}));
-        let mb = Rc::new(RefCell::new(Self {
+        let mut mb = Rc::new(RefCell::new(Self {
             cartridge,
             ppu,
             sound,
-            timer: Option::None,
+            interruption,
             ram: RefCell::new([0; 4 * 1024 * 2]),
             stack: RefCell::new([0; 128]),
+            timer: Option::None,
             cpu: Option::None,
         }));
         let timer = RefCell::new(Timer::new(Rc::<RefCell<MotherBoard>>::downgrade(&mb)));
         let cpu = RefCell::new(CPU::new(Rc::<RefCell<MotherBoard>>::downgrade(&mb)));
-        mb.borrow_mut().cpu = Option::Some(cpu);
-        mb.borrow_mut().timer = Option::Some(timer);
+        mb.as_ref().borrow_mut().cpu = Option::Some(cpu);
+        mb.as_ref().borrow_mut().timer = Option::Some(timer);
         mb
     }
 
@@ -84,7 +89,13 @@ impl MotherBoard {
                 self.ppu.borrow_mut().tick(cycle);
                 self.timer.as_ref().unwrap().borrow_mut().tick(cycle);
             }
-            bp.breakpoint(opcode, &cpu, &self.stack.borrow(), &self.ppu.borrow());
+            bp.breakpoint(
+                opcode,
+                &cpu,
+                &self.stack.borrow(),
+                &self.ppu.borrow(),
+                &self.interruption.borrow(),
+            );
         }
         Ok(())
     }
@@ -117,6 +128,14 @@ impl Bus for MotherBoard {
                 // 0xE000 - 0xFDFF: 0xC000 - 0xDDFF と同じ内容
                 self.read(address - 0x2000)
             }
+            0xFF0F => {
+                // 割り込みフラグ
+                self.interruption.borrow().read(address)
+            }
+            0xFFFF => {
+                // 割り込み有効
+                self.interruption.borrow().read(address)
+            }
             // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
             0xFE00..=0xFE9F => self.ppu.borrow().read(address),
@@ -128,7 +147,9 @@ impl Bus for MotherBoard {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
                 self.stack.borrow()[(address - 0xFF80) as usize]
             }
-            _ => unreachable!(),
+            _ => {
+                unreachable!()
+            }
         }
     }
 
@@ -156,6 +177,14 @@ impl Bus for MotherBoard {
             0xE000..=0xFDFF => {
                 // 0xE000 - 0xFDFF: 0xC000 - 0xDDFF と同じ内容
                 self.write(address - 0x2000, data)
+            }
+            0xFF0F => {
+                // 割り込みフラグ
+                self.interruption.borrow_mut().write(address, data)
+            }
+            0xFFFF => {
+                // 割り込み有効
+                self.interruption.borrow_mut().write(address, data)
             }
             // 以降はシステム領域（WR信号は外部に出力されず本来はCPU内部で処理される）
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)

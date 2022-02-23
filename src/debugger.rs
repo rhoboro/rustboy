@@ -1,4 +1,5 @@
 use crate::cpu::CPU;
+use crate::interruption::Interruption;
 use crate::mother_board::Stack;
 use crate::ppu::PPU;
 use std::io::{stdin, stdout, Write};
@@ -46,10 +47,19 @@ impl BreakPoint {
             counter: 0,
         }
     }
-    pub fn breakpoint(&mut self, opcode: u16, cpu: &CPU, stack: &Stack, ppu: &PPU) {
-        // println!("COUNTS: {:}", self.counter);
-        // println!("OPCODE: 0x{:04X?}", opcode);
-        // cpu.print_registers();
+    pub fn breakpoint(
+        &mut self,
+        opcode: u16,
+        cpu: &CPU,
+        stack: &Stack,
+        ppu: &PPU,
+        int: &Interruption,
+    ) {
+        println!("COUNTS: {:}", self.counter);
+        println!("OPCODE: 0x{:04X?}", opcode);
+        cpu.print_registers();
+        int.print_interrupt_flags();
+        int.print_interrupt_enables();
         self.counter += 1;
         if !self.should_stop
             & !self.breakpoints.contains(&opcode)
@@ -101,8 +111,8 @@ impl BreakPoint {
                 }
                 "print" | "p" => match commands.get(1) {
                     Some(&"reg") => cpu.print_registers(),
-                    Some(&"ifg") => cpu.print_interrupt_flags(),
-                    Some(&"ie") => cpu.print_interrupt_enables(),
+                    Some(&"ifg") => int.print_interrupt_flags(),
+                    Some(&"ie") => int.print_interrupt_enables(),
                     Some(&"vram") => ppu.print_vram(),
                     Some(&"stack") => println!("{:?}", stack),
                     Some(&"count") => println!("{:?}", self.counter),
