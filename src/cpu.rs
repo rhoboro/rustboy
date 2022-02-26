@@ -141,6 +141,9 @@ impl Registers {
 pub struct CPU {
     registers: Registers,
     bus: Weak<RefCell<dyn Bus>>,
+    // halt() 呼び出し後は割り込みが来るまで停止する
+    is_halted: bool,
+
     // Interrupt Master Enable Flag
     ime: bool,
 
@@ -172,10 +175,13 @@ pub struct CPU {
 }
 
 impl CPU {
+    pub const CLOCK: u32 = 4194304;
+
     pub fn new(bus: Weak<RefCell<dyn Bus>>) -> Self {
         Self {
             bus,
             registers: Registers::new(),
+            is_halted: false,
             ime: false,
             p1: 0,
             sb: 0,
@@ -187,6 +193,10 @@ impl CPU {
     pub fn tick(&mut self) -> Result<(u16, u8), &str> {
         // 割り込み処理
         self.handle_interruption();
+        if self.is_halted {
+            // NOP
+            return Ok((0x0000 as u16, 4));
+        }
         // fetch
         let opcode = self.fetch();
         // decode & execute
@@ -201,7 +211,10 @@ impl CPU {
         }
     }
     pub fn print_registers(&self) {
-        println!("{:?}", &self.registers);
+        println!(
+            "{:?}, ime: {}, is_halted: {}",
+            &self.registers, self.ime, self.is_halted
+        );
     }
     // PCの位置から1バイト読み取り、PCをインクリメントする
     fn fetch(&mut self) -> u8 {
@@ -213,6 +226,11 @@ impl CPU {
     // 割り込み処理
     fn handle_interruption(&mut self) {
         if let Some(interrupt) = self.check_interrupt() {
+            self.is_halted = false;
+            // imeフラグは割り込みフラグより優先される
+            if !self.ime {
+                return;
+            };
             // スタックにリターンアドレスを保存
             self.write(
                 self.registers.sp.wrapping_sub(1),
@@ -232,9 +250,6 @@ impl CPU {
     }
     fn check_interrupt(&self) -> Option<Peripheral> {
         // このロジックは Interruption に持たせたいが、共有参照が必要になるので一旦ここで定義する
-        if !self.ime {
-            return None;
-        }
         let interrupts = InterruptFlags::from(self.read(0xFF0F));
         let enables = InterruptEnables::from(self.read(0xFFFF));
         // ビット 0 (V-Blank) か最高、ビット 4 (Joypad) が最低の優先度
@@ -891,7 +906,7 @@ impl CPU {
         self.write(0xFF04, 0x18); // DIV
         self.write(0xFF05, 0x00); // TIMA
         self.write(0xFF06, 0x00); // TMA
-        self.write(0xFF07, 0xF8); // TAC
+        self.write(0xFF07, 0x00); // TAC
         self.write(0xFF0F, 0xE1); // IF
         self.write(0xFF10, 0x80); // NR10
         self.write(0xFF11, 0xBF); // NR11
@@ -1822,7 +1837,10 @@ impl CPU {
     fn halt_0x76(&mut self) -> u8 {
         debug_log!("HALT");
         // 割り込みが来るまで待機
-        todo!();
+        self.is_halted = true;
+        // haltの直後の命令はスキップされる(GBCPUman.pdf page 20)
+        self.registers.pc = self.registers.pc.wrapping_add(1);
+        4
     }
     // bytes: 1 cycles: [8]
     fn ld_hl_a_0x77(&mut self) -> u8 {

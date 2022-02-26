@@ -5,6 +5,7 @@ use crate::cpu::CPU;
 use crate::interruption::Interruption;
 use crate::mother_board::Stack;
 use crate::ppu::PPU;
+use crate::timer::Timer;
 
 macro_rules! debug_log {
     () => (
@@ -55,12 +56,14 @@ impl BreakPoint {
         stack: &Stack,
         ppu: &PPU,
         int: &Interruption,
+        timer: &Timer,
     ) {
         println!("COUNTS: {:}", self.counter);
         println!("OPCODE: 0x{:04X?}", opcode);
         cpu.print_registers();
         int.print_interrupt_flags();
         int.print_interrupt_enables();
+        timer.print_timer();
         self.counter += 1;
         if !self.should_stop
             & !self.breakpoints.contains(&opcode)

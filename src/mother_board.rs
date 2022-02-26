@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -81,10 +80,6 @@ impl MotherBoard {
         cpu.reset();
         loop {
             let (opcode, cycle) = cpu.tick().unwrap();
-            if opcode == 0x76 {
-                // HALT
-                break;
-            }
             {
                 self.ppu.borrow_mut().tick(cycle);
                 self.timer.as_ref().unwrap().borrow_mut().tick(cycle);
@@ -95,9 +90,9 @@ impl MotherBoard {
                 &self.stack.borrow(),
                 &self.ppu.borrow(),
                 &self.interruption.borrow(),
+                &self.timer.as_ref().unwrap().borrow(),
             );
         }
-        Ok(())
     }
 }
 
