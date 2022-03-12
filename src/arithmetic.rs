@@ -69,6 +69,16 @@ impl AddSigned for u16 {
     }
 }
 
+pub trait AddSignedU8 {
+    fn add_signed_u8(&self, rhs: u8) -> u8;
+}
+
+impl AddSignedU8 for u8 {
+    fn add_signed_u8(&self, rhs: u8) -> u8 {
+        ((*self as i8).wrapping_add(rhs as i8)) as u8
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
