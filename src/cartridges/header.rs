@@ -1,4 +1,5 @@
 #[derive(Debug)]
+#[repr(C)]
 pub struct CartridgeHeader {
     // 0100-0103
     pub entry_point: [u8; 4],
