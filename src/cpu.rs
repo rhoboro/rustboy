@@ -4,12 +4,12 @@ use std::convert::Into;
 use std::default::Default;
 use std::rc::Weak;
 
+use crate::arithmetic::ToSigned;
 #[allow(overflowing_literals)]
 use crate::arithmetic::{AddSigned, AddSignedU8, ArithmeticUtil};
 use crate::interruption::{InterruptEnables, InterruptFlags, Peripheral};
 use crate::io::Bus;
 use crate::Address;
-use crate::arithmetic::ToSigned;
 
 #[derive(Default, Copy, Clone, Debug)]
 struct Flags {
@@ -1329,7 +1329,8 @@ impl CPU {
         self.registers.f.c = self.registers.hl().calc_carry(self.registers.hl());
         // ここのハーフキャリーは変則的
         self.registers.f.h =
-            ((self.registers.hl() & 0xFFF).wrapping_add(self.registers.hl() & 0xFFF)) & 0x1000 == 0x1000;
+            ((self.registers.hl() & 0xFFF).wrapping_add(self.registers.hl() & 0xFFF)) & 0x1000
+                == 0x1000;
         self.registers
             .set_hl(self.registers.hl().wrapping_add(self.registers.hl()));
         self.registers.f.n = false;
@@ -1467,7 +1468,8 @@ impl CPU {
         // ここのハーフキャリーは変則的
         self.registers.f.h =
             ((self.registers.hl() & 0xFFF) + (self.registers.sp & 0xFFF)) & 0x1000 == 0x1000;
-        self.registers.set_hl(self.registers.sp);
+        self.registers
+            .set_hl(self.registers.hl().wrapping_add(self.registers.sp));
         self.registers.f.n = false;
         8
     }
@@ -2054,7 +2056,9 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn adc_a_hl_0x8e(&mut self) -> u8 {
         debug_log!("ADC A, (HL)");
-        let rhs: u8 = self.read(self.registers.hl()).wrapping_add(self.registers.f.c as u8);
+        let rhs: u8 = self
+            .read(self.registers.hl())
+            .wrapping_add(self.registers.f.c as u8);
         self.registers.f.h = self.registers.a.calc_half_carry(rhs);
         self.registers.f.c = self.registers.a.calc_carry(rhs);
         self.registers.a = self.registers.a.wrapping_add(rhs);
@@ -2223,7 +2227,9 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn sbc_a_hl_0x9e(&mut self) -> u8 {
         debug_log!("SBC A, (HL)");
-        let rhs: u8 = self.read(self.registers.hl()).wrapping_add(self.registers.f.c as u8);
+        let rhs: u8 = self
+            .read(self.registers.hl())
+            .wrapping_add(self.registers.f.c as u8);
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
@@ -3024,11 +3030,9 @@ impl CPU {
     fn add_sp_r8_0xe8(&mut self) -> u8 {
         debug_log!("ADD SP, r8");
         let r8 = self.fetch();
-        let spv = self.read(self.registers.sp);
-        // TODO: 符号
-        self.registers.f.h = spv.calc_half_carry(r8 as u8);
-        self.registers.f.c = spv.calc_carry(r8 as u8);
-        self.write(self.registers.sp, spv.add_signed_u8(r8));
+        self.registers.f.h = (self.registers.sp as u8).calc_half_carry(r8);
+        self.registers.f.c = (self.registers.sp as u8).calc_carry(r8);
+        self.registers.sp = self.registers.sp.add_signed_u8(r8);
         self.registers.f.z = false;
         self.registers.f.n = false;
         16
@@ -3169,8 +3173,8 @@ impl CPU {
         self.registers.set_hl(self.registers.sp.add_signed_u8(r8));
         self.registers.f.z = false;
         self.registers.f.n = false;
-        self.registers.f.h = self.registers.sp.calc_half_carry(r8.to_signed_u16());
-        self.registers.f.c = self.registers.sp.calc_carry(r8.to_signed_u16());
+        self.registers.f.h = (self.registers.sp as u8).calc_half_carry(r8);
+        self.registers.f.c = (self.registers.sp as u8).calc_carry(r8);
         12
     }
     // bytes: 1 cycles: [8]
