@@ -2757,9 +2757,20 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn adc_a_d8_0xce(&mut self) -> u8 {
         debug_log!("ADC A, d8");
-        let rhs: u8 = self.fetch().wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let d8 = self.fetch();
+        let h = d8.calc_half_carry(self.registers.f.c as u8);
+        let c = d8.calc_carry(self.registers.f.c as u8);
+        let rhs = d8.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
