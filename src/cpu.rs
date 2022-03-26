@@ -2951,13 +2951,29 @@ impl CPU {
     }
     // bytes: 2 cycles: [8]
     fn sbc_a_d8_0xde(&mut self) -> u8 {
-        debug_log!("SBC A, d8");
-        let rhs: u8 = self.fetch().wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
-        self.registers.a = self.registers.a.wrapping_sub(rhs);
+        println!("SBC A, d8");
+        let d8 = self.fetch();
+        println!("d8: 0b{:08b}", d8);
+        let h = d8.calc_half_carry(self.registers.f.c as u8);
+        let c = d8.calc_carry(self.registers.f.c as u8);
+        let rhs: u16 = (d8 as u16).wrapping_add(self.registers.f.c as u16);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if d8.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < ((rhs as u8) & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            (self.registers.a as u16) < rhs
+        };
+        self.registers.a = self.registers.a.wrapping_sub(rhs as u8);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         8
     }
     // bytes: 1 cycles: [16]
