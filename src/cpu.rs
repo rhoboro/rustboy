@@ -1029,7 +1029,7 @@ impl CPU {
         // ここのハーフキャリーは変則的
         self.registers.f.h =
             ((self.registers.hl() & 0xFFF) + (self.registers.bc() & 0xFFF)) & 0x1000 == 0x1000;
-        self.registers.set_hl(self.registers.bc());
+        self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.bc()));
         self.registers.f.n = false;
         8
     }
@@ -1163,7 +1163,7 @@ impl CPU {
         // ここのハーフキャリーは変則的
         self.registers.f.h =
             ((self.registers.hl() & 0xFFF) + (self.registers.de() & 0xFFF)) & 0x1000 == 0x1000;
-        self.registers.set_hl(self.registers.de());
+        self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.de()));
         self.registers.f.n = false;
         8
     }
@@ -2166,7 +2166,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2177,7 +2177,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2188,7 +2188,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2199,7 +2199,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2210,7 +2210,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
@@ -2221,7 +2221,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [8]
@@ -2234,7 +2234,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         8
     }
     // bytes: 1 cycles: [4]
@@ -2245,7 +2245,7 @@ impl CPU {
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
-        self.registers.f.n = false;
+        self.registers.f.n = true;
         4
     }
     // bytes: 1 cycles: [4]
