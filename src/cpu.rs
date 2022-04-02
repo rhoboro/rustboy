@@ -883,7 +883,6 @@ impl CPU {
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().write(address, data),
                     _ => {
                         debug_log!("ignored: {:X?}", address);
-                        unreachable!()
                     }
                 }
             }
