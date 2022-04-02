@@ -1029,7 +1029,8 @@ impl CPU {
         // ここのハーフキャリーは変則的
         self.registers.f.h =
             ((self.registers.hl() & 0xFFF) + (self.registers.bc() & 0xFFF)) & 0x1000 == 0x1000;
-        self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.bc()));
+        self.registers
+            .set_hl(self.registers.hl().wrapping_add(self.registers.bc()));
         self.registers.f.n = false;
         8
     }
@@ -1163,7 +1164,8 @@ impl CPU {
         // ここのハーフキャリーは変則的
         self.registers.f.h =
             ((self.registers.hl() & 0xFFF) + (self.registers.de() & 0xFFF)) & 0x1000 == 0x1000;
-        self.registers.set_hl(self.registers.hl().wrapping_add(self.registers.de()));
+        self.registers
+            .set_hl(self.registers.hl().wrapping_add(self.registers.de()));
         self.registers.f.n = false;
         8
     }
@@ -2243,11 +2245,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2268,11 +2266,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2293,11 +2287,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2318,11 +2308,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2343,11 +2329,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2368,11 +2350,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2406,11 +2384,7 @@ impl CPU {
                 (self.registers.a & 0x0F) < (rhs & 0x0F)
             }
         };
-        self.registers.f.c = if c {
-            true
-        } else {
-            self.registers.a < rhs
-        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -3520,7 +3494,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_b_0xcb08(&mut self) -> u8 {
         debug_log!("RRC B");
-        let c = (self.registers.b >> 7) == 1;
+        let c = (self.registers.b & 0x01) == 1;
         self.registers.b = (c as u8) << 7 | self.registers.b >> 1;
         self.registers.f.z = self.registers.b == 0;
         self.registers.f.n = false;
@@ -3531,7 +3505,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_c_0xcb09(&mut self) -> u8 {
         debug_log!("RRC C");
-        let c = (self.registers.c >> 7) == 1;
+        let c = (self.registers.c & 0x01) == 1;
         self.registers.c = (c as u8) << 7 | self.registers.c >> 1;
         self.registers.f.z = self.registers.c == 0;
         self.registers.f.n = false;
@@ -3542,7 +3516,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_d_0xcb0a(&mut self) -> u8 {
         debug_log!("RRC D");
-        let c = (self.registers.d >> 7) == 1;
+        let c = (self.registers.d & 0x01) == 1;
         self.registers.d = (c as u8) << 7 | self.registers.d >> 1;
         self.registers.f.z = self.registers.d == 0;
         self.registers.f.n = false;
@@ -3553,7 +3527,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_e_0xcb0b(&mut self) -> u8 {
         debug_log!("RRC E");
-        let c = (self.registers.e >> 7) == 1;
+        let c = (self.registers.e & 0x01) == 1;
         self.registers.e = (c as u8) << 7 | self.registers.e >> 1;
         self.registers.f.z = self.registers.e == 0;
         self.registers.f.n = false;
@@ -3564,7 +3538,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_h_0xcb0c(&mut self) -> u8 {
         debug_log!("RRC H");
-        let c = (self.registers.h >> 7) == 1;
+        let c = (self.registers.h & 0x01) == 1;
         self.registers.h = (c as u8) << 7 | self.registers.h >> 1;
         self.registers.f.z = self.registers.h == 0;
         self.registers.f.n = false;
@@ -3575,7 +3549,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_l_0xcb0d(&mut self) -> u8 {
         debug_log!("RRC L");
-        let c = (self.registers.l >> 7) == 1;
+        let c = (self.registers.l & 0x01) == 1;
         self.registers.l = (c as u8) << 7 | self.registers.l >> 1;
         self.registers.f.z = self.registers.l == 0;
         self.registers.f.n = false;
@@ -3586,7 +3560,7 @@ impl CPU {
     // bytes: 2 cycles: [16]
     fn rrc_hl_0xcb0e(&mut self) -> u8 {
         debug_log!("RRC (HL)");
-        let c = (self.read(self.registers.hl()) >> 7) == 1;
+        let c = (self.read(self.registers.hl()) & 0x01) == 1;
         self.write(
             self.registers.hl(),
             (c as u8) << 7 | self.read(self.registers.hl()) >> 1,
@@ -3600,7 +3574,7 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn rrc_a_0xcb0f(&mut self) -> u8 {
         debug_log!("RRC A");
-        let c = (self.registers.a >> 7) == 1;
+        let c = (self.registers.a & 0x01) == 1;
         self.registers.a = (c as u8) << 7 | self.registers.a >> 1;
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -3933,10 +3907,10 @@ impl CPU {
     // bytes: 2 cycles: [8]
     fn sra_l_0xcb2d(&mut self) -> u8 {
         debug_log!("SRA L");
-        let c = self.registers.b & 0x1 == 0x1;
-        let smb = self.registers.b & 0x80;
-        self.registers.b = smb | (self.registers.b >> 1);
-        self.registers.f.z = self.registers.b == 0;
+        let c = self.registers.l & 0x1 == 0x1;
+        let smb = self.registers.l & 0x80;
+        self.registers.l = smb | (self.registers.l >> 1);
+        self.registers.f.z = self.registers.l == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
