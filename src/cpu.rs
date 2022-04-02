@@ -1990,9 +1990,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_b_0x88(&mut self) -> u8 {
         debug_log!("ADC A, B");
-        let rhs: u8 = self.registers.b.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.b.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.b.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.b.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2001,9 +2011,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_c_0x89(&mut self) -> u8 {
         debug_log!("ADC A, C");
-        let rhs: u8 = self.registers.c.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.c.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.c.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.c.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2012,9 +2032,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_d_0x8a(&mut self) -> u8 {
         debug_log!("ADC A, D");
-        let rhs: u8 = self.registers.d.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.d.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.d.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.d.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2023,9 +2053,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_e_0x8b(&mut self) -> u8 {
         debug_log!("ADC A, E");
-        let rhs: u8 = self.registers.e.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.e.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.e.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.e.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2034,9 +2074,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_h_0x8c(&mut self) -> u8 {
         debug_log!("ADC A, H");
-        let rhs: u8 = self.registers.h.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.h.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.h.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.h.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2045,9 +2095,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_l_0x8d(&mut self) -> u8 {
         debug_log!("ADC A, L");
-        let rhs: u8 = self.registers.l.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.l.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.l.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.l.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2069,9 +2129,19 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn adc_a_a_0x8f(&mut self) -> u8 {
         debug_log!("ADC A, A");
-        let rhs: u8 = self.registers.a.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let h = self.registers.a.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.a.calc_carry(self.registers.f.c as u8);
+        let rhs = self.registers.a.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2161,9 +2231,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_b_0x98(&mut self) -> u8 {
         debug_log!("SBC A, B");
+        let h = self.registers.b.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.b.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.b.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.b.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2172,9 +2256,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_c_0x99(&mut self) -> u8 {
         debug_log!("SBC A, C");
+        let h = self.registers.c.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.c.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.c.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.c.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2183,9 +2281,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_d_0x9a(&mut self) -> u8 {
         debug_log!("SBC A, D");
+        let h = self.registers.d.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.d.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.d.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.d.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2194,9 +2306,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_e_0x9b(&mut self) -> u8 {
         debug_log!("SUB A, E");
+        let h = self.registers.e.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.e.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.e.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.e.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2205,9 +2331,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_h_0x9c(&mut self) -> u8 {
         debug_log!("SBC A, H");
+        let h = self.registers.h.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.h.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.h.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.h.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2216,9 +2356,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_l_0x9d(&mut self) -> u8 {
         debug_log!("SBC A, L");
+        let h = self.registers.l.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.l.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.l.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.l.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -2240,9 +2394,23 @@ impl CPU {
     // bytes: 1 cycles: [4]
     fn sbc_a_a_0x9f(&mut self) -> u8 {
         debug_log!("SBC A, A");
+        let h = self.registers.a.calc_half_carry(self.registers.f.c as u8);
+        let c = self.registers.a.calc_carry(self.registers.f.c as u8);
         let rhs: u8 = self.registers.a.wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if self.registers.a.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a < rhs
+        };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
