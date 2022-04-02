@@ -2118,11 +2118,20 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn adc_a_hl_0x8e(&mut self) -> u8 {
         debug_log!("ADC A, (HL)");
-        let rhs: u8 = self
-            .read(self.registers.hl())
-            .wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_carry(rhs);
-        self.registers.f.c = self.registers.a.calc_carry(rhs);
+        let d8 = self.read(self.registers.hl());
+        let h = d8.calc_half_carry(self.registers.f.c as u8);
+        let c = d8.calc_carry(self.registers.f.c as u8);
+        let rhs: u8 = d8.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            self.registers.a.calc_half_carry(rhs)
+        };
+        self.registers.f.c = if c {
+            true
+        } else {
+            self.registers.a.calc_carry(rhs)
+        };
         self.registers.a = self.registers.a.wrapping_add(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = false;
@@ -2359,11 +2368,20 @@ impl CPU {
     // bytes: 1 cycles: [8]
     fn sbc_a_hl_0x9e(&mut self) -> u8 {
         debug_log!("SBC A, (HL)");
-        let rhs: u8 = self
-            .read(self.registers.hl())
-            .wrapping_add(self.registers.f.c as u8);
-        self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
-        self.registers.f.c = self.registers.a.calc_borrow(rhs);
+        let d8 = self.read(self.registers.hl());
+        let h = d8.calc_half_carry(self.registers.f.c as u8);
+        let c = d8.calc_carry(self.registers.f.c as u8);
+        let rhs: u8 = d8.wrapping_add(self.registers.f.c as u8);
+        self.registers.f.h = if h {
+            true
+        } else {
+            if d8.calc_half_carry(self.registers.f.c as u8) {
+                true
+            } else {
+                (self.registers.a & 0x0F) < (rhs & 0x0F)
+            }
+        };
+        self.registers.f.c = if c { true } else { self.registers.a < rhs };
         self.registers.a = self.registers.a.wrapping_sub(rhs);
         self.registers.f.z = self.registers.a == 0;
         self.registers.f.n = true;
@@ -3474,7 +3492,7 @@ impl CPU {
             self.registers.hl(),
             self.read(self.registers.hl()) << 1 | c as u8,
         );
-        self.registers.f.z = self.registers.hl() == 0;
+        self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
@@ -3829,7 +3847,7 @@ impl CPU {
         debug_log!("SLA (HL)");
         self.registers.f.c = (self.read(self.registers.hl()) >> 7) == 0x1;
         self.write(self.registers.hl(), self.read(self.registers.hl()) << 1);
-        self.registers.f.z = self.registers.hl() == 0;
+        self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         16
@@ -3925,7 +3943,7 @@ impl CPU {
             self.registers.hl(),
             smb | (self.read(self.registers.hl()) >> 1),
         );
-        self.registers.f.z = self.registers.b == 0;
+        self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = c;
@@ -4018,10 +4036,10 @@ impl CPU {
     // bytes: 2 cycles: [16]
     fn swap_hl_0xcb36(&mut self) -> u8 {
         debug_log!("SWAP (HL)");
-        let upper = (self.registers.hl() & 0xF0) >> 4;
-        let lower = self.registers.hl() & 0x0F;
-        self.registers.set_hl((lower << 4) | upper);
-        self.registers.f.z = self.registers.hl() == 0;
+        let upper = (self.read(self.registers.hl()) & 0xF0) >> 4;
+        let lower = self.read(self.registers.hl()) & 0x0F;
+        self.write(self.registers.hl(), lower << 4 | upper);
+        self.registers.f.z = self.read(self.registers.hl()) == 0;
         self.registers.f.n = false;
         self.registers.f.h = false;
         self.registers.f.c = false;
