@@ -79,7 +79,7 @@ struct Pixel {
     // 未使用
     // sprite: u8,
     // スプライトの bit7 の値
-    background_priority: u8,
+    background_priority: bool,
 }
 
 // タイルは 8 x 8 ピクセル。1ピクセルは2bitで4色。
@@ -90,6 +90,54 @@ type Tile = [u8; 8 * 2];
 struct TileLine {
     low: u8,
     high: u8,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Sprite {
+    y_position: u16,
+    x_position: u16,
+    tile_number: u8,
+    flags: u8,
+}
+
+impl Sprite {
+    fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: u8) -> Vec<Sprite> {
+        let mut sprite_buffer = Vec::with_capacity(10);
+        for sprite_bytes in oam.chunks(4) {
+            match Sprite::new(sprite_bytes, ly, lcdc) {
+                Some(sprite) => {
+                    sprite_buffer.push(sprite);
+                    if sprite_buffer.len() >= 10 {
+                        break;
+                    }
+                }
+                _ => (),
+            }
+        }
+        sprite_buffer
+    }
+    fn new(bytes: &[u8], ly: u16, lcdc: u8) -> Option<Self> {
+        if bytes.len() != 4 {
+            return Option::None;
+        }
+        let sprite = Self {
+            y_position: bytes[0].into(),
+            x_position: bytes[1].into(),
+            tile_number: bytes[2].into(),
+            flags: bytes[3].into(),
+        };
+        if sprite.x_position <= 0 || 168 < sprite.x_position {
+            return Option::None;
+        }
+        if ly + 16 < sprite.y_position {
+            return Option::None;
+        }
+        let height = if (lcdc | 0b00000100) != 0 { 16 } else { 8 };
+        if ly + 16 >= sprite.y_position + height {
+            return Option::None;
+        }
+        Some(sprite)
+    }
 }
 
 impl IntoIterator for TileLine {
@@ -111,6 +159,8 @@ impl IntoIterator for TileLine {
         v.into_iter()
     }
 }
+
+struct BackgroundFetcher {}
 
 pub struct PPU {
     lcd: Box<dyn LCD>,
@@ -243,6 +293,7 @@ impl PPU {
             // ly レジスタが現在処理中の行
             // 1画面は154行（LCD144行 + 擬似スキャンライン10行）
             if self.ly >= HEIGHT_LCD {
+                // mode 0: V-Blank
                 break;
             }
             self.scan_line(self.ly);
@@ -267,30 +318,68 @@ impl PPU {
             if rx >= WIDTH_LCD - 1 {
                 break;
             }
-            // TODO: OAMスキャン
-            let tile_number = self.fetch_tile_number(ly, rx);
-            let tile_data = self.fetch_tile_data(tile_number, ly);
+            // mode 2: OAM Scan
+            let sprite_buffer = Sprite::oam_scan(&self.oam, self.ly, self.lcdc);
+
+            // mode 3: Drawing
+            for sprite in &sprite_buffer {
+                if sprite.x_position <= rx + 8 {
+                    let base_address =
+                        0x8000 + sprite.tile_number.to_unsigned_u16().wrapping_mul(16);
+                    let offset = 2 * ((self.ly + self.scy) % HEIGHT_TILE);
+                    let address = base_address + offset;
+                    let low = self.read(address);
+                    let high = self.read(address + 1);
+                    let tile_line = TileLine { low, high };
+                    for color in tile_line {
+                        self.fifo_sprite.push_back(Pixel {
+                            color,
+                            palette: self.obp0,
+                            background_priority: (sprite.flags >> 7) == 0b1,
+                        });
+                    }
+                }
+            }
+
+            let tile_number = self.fetch_bg_tile_number(ly, rx);
+            let tile_data = self.fetch_bg_tile_data(tile_number, ly);
             if self.fifo_background.is_empty() {
                 assert_eq!(self.fifo_background.len(), 0);
-                self.push_fifo(tile_data);
+                self.push_bg_fifo(tile_data);
             }
+
             if !self.fifo_background.is_empty() {
                 // Push Pixel to LCD
                 let mut discarded = self.scx % 8;
                 while self.fifo_background.len() > 0 {
-                    let pixel = self.fifo_background.pop_front();
+                    let bg_pixel = self.fifo_background.pop_front().unwrap();
+                    let sp_pixel = self.fifo_sprite.pop_front();
+                    let pixel = match sp_pixel {
+                        Some(sp_pixel) => {
+                            if sp_pixel.color == Color::White {
+                                bg_pixel
+                            } else if sp_pixel.background_priority && bg_pixel.color != Color::White
+                            {
+                                bg_pixel
+                            } else {
+                                sp_pixel
+                            }
+                        }
+                        None => bg_pixel,
+                    };
                     if discarded > 0 {
                         discarded -= 1;
                         continue;
                     }
-                    self.frame_buffer[ly as usize][rx as usize] = pixel.unwrap().color.to_rgba();
+                    self.frame_buffer[ly as usize][rx as usize] = pixel.color.to_rgba();
                     rx += 1;
                 }
             }
+            // mode 0: H-Blank
         }
     }
 
-    fn fetch_tile_number(&self, ly: u16, rx: u16) -> u8 {
+    fn fetch_bg_tile_number(&self, ly: u16, rx: u16) -> u8 {
         self.read(tile_number_address(
             self.background_data_select(),
             ly,
@@ -299,19 +388,19 @@ impl PPU {
             self.scy,
         ))
     }
-    fn fetch_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
+    fn fetch_bg_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
         let address = tile_number_to_address(tile_number, self.tile_data_select(), ly, self.scy);
         let low = self.read(address);
         let high = self.read(address + 1);
         TileLine { low, high }
     }
-    fn push_fifo(&mut self, tile_line: TileLine) {
+    fn push_bg_fifo(&mut self, tile_line: TileLine) {
         // 8画素分のピクセルデータを fifo にいれ、pushしたピクセル数を返す
         for color in tile_line {
             self.fifo_background.push_back(Pixel {
                 color,
                 palette: self.obp0,
-                background_priority: 0,
+                background_priority: false,
             });
         }
     }
