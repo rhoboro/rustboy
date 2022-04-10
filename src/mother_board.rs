@@ -6,7 +6,7 @@ use crate::cpu::CPU;
 use crate::debugger::BreakPoint;
 use crate::interruption::Interruption;
 use crate::io::{Bus, IO};
-use crate::lcd::BrailleTerminal;
+use crate::lcd::{BrailleTerminal, Terminal};
 use crate::ppu::PPU;
 use crate::sound::Sound;
 use crate::timer::Timer;
@@ -14,7 +14,7 @@ use crate::Address;
 
 /// 引数から構築される設定値群
 pub struct Config {
-    pub romfile: String,
+    pub rom_file: String,
 }
 
 impl Config {
@@ -22,8 +22,8 @@ impl Config {
         if args.len() < 2 {
             return Err("Several arguments are missing.");
         }
-        let romfile = args[1].clone();
-        Ok(Config { romfile })
+        let rom_file = args[1].clone();
+        Ok(Config { rom_file })
     }
 }
 
@@ -52,7 +52,7 @@ pub struct MotherBoard {
 
 impl MotherBoard {
     pub fn new(config: &Config) -> Rc<RefCell<Self>> {
-        let cartridge = RefCell::new(Cartridge::new(&config.romfile));
+        let cartridge = RefCell::new(Cartridge::new(&config.rom_file));
         debug_log!("{:?}", cartridge);
         let ppu = RefCell::new(Box::new(PPU::new(Box::new(BrailleTerminal::new()))));
         let interruption = RefCell::new(Box::new(Interruption::new()));

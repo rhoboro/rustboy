@@ -136,6 +136,8 @@ struct Sprite {
 }
 
 impl Sprite {
+    pub const BASE_ADDRESS: Address = 0x8000;
+
     fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: LcdControl) -> Vec<Sprite> {
         let mut sprite_buffer = Vec::with_capacity(10);
         for sprite_bytes in oam.chunks(4) {
@@ -171,6 +173,12 @@ impl Sprite {
             return Option::None;
         }
         Some(sprite)
+    }
+    fn tile_address(&self, ly: u16, scy: u16) -> Address {
+        let base_address =
+            Sprite::BASE_ADDRESS + self.tile_number.to_unsigned_u16().wrapping_mul(16);
+        let offset = 2 * ((ly + scy) % HEIGHT_TILE);
+        base_address + offset
     }
 }
 
@@ -415,10 +423,7 @@ impl PPU {
             // mode 3: Drawing
             for sprite in &sprite_buffer {
                 if sprite.x_position <= rx + 8 {
-                    let base_address =
-                        0x8000 + sprite.tile_number.to_unsigned_u16().wrapping_mul(16);
-                    let offset = 2 * ((self.ly + self.scy) % HEIGHT_TILE);
-                    let address = base_address + offset;
+                    let address = sprite.tile_address(self.ly, self.scy);
                     let low = self.read(address);
                     let high = self.read(address + 1);
                     let tile_line = TileLine { low, high };
