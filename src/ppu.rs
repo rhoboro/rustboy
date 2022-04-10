@@ -42,9 +42,44 @@ enum PPUMode {
     Drawing,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum TileDataSelect {
     Method8000,
     Method8800,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum TileMapSelect {
+    Method9C00,
+    Method9800,
+}
+
+impl From<TileMapSelect> for Address {
+    fn from(v: TileMapSelect) -> Self {
+        if v == TileMapSelect::Method9C00 {
+            // 0x9C00 - 0x9FFF の1024個
+            0x9C00
+        } else {
+            // 0x9800 - 0x9BFF の1024個
+            0x9800
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum SpriteSize {
+    Normal,
+    Tall,
+}
+
+impl From<SpriteSize> for u16 {
+    fn from(v: SpriteSize) -> Self {
+        if v == SpriteSize::Tall {
+            16
+        } else {
+            8
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -101,7 +136,7 @@ struct Sprite {
 }
 
 impl Sprite {
-    fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: u8) -> Vec<Sprite> {
+    fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: LcdControl) -> Vec<Sprite> {
         let mut sprite_buffer = Vec::with_capacity(10);
         for sprite_bytes in oam.chunks(4) {
             match Sprite::new(sprite_bytes, ly, lcdc) {
@@ -116,7 +151,7 @@ impl Sprite {
         }
         sprite_buffer
     }
-    fn new(bytes: &[u8], ly: u16, lcdc: u8) -> Option<Self> {
+    fn new(bytes: &[u8], ly: u16, lcdc: LcdControl) -> Option<Self> {
         if bytes.len() != 4 {
             return Option::None;
         }
@@ -132,8 +167,7 @@ impl Sprite {
         if ly + 16 < sprite.y_position {
             return Option::None;
         }
-        let height = if (lcdc | 0b00000100) != 0 { 16 } else { 8 };
-        if ly + 16 >= sprite.y_position + height {
+        if ly + 16 >= sprite.y_position + u16::from(lcdc.sprite_size) {
             return Option::None;
         }
         Some(sprite)
@@ -160,7 +194,81 @@ impl IntoIterator for TileLine {
     }
 }
 
-struct BackgroundFetcher {}
+#[derive(Debug, Clone, Copy)]
+struct LcdControl {
+    lcd_enable: bool,
+    window_tile_map_select: TileMapSelect,
+    window_enable: bool,
+    tile_data_select: TileDataSelect,
+    bg_tile_map_select: TileMapSelect,
+    sprite_size: SpriteSize,
+    sprite_enable: bool,
+    bg_win_enable: bool,
+}
+
+impl From<u8> for LcdControl {
+    fn from(v: u8) -> Self {
+        Self {
+            lcd_enable: (v & 0b_1000_0000) == 0b_1000_0000,
+            window_tile_map_select: if (v & 0b_0100_0000) == 0b_0100_0000 {
+                TileMapSelect::Method9C00
+            } else {
+                TileMapSelect::Method9800
+            },
+            window_enable: (v & 0b_0010_0000) == 0b_0010_0000,
+            tile_data_select: if (v & 0b_0001_0000) == 0b_0001_0000 {
+                TileDataSelect::Method8000
+            } else {
+                TileDataSelect::Method8800
+            },
+            bg_tile_map_select: if (v & 0b_0000_1000) == 0b_0000_1000 {
+                TileMapSelect::Method9C00
+            } else {
+                TileMapSelect::Method9800
+            },
+            sprite_size: if (v & 0b_0000_0100) == 0b_0000_0100 {
+                SpriteSize::Tall
+            } else {
+                SpriteSize::Normal
+            },
+            sprite_enable: (v & 0b_0000_0010) == 0b_0000_0010,
+            bg_win_enable: (v & 0b_0000_0001) == 0b_0000_0001,
+        }
+    }
+}
+
+impl From<LcdControl> for u8 {
+    fn from(lcdc: LcdControl) -> Self {
+        let mut v;
+        if lcdc.lcd_enable {
+            v = 0b_1000_0000;
+        } else {
+            v = 0b_0000_0000;
+        }
+        if lcdc.window_tile_map_select == TileMapSelect::Method9C00 {
+            v |= 0b_0100_0000;
+        }
+        if lcdc.window_enable {
+            v |= 0b_0010_0000;
+        }
+        if lcdc.tile_data_select == TileDataSelect::Method8000 {
+            v |= 0b_0001_0000;
+        }
+        if lcdc.bg_tile_map_select == TileMapSelect::Method9C00 {
+            v |= 0b_0000_1000;
+        }
+        if lcdc.sprite_size == SpriteSize::Tall {
+            v |= 0b_0000_0100;
+        }
+        if lcdc.sprite_enable {
+            v |= 0b_0000_0010;
+        }
+        if lcdc.bg_win_enable {
+            v |= 0b_0000_0001;
+        }
+        v
+    }
+}
 
 pub struct PPU {
     lcd: Box<dyn LCD>,
@@ -208,7 +316,7 @@ pub struct PPU {
     // 5bit: 1ならウィンドウも描画, 0ならウィンドウは無視
     // 4bit: 1なら Method 8000, 0なら Method 8800
     // 3bit: 1なら 0x9C00 - 0x9FFF, 0なら 0x9800 - 0x9BFF にある背景データを使う
-    lcdc: u8,
+    lcdc: LcdControl,
     // 0xFF41: LCDステータス
     stat: u8,
     // 0xFF42: スクロールY座標
@@ -241,7 +349,7 @@ impl PPU {
             frame_buffer: [[WHITE; 160]; 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],
-            lcdc: 0,
+            lcdc: LcdControl::from(0),
             stat: 0,
             scy: 0,
             scx: 0,
@@ -254,23 +362,6 @@ impl PPU {
             wx: 0,
             fifo_background: VecDeque::with_capacity(WIDTH_TILE as usize),
             fifo_sprite: VecDeque::with_capacity(WIDTH_TILE as usize),
-        }
-    }
-
-    fn tile_data_select(&self) -> TileDataSelect {
-        if (self.lcdc & 0b00010000) != 0 {
-            TileDataSelect::Method8000
-        } else {
-            TileDataSelect::Method8800
-        }
-    }
-    fn background_data_select(&self) -> Address {
-        if (self.lcdc & 0b00001000) != 0 {
-            // 0x9C00 - 0x9FFF の1024個
-            0x9C00
-        } else {
-            // 0x9800 - 0x9BFF の1024個
-            0x9800
         }
     }
 
@@ -381,7 +472,7 @@ impl PPU {
 
     fn fetch_bg_tile_number(&self, ly: u16, rx: u16) -> u8 {
         self.read(tile_number_address(
-            self.background_data_select(),
+            self.lcdc.bg_tile_map_select.into(),
             ly,
             rx,
             self.scx,
@@ -389,7 +480,7 @@ impl PPU {
         ))
     }
     fn fetch_bg_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
-        let address = tile_number_to_address(tile_number, self.tile_data_select(), ly, self.scy);
+        let address = tile_number_to_address(tile_number, self.lcdc.tile_data_select, ly, self.scy);
         let low = self.read(address);
         let high = self.read(address + 1);
         TileLine { low, high }
@@ -423,7 +514,7 @@ impl IO for PPU {
             0xFF40..=0xFF4B => {
                 // レジスタ
                 match address {
-                    0xFF40 => self.lcdc,
+                    0xFF40 => self.lcdc.into(),
                     0xFF41 => self.stat,
                     0xFF42 => self.scy.try_into().unwrap(),
                     0xFF43 => self.scx.try_into().unwrap(),
@@ -454,7 +545,7 @@ impl IO for PPU {
             0xFF40..=0xFF4B => {
                 // レジスタ
                 match address {
-                    0xFF40 => self.lcdc = data,
+                    0xFF40 => self.lcdc = LcdControl::from(data),
                     0xFF41 => self.stat = data,
                     0xFF42 => self.scy = data as u16,
                     0xFF43 => self.scx = data as u16,
