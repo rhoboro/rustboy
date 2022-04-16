@@ -6,7 +6,6 @@ use crate::arithmetic::{AddSigned, ToSigned};
 use crate::io::IO;
 use crate::Address;
 
-const REFRESH_CYCLE: u64 = 70224;
 const WHITE: PixelData = PixelData(255, 255, 255, 0);
 const LIGHT_GRAY: PixelData = PixelData(170, 170, 170, 0);
 const DARK_GRAY: PixelData = PixelData(85, 85, 85, 0);
@@ -14,12 +13,14 @@ const BLACK: PixelData = PixelData(0, 0, 0, 0);
 
 const WIDTH_LCD: u16 = 160;
 const HEIGHT_LCD: u16 = 144;
+const HEIGHT_LCD_MARGIN: u16 = 10;
 const WIDTH_TILE: u16 = 8;
 const HEIGHT_TILE: u16 = 8;
 const WIDTH_BG: u16 = 256;
 const HEIGHT_BG: u16 = 256;
 const WIDTH_WINDOW: u16 = 256;
 const HEIGHT_WINDOW: u16 = 256;
+const SCANLINE_CYCLE: u64 = 456;
 
 pub type FrameBuffer = [[PixelData; WIDTH_LCD as usize]; HEIGHT_LCD as usize];
 pub trait LCD {
@@ -380,25 +381,15 @@ impl PPU {
     pub fn tick(&mut self, cycle: u8) {
         self.clock += cycle as u64;
         if self.clock_next_target <= self.clock {
-            debug_log!("LCD REFRESH!!!");
-            self.clock_next_target += REFRESH_CYCLE;
-            self.scan_lines();
-        }
-    }
-
-    fn scan_lines(&mut self) {
-        self.ly = 0;
-        loop {
-            // ly レジスタが現在処理中の行
-            // 1画面は154行（LCD144行 + 擬似スキャンライン10行）
-            if self.ly >= HEIGHT_LCD {
-                // mode 0: V-Blank
-                break;
-            }
+            self.clock_next_target += SCANLINE_CYCLE;
             self.scan_line(self.ly);
             self.ly += 1;
+            if self.ly >= (HEIGHT_LCD + HEIGHT_LCD_MARGIN) {
+                debug_log!("LCD REFRESH!!!");
+                self.lcd.draw(&self.frame_buffer);
+                self.ly = 0;
+            }
         }
-        self.lcd.draw(&self.frame_buffer);
     }
 
     // 1行(= 160 pixel)の描画
@@ -410,6 +401,9 @@ impl PPU {
         // タイル番号を取得、タイルデータの1バイト目を取得、タイルデータの2バイト目を取得、対応するFIFOにプッシュ
         // FIFOは2つある（背景ウィンドウ用とスプライト用）
         // FIFOが埋まったらLCDにプッシュ。（2つのFIFOをマージすることもある）
+        if self.ly >= HEIGHT_LCD {
+            return;
+        }
 
         // スキャンラインごとのLCDにpushしたピクセル数(0 - 160)
         let mut rx = 0u16;

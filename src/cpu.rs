@@ -859,7 +859,6 @@ impl CPU {
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
                 debug_log!("ignored: {:X?}", address);
-                unreachable!()
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
