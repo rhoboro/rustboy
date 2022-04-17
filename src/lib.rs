@@ -7,6 +7,7 @@ mod cartridges;
 mod cpu;
 mod interruption;
 mod io;
+mod joypad;
 mod lcd;
 mod mother_board;
 mod ppu;

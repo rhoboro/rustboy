@@ -6,6 +6,7 @@ use crate::cpu::CPU;
 use crate::debugger::BreakPoint;
 use crate::interruption::Interruption;
 use crate::io::{Bus, IO};
+use crate::joypad::JoyPad;
 use crate::lcd::{BrailleTerminal, Terminal};
 use crate::ppu::PPU;
 use crate::sound::Sound;
@@ -40,7 +41,6 @@ pub type Stack = [u8; 128];
 #[derive(Debug)]
 pub struct MotherBoard {
     cpu: Option<RefCell<CPU>>,
-    // joypad
     cartridge: RefCell<Cartridge>,
     ram: RefCell<[u8; 4 * 1024 * 2]>,
     stack: RefCell<Stack>,
@@ -48,6 +48,7 @@ pub struct MotherBoard {
     interruption: RefCell<Box<Interruption>>,
     timer: Option<RefCell<Timer>>,
     sound: RefCell<Box<dyn IO>>,
+    joypad: RefCell<Box<dyn IO>>,
 }
 
 impl MotherBoard {
@@ -57,10 +58,12 @@ impl MotherBoard {
         let ppu = RefCell::new(Box::new(PPU::new(Box::new(BrailleTerminal::new()))));
         let interruption = RefCell::new(Box::new(Interruption::new()));
         let sound = RefCell::new(Box::new(Sound {}));
+        let joypad = RefCell::new(Box::new(JoyPad::new()));
         let mut mb = Rc::new(RefCell::new(Self {
             cartridge,
             ppu,
             sound,
+            joypad,
             interruption,
             ram: RefCell::new([0; 4 * 1024 * 2]),
             stack: RefCell::new([0; 128]),
@@ -133,6 +136,7 @@ impl Bus for MotherBoard {
             }
             // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
+            0xFF00 => self.joypad.borrow().read(address),
             0xFE00..=0xFE9F => self.ppu.borrow().read(address),
             // 以下はI/Oポート
             0xFF05..=0xFF07 => self.timer.as_ref().unwrap().borrow().read(address),
@@ -185,6 +189,7 @@ impl Bus for MotherBoard {
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
             0xFE00..=0xFE9F => self.ppu.borrow_mut().write(address, data),
             // 以下はI/Oポート
+            0xFF00 => self.joypad.borrow_mut().write(address, data),
             0xFF05..=0xFF07 => self
                 .timer
                 .as_ref()

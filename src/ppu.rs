@@ -354,7 +354,7 @@ impl PPU {
         Self {
             lcd,
             clock: 0,
-            clock_next_target: REFRESH_CYCLE,
+            clock_next_target: SCANLINE_CYCLE,
             frame_buffer: [[WHITE; 160]; 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],

@@ -153,7 +153,7 @@ pub struct CPU {
 
     // 以下はIOレジスタ
     // 0xFF00 コントロールパッド情報/機種タイプ
-    p1: u8,
+    // p1: u8,
     // 0xFF01 シリアル通信送受信データ
     sb: u8,
     // 0xFF02 シリアル通信制御
@@ -184,7 +184,6 @@ impl CPU {
             registers: Registers::new(),
             is_halted: false,
             ime: false,
-            p1: 0,
             sb: 0,
             sc: 0,
             div: 0,
@@ -822,7 +821,8 @@ impl CPU {
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
                 match address {
-                    0xFF00 => self.p1,
+                    // JoyPad
+                    0xFF00 => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF01 => self.sb,
                     0xFF02 => self.sc,
                     0xFF04 => self.div,
@@ -863,7 +863,8 @@ impl CPU {
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
                 match address {
-                    0xFF00 => self.p1 = data,
+                    // JoyPad
+                    0xFF00 => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF01 => {
                         if let Some(c) = char::from_u32(data as u32) {
                             if c.is_ascii() && data != 0 {
