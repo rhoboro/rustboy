@@ -167,7 +167,7 @@ pub struct CPU {
     // sound: Box<dyn IO>,
 
     // 0xFF46 DMA(Direct Memory Access)
-    dma: u8,
+    // dma: u8,
     // 0xFF40 - 0xFF4B
     // lcd: Box<dyn IO>,
 
@@ -187,7 +187,6 @@ impl CPU {
             sb: 0,
             sc: 0,
             div: 0,
-            dma: 0,
         }
     }
     pub fn tick(&mut self) -> Result<(u16, u8), &str> {
@@ -270,11 +269,11 @@ impl CPU {
     fn reset_interrupt(&mut self, p: &Peripheral) {
         // このロジックは Interruption に持たせたいが、可変参照が必要になるので一旦ここで定義する
         let data = match p {
-            Peripheral::VBlank => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::LcdStatus => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::Timer => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::Serial => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::Joypad => self.read(0xFF0F) & 0b_0000_0000,
+            Peripheral::VBlank => self.read(0xFF0F) & 0b_0001_1110,
+            Peripheral::LcdStatus => self.read(0xFF0F) & 0b_0001_1101,
+            Peripheral::Timer => self.read(0xFF0F) & 0b_0001_1011,
+            Peripheral::Serial => self.read(0xFF0F) & 0b_0001_0111,
+            Peripheral::Joypad => self.read(0xFF0F) & 0b_0000_1111,
         };
         self.write(0xFF0F, data);
     }
@@ -829,7 +828,6 @@ impl CPU {
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF0F => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().read(address),
-                    0xFF46 => self.dma,
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().read(address),
                     _ => {
@@ -878,7 +876,6 @@ impl CPU {
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF0F => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().write(address, data),
-                    0xFF46 => self.dma = data,
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().write(address, data),
                     _ => {
@@ -935,7 +932,6 @@ impl CPU {
         self.write(0xFF43, 0x00); // SCX
         self.write(0xFF44, 0x91); // LY
         self.write(0xFF45, 0x00); // LYC
-        self.write(0xFF46, 0xFF); // DMA
         self.write(0xFF47, 0xFC); // BGP
         self.write(0xFF48, 0xFF); // OBP0
         self.write(0xFF49, 0xFF); // OBP1

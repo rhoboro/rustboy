@@ -1,9 +1,11 @@
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
+use std::rc::Weak;
 use std::vec::IntoIter;
 
 use crate::arithmetic::{AddSigned, ToSigned};
-use crate::io::IO;
+use crate::io::{Bus, IO};
 use crate::Address;
 
 const WHITE: PixelData = PixelData(255, 255, 255, 0);
@@ -347,11 +349,14 @@ pub struct PPU {
     wy: u8,
     // 0xFF4B: ウィンドウX座標
     wx: u8,
+
+    bus: Weak<RefCell<dyn Bus>>,
 }
 
 impl PPU {
-    pub fn new(lcd: Box<dyn LCD>) -> Self {
+    pub fn new(lcd: Box<dyn LCD>, bus: Weak<RefCell<dyn Bus>>) -> Self {
         Self {
+            bus,
             lcd,
             clock: 0,
             clock_next_target: SCANLINE_CYCLE,
@@ -384,6 +389,11 @@ impl PPU {
             self.clock_next_target += SCANLINE_CYCLE;
             self.scan_line(self.ly);
             self.ly += 1;
+            if self.ly == HEIGHT_LCD {
+                // V-Blank 割り込み
+                let value = self.bus.upgrade().unwrap().borrow().read(0xFF0F) | 0b_0000_0001;
+                self.bus.upgrade().unwrap().borrow().write(0xFF0F, value);
+            }
             if self.ly >= (HEIGHT_LCD + HEIGHT_LCD_MARGIN) {
                 debug_log!("LCD REFRESH!!!");
                 self.lcd.draw(&self.frame_buffer);
@@ -550,6 +560,17 @@ impl IO for PPU {
                     0xFF43 => self.scx = data as u16,
                     0xFF44 => self.ly = data as u16,
                     0xFF45 => self.lyc = data,
+                    0xFF46 => {
+                        // OAM DMA 転送
+                        // 転送元: XX00 - XX9F の4バイトx40個を転送。XXは00-F1
+                        // 転送元: FE00 - FE9F
+                        let src_start = (data as u16) << 8;
+                        let src_end = src_start | 0x009F;
+                        for a in (src_start..=src_end).step_by(0x1) {
+                            let data = self.bus.upgrade().unwrap().borrow().read(a);
+                            self.oam[(a - src_start) as usize] = data;
+                        }
+                    }
                     0xFF47 => self.bgp = data,
                     0xFF48 => self.obp0 = data,
                     0xFF49 => self.obp1 = data,

@@ -44,7 +44,7 @@ pub struct MotherBoard {
     cartridge: RefCell<Cartridge>,
     ram: RefCell<[u8; 4 * 1024 * 2]>,
     stack: RefCell<Stack>,
-    ppu: RefCell<Box<PPU>>,
+    ppu: Option<RefCell<Box<PPU>>>,
     interruption: RefCell<Box<Interruption>>,
     timer: Option<RefCell<Timer>>,
     sound: RefCell<Box<dyn IO>>,
@@ -55,24 +55,28 @@ impl MotherBoard {
     pub fn new(config: &Config) -> Rc<RefCell<Self>> {
         let cartridge = RefCell::new(Cartridge::new(&config.rom_file));
         debug_log!("{:?}", cartridge);
-        let ppu = RefCell::new(Box::new(PPU::new(Box::new(BrailleTerminal::new()))));
         let interruption = RefCell::new(Box::new(Interruption::new()));
         let sound = RefCell::new(Box::new(Sound {}));
         let joypad = RefCell::new(Box::new(JoyPad::new()));
         let mut mb = Rc::new(RefCell::new(Self {
             cartridge,
-            ppu,
             sound,
             joypad,
             interruption,
+            ppu: Option::None,
             ram: RefCell::new([0; 4 * 1024 * 2]),
             stack: RefCell::new([0; 128]),
             timer: Option::None,
             cpu: Option::None,
         }));
+        let ppu = RefCell::new(Box::new(PPU::new(
+            Box::new(BrailleTerminal::new()),
+            Rc::<RefCell<MotherBoard>>::downgrade(&mb),
+        )));
         let timer = RefCell::new(Timer::new(Rc::<RefCell<MotherBoard>>::downgrade(&mb)));
         let cpu = RefCell::new(CPU::new(Rc::<RefCell<MotherBoard>>::downgrade(&mb)));
         mb.as_ref().borrow_mut().cpu = Option::Some(cpu);
+        mb.as_ref().borrow_mut().ppu = Option::Some(ppu);
         mb.as_ref().borrow_mut().timer = Option::Some(timer);
         mb
     }
@@ -84,14 +88,14 @@ impl MotherBoard {
         loop {
             let (opcode, cycle) = cpu.tick().unwrap();
             {
-                self.ppu.borrow_mut().tick(cycle);
+                self.ppu.as_ref().unwrap().borrow_mut().tick(cycle);
                 self.timer.as_ref().unwrap().borrow_mut().tick(cycle);
             }
             bp.breakpoint(
                 opcode,
                 &cpu,
                 &self.stack.borrow(),
-                &self.ppu.borrow(),
+                &self.ppu.as_ref().unwrap().borrow(),
                 &self.interruption.borrow(),
                 &self.timer.as_ref().unwrap().borrow(),
             );
@@ -111,7 +115,7 @@ impl Bus for MotherBoard {
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
-                self.ppu.borrow().read(address)
+                self.ppu.as_ref().unwrap().borrow().read(address)
             }
             0xA000..=0xBFFF => {
                 // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
@@ -137,11 +141,11 @@ impl Bus for MotherBoard {
             // 以降はシステム領域（WR信号は外部に出力されずCPU内部で処理される）
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
             0xFF00 => self.joypad.borrow().read(address),
-            0xFE00..=0xFE9F => self.ppu.borrow().read(address),
+            0xFE00..=0xFE9F => self.ppu.as_ref().unwrap().borrow().read(address),
             // 以下はI/Oポート
             0xFF05..=0xFF07 => self.timer.as_ref().unwrap().borrow().read(address),
             0xFF10..=0xFF3F => self.sound.borrow().read(address),
-            0xFF40..=0xFF4B => self.ppu.borrow().read(address),
+            0xFF40..=0xFF4B => self.ppu.as_ref().unwrap().borrow().read(address),
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
                 self.stack.borrow()[(address - 0xFF80) as usize]
@@ -162,7 +166,7 @@ impl Bus for MotherBoard {
             }
             0x8000..=0x9FFF => {
                 // 0x8000 - 0x9FFF: 8KB VRAM
-                self.ppu.borrow_mut().write(address, data);
+                self.ppu.as_ref().unwrap().borrow_mut().write(address, data);
             }
             0xA000..=0xBFFF => {
                 // 0xA000 - 0xBFFF: 8KB カートリッジ RAM バンク0 から N
@@ -187,7 +191,7 @@ impl Bus for MotherBoard {
             }
             // 以降はシステム領域（WR信号は外部に出力されず本来はCPU内部で処理される）
             // 0xFE00 - 0xFE9F: スプライト属性テーブル (OAM)
-            0xFE00..=0xFE9F => self.ppu.borrow_mut().write(address, data),
+            0xFE00..=0xFE9F => self.ppu.as_ref().unwrap().borrow_mut().write(address, data),
             // 以下はI/Oポート
             0xFF00 => self.joypad.borrow_mut().write(address, data),
             0xFF05..=0xFF07 => self
@@ -197,7 +201,7 @@ impl Bus for MotherBoard {
                 .borrow_mut()
                 .write(address, data),
             0xFF10..=0xFF3F => self.sound.borrow_mut().write(address, data),
-            0xFF40..=0xFF4B => self.ppu.borrow_mut().write(address, data),
+            0xFF40..=0xFF4B => self.ppu.as_ref().unwrap().borrow_mut().write(address, data),
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
                 self.stack.borrow_mut()[(address - 0xFF80) as usize] = data;
