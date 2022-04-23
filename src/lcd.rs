@@ -6,9 +6,9 @@ impl Debug for PixelData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             PixelData(255, 255, 255, 0) => write!(f, " "),
-            PixelData(170, 170, 170, 0) => write!(f, "B"),
-            PixelData(85, 85, 85, 0) => write!(f, "C"),
-            PixelData(0, 0, 0, 0) => write!(f, "D"),
+            PixelData(170, 170, 170, 0) => write!(f, "{}", char::from_u32(0x25A1).unwrap()),
+            PixelData(85, 85, 85, 0) => write!(f, "{}", char::from_u32(0x25A6).unwrap()),
+            PixelData(0, 0, 0, 0) => write!(f, "{}", char::from_u32(0x25A0).unwrap()),
             _ => write!(f, ""),
         }
     }
