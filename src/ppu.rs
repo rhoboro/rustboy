@@ -130,7 +130,7 @@ struct TileLine {
     high: u8,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Sprite {
     y_position: u16,
     x_position: u16,
@@ -142,19 +142,19 @@ impl Sprite {
     pub const BASE_ADDRESS: Address = 0x8000;
 
     fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: LcdControl) -> Vec<Sprite> {
-        let mut sprite_buffer = Vec::with_capacity(10);
+        let mut sprite_buffer = Vec::with_capacity(40);
         for sprite_bytes in oam.chunks(4) {
             debug_log!("sprite_bytes: {:?}", sprite_bytes);
             match Sprite::new(sprite_bytes, ly, lcdc) {
                 Some(sprite) => {
                     sprite_buffer.push(sprite);
-                    if sprite_buffer.len() >= 10 {
-                        break;
-                    }
                 }
                 _ => (),
             }
         }
+        // 1度の ScanLine で表示できるスプライトは優先度の高い10個まで
+        sprite_buffer.sort_by_key(|x| (x.x_position, x.tile_number));
+        sprite_buffer.truncate(10);
         sprite_buffer
     }
     fn new(bytes: &[u8], ly: u16, lcdc: LcdControl) -> Option<Self> {
