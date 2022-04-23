@@ -3275,8 +3275,8 @@ impl CPU {
     fn ldh_a_a8_0xf0(&mut self) -> u8 {
         debug_log!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
-        debug_log!("LDH A, (a8): {:04X?}", 0xFF00 + a8);
-        debug_log!("LDH A, (a8): {:08b}", self.read(0xFF00 + a8));
+        debug_log!("LDH A, (a8): 0x{:04X?}", 0xFF00 + a8);
+        debug_log!("LDH A, (a8): 0b{:08b}", self.read(0xFF00 + a8));
         self.registers.a = self.read(0xFF00 + a8);
         12
     }
@@ -3392,6 +3392,7 @@ impl CPU {
     fn cp_d8_0xfe(&mut self) -> u8 {
         debug_log!("CP d8");
         let rhs = self.fetch();
+        debug_log!("CP d8: 0b{:08b}", rhs);
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a.wrapping_sub(rhs) == 0;

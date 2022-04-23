@@ -144,6 +144,7 @@ impl Sprite {
     fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: LcdControl) -> Vec<Sprite> {
         let mut sprite_buffer = Vec::with_capacity(10);
         for sprite_bytes in oam.chunks(4) {
+            debug_log!("sprite_bytes: {:?}", sprite_bytes);
             match Sprite::new(sprite_bytes, ly, lcdc) {
                 Some(sprite) => {
                     sprite_buffer.push(sprite);
@@ -423,6 +424,7 @@ impl PPU {
             }
             // mode 2: OAM Scan
             let sprite_buffer = Sprite::oam_scan(&self.oam, self.ly, self.lcdc);
+            debug_log!("sprite_buffer: {:?}", sprite_buffer.len());
 
             // mode 3: Drawing
             for sprite in &sprite_buffer {
@@ -543,7 +545,7 @@ impl IO for PPU {
     fn write(&mut self, address: Address, data: u8) {
         match address {
             0xFE00..=0xFE9F => {
-                debug_log!("Write Vram: {:X?}, Data: {}", address, data);
+                debug_log!("Write OAM: {:X?}, Data: {}", address, data);
                 self.oam[(address - 0xFE00) as usize] = data;
             }
             0x8000..=0x9FFF => {
@@ -561,13 +563,16 @@ impl IO for PPU {
                     0xFF44 => self.ly = data as u16,
                     0xFF45 => self.lyc = data,
                     0xFF46 => {
+                        debug_log!("Write FF46: 0x{:04X?}", data);
                         // OAM DMA 転送
                         // 転送元: XX00 - XX9F の4バイトx40個を転送。XXは00-F1
                         // 転送元: FE00 - FE9F
                         let src_start = (data as u16) << 8;
+                        debug_log!("src_start: 0x{:04X?}", src_start);
                         let src_end = src_start | 0x009F;
                         for a in (src_start..=src_end).step_by(0x1) {
                             let data = self.bus.upgrade().unwrap().borrow().read(a);
+                            debug_log!("Write OAM: {:04X?}, Data: {}", a, data);
                             self.oam[(a - src_start) as usize] = data;
                         }
                     }
