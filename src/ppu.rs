@@ -433,7 +433,10 @@ impl PPU {
                     let low = self.read(address);
                     let high = self.read(address + 1);
                     let tile_line = TileLine { low, high };
-                    for color in tile_line {
+                    for color in tile_line
+                        .into_iter()
+                        .skip((rx - (sprite.x_position - 8)) as usize)
+                    {
                         self.fifo_sprite.push_back(Pixel {
                             color,
                             palette: self.obp0,
