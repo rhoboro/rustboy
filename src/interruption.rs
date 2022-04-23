@@ -150,7 +150,7 @@ impl IO for Interruption {
             // 割り込みフラグ
             0xFF0F => self.interrupts.into(),
             // 割り込み有効
-            0xFFFF => self.interrupts.into(),
+            0xFFFF => self.enables.into(),
             _ => unreachable!(),
         }
     }

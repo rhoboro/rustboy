@@ -153,7 +153,7 @@ pub struct CPU {
 
     // 以下はIOレジスタ
     // 0xFF00 コントロールパッド情報/機種タイプ
-    p1: u8,
+    // p1: u8,
     // 0xFF01 シリアル通信送受信データ
     sb: u8,
     // 0xFF02 シリアル通信制御
@@ -167,7 +167,7 @@ pub struct CPU {
     // sound: Box<dyn IO>,
 
     // 0xFF46 DMA(Direct Memory Access)
-    dma: u8,
+    // dma: u8,
     // 0xFF40 - 0xFF4B
     // lcd: Box<dyn IO>,
 
@@ -184,11 +184,9 @@ impl CPU {
             registers: Registers::new(),
             is_halted: false,
             ime: false,
-            p1: 0,
             sb: 0,
             sc: 0,
             div: 0,
-            dma: 0,
         }
     }
     pub fn tick(&mut self) -> Result<(u16, u8), &str> {
@@ -271,11 +269,11 @@ impl CPU {
     fn reset_interrupt(&mut self, p: &Peripheral) {
         // このロジックは Interruption に持たせたいが、可変参照が必要になるので一旦ここで定義する
         let data = match p {
-            Peripheral::VBlank => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::LcdStatus => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::Timer => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::Serial => self.read(0xFF0F) & 0b_0000_0000,
-            Peripheral::Joypad => self.read(0xFF0F) & 0b_0000_0000,
+            Peripheral::VBlank => self.read(0xFF0F) & 0b_0001_1110,
+            Peripheral::LcdStatus => self.read(0xFF0F) & 0b_0001_1101,
+            Peripheral::Timer => self.read(0xFF0F) & 0b_0001_1011,
+            Peripheral::Serial => self.read(0xFF0F) & 0b_0001_0111,
+            Peripheral::Joypad => self.read(0xFF0F) & 0b_0000_1111,
         };
         self.write(0xFF0F, data);
     }
@@ -822,14 +820,14 @@ impl CPU {
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
                 match address {
-                    0xFF00 => self.p1,
+                    // JoyPad
+                    0xFF00 => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF01 => self.sb,
                     0xFF02 => self.sc,
                     0xFF04 => self.div,
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF0F => self.bus.upgrade().unwrap().borrow().read(address),
                     0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().read(address),
-                    0xFF46 => self.dma,
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().read(address),
                     _ => {
@@ -859,12 +857,12 @@ impl CPU {
             0xFEA0..=0xFEFF => {
                 // 0xFEA0 - 0xFEFF: 未使用
                 debug_log!("ignored: {:X?}", address);
-                unreachable!()
             }
             0xFF00..=0xFF7F => {
                 // 0xFF00 - 0xFF7F: I/Oレジスタ
                 match address {
-                    0xFF00 => self.p1 = data,
+                    // JoyPad
+                    0xFF00 => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF01 => {
                         if let Some(c) = char::from_u32(data as u32) {
                             if c.is_ascii() && data != 0 {
@@ -878,7 +876,6 @@ impl CPU {
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF0F => self.bus.upgrade().unwrap().borrow().write(address, data),
                     0xFF10..=0xFF3F => self.bus.upgrade().unwrap().borrow().write(address, data),
-                    0xFF46 => self.dma = data,
                     // LCD
                     0xFF40..=0xFF4B => self.bus.upgrade().unwrap().borrow().write(address, data),
                     _ => {
@@ -935,7 +932,6 @@ impl CPU {
         self.write(0xFF43, 0x00); // SCX
         self.write(0xFF44, 0x91); // LY
         self.write(0xFF45, 0x00); // LYC
-        self.write(0xFF46, 0xFF); // DMA
         self.write(0xFF47, 0xFC); // BGP
         self.write(0xFF48, 0xFF); // OBP0
         self.write(0xFF49, 0xFF); // OBP1
@@ -3279,8 +3275,8 @@ impl CPU {
     fn ldh_a_a8_0xf0(&mut self) -> u8 {
         debug_log!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
-        debug_log!("LDH A, (a8): {:04X?}", 0xFF00 + a8);
-        debug_log!("LDH A, (a8): {:08b}", self.read(0xFF00 + a8));
+        debug_log!("LDH A, (a8): 0x{:04X?}", 0xFF00 + a8);
+        debug_log!("LDH A, (a8): 0b{:08b}", self.read(0xFF00 + a8));
         self.registers.a = self.read(0xFF00 + a8);
         12
     }
@@ -3396,6 +3392,7 @@ impl CPU {
     fn cp_d8_0xfe(&mut self) -> u8 {
         debug_log!("CP d8");
         let rhs = self.fetch();
+        debug_log!("CP d8: 0b{:08b}", rhs);
         self.registers.f.h = self.registers.a.calc_half_borrow(rhs);
         self.registers.f.c = self.registers.a.calc_borrow(rhs);
         self.registers.f.z = self.registers.a.wrapping_sub(rhs) == 0;

@@ -28,9 +28,17 @@ impl Mbc for RomOnly {
         debug_log!("Read Rom: {:04X?}", address);
         match address {
             // ROMバンク0から読み込み
-            0x0000..=0x3FFF => self.rom_banks[0][address as usize],
+            0x0000..=0x3FFF => {
+                let d = self.rom_banks[0][address as usize];
+                debug_log!("Read ROM 0(0x{:04X?}): 0x{:04X?}", address, d);
+                d
+            }
             // ROMバンク1から読み込み
-            0x4000..=0x7FFF => self.rom_banks[1][(address - 0x4000) as usize],
+            0x4000..=0x7FFF => {
+                let d = self.rom_banks[1][(address - 0x4000) as usize];
+                debug_log!("Read ROM 1(0x{:04X?}): 0x{:04X?}", address, d);
+                d
+            }
             // RAMから読み込み
             0xA000..=0xBFFF => self.ram_banks[0][(address - 0xA000) as usize],
             _ => unreachable!(),

@@ -1,12 +1,13 @@
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
+use std::rc::Weak;
 use std::vec::IntoIter;
 
 use crate::arithmetic::{AddSigned, ToSigned};
-use crate::io::IO;
+use crate::io::{Bus, IO};
 use crate::Address;
 
-const REFRESH_CYCLE: u64 = 70224;
 const WHITE: PixelData = PixelData(255, 255, 255, 0);
 const LIGHT_GRAY: PixelData = PixelData(170, 170, 170, 0);
 const DARK_GRAY: PixelData = PixelData(85, 85, 85, 0);
@@ -14,12 +15,14 @@ const BLACK: PixelData = PixelData(0, 0, 0, 0);
 
 const WIDTH_LCD: u16 = 160;
 const HEIGHT_LCD: u16 = 144;
+const HEIGHT_LCD_MARGIN: u16 = 10;
 const WIDTH_TILE: u16 = 8;
 const HEIGHT_TILE: u16 = 8;
 const WIDTH_BG: u16 = 256;
 const HEIGHT_BG: u16 = 256;
 const WIDTH_WINDOW: u16 = 256;
 const HEIGHT_WINDOW: u16 = 256;
+const SCANLINE_CYCLE: u64 = 456;
 
 pub type FrameBuffer = [[PixelData; WIDTH_LCD as usize]; HEIGHT_LCD as usize];
 pub trait LCD {
@@ -42,9 +45,44 @@ enum PPUMode {
     Drawing,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum TileDataSelect {
     Method8000,
     Method8800,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum TileMapSelect {
+    Method9C00,
+    Method9800,
+}
+
+impl From<TileMapSelect> for Address {
+    fn from(v: TileMapSelect) -> Self {
+        if v == TileMapSelect::Method9C00 {
+            // 0x9C00 - 0x9FFF の1024個
+            0x9C00
+        } else {
+            // 0x9800 - 0x9BFF の1024個
+            0x9800
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum SpriteSize {
+    Normal,
+    Tall,
+}
+
+impl From<SpriteSize> for u16 {
+    fn from(v: SpriteSize) -> Self {
+        if v == SpriteSize::Tall {
+            16
+        } else {
+            8
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -79,7 +117,7 @@ struct Pixel {
     // 未使用
     // sprite: u8,
     // スプライトの bit7 の値
-    background_priority: u8,
+    background_priority: bool,
 }
 
 // タイルは 8 x 8 ピクセル。1ピクセルは2bitで4色。
@@ -90,6 +128,62 @@ type Tile = [u8; 8 * 2];
 struct TileLine {
     low: u8,
     high: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Sprite {
+    y_position: u16,
+    x_position: u16,
+    tile_number: u8,
+    flags: u8,
+}
+
+impl Sprite {
+    pub const BASE_ADDRESS: Address = 0x8000;
+
+    fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: LcdControl) -> Vec<Sprite> {
+        let mut sprite_buffer = Vec::with_capacity(40);
+        for sprite_bytes in oam.chunks(4) {
+            debug_log!("sprite_bytes: {:?}", sprite_bytes);
+            match Sprite::new(sprite_bytes, ly, lcdc) {
+                Some(sprite) => {
+                    sprite_buffer.push(sprite);
+                }
+                _ => (),
+            }
+        }
+        // 1度の ScanLine で表示できるスプライトは優先度の高い10個まで
+        sprite_buffer.sort_by_key(|x| (x.x_position, x.tile_number));
+        sprite_buffer.truncate(10);
+        sprite_buffer
+    }
+    fn new(bytes: &[u8], ly: u16, lcdc: LcdControl) -> Option<Self> {
+        if bytes.len() != 4 {
+            return Option::None;
+        }
+        let sprite = Self {
+            y_position: bytes[0].into(),
+            x_position: bytes[1].into(),
+            tile_number: bytes[2].into(),
+            flags: bytes[3].into(),
+        };
+        if sprite.x_position <= 0 || 168 < sprite.x_position {
+            return Option::None;
+        }
+        if ly + 16 < sprite.y_position {
+            return Option::None;
+        }
+        if ly + 16 >= sprite.y_position + u16::from(lcdc.sprite_size) {
+            return Option::None;
+        }
+        Some(sprite)
+    }
+    fn tile_address(&self, ly: u16, scy: u16) -> Address {
+        let base_address =
+            Sprite::BASE_ADDRESS + self.tile_number.to_unsigned_u16().wrapping_mul(16);
+        let offset = 2 * ((ly + scy) % HEIGHT_TILE);
+        base_address + offset
+    }
 }
 
 impl IntoIterator for TileLine {
@@ -109,6 +203,82 @@ impl IntoIterator for TileLine {
             v.push(color)
         }
         v.into_iter()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct LcdControl {
+    lcd_enable: bool,
+    window_tile_map_select: TileMapSelect,
+    window_enable: bool,
+    tile_data_select: TileDataSelect,
+    bg_tile_map_select: TileMapSelect,
+    sprite_size: SpriteSize,
+    sprite_enable: bool,
+    bg_win_enable: bool,
+}
+
+impl From<u8> for LcdControl {
+    fn from(v: u8) -> Self {
+        Self {
+            lcd_enable: (v & 0b_1000_0000) == 0b_1000_0000,
+            window_tile_map_select: if (v & 0b_0100_0000) == 0b_0100_0000 {
+                TileMapSelect::Method9C00
+            } else {
+                TileMapSelect::Method9800
+            },
+            window_enable: (v & 0b_0010_0000) == 0b_0010_0000,
+            tile_data_select: if (v & 0b_0001_0000) == 0b_0001_0000 {
+                TileDataSelect::Method8000
+            } else {
+                TileDataSelect::Method8800
+            },
+            bg_tile_map_select: if (v & 0b_0000_1000) == 0b_0000_1000 {
+                TileMapSelect::Method9C00
+            } else {
+                TileMapSelect::Method9800
+            },
+            sprite_size: if (v & 0b_0000_0100) == 0b_0000_0100 {
+                SpriteSize::Tall
+            } else {
+                SpriteSize::Normal
+            },
+            sprite_enable: (v & 0b_0000_0010) == 0b_0000_0010,
+            bg_win_enable: (v & 0b_0000_0001) == 0b_0000_0001,
+        }
+    }
+}
+
+impl From<LcdControl> for u8 {
+    fn from(lcdc: LcdControl) -> Self {
+        let mut v;
+        if lcdc.lcd_enable {
+            v = 0b_1000_0000;
+        } else {
+            v = 0b_0000_0000;
+        }
+        if lcdc.window_tile_map_select == TileMapSelect::Method9C00 {
+            v |= 0b_0100_0000;
+        }
+        if lcdc.window_enable {
+            v |= 0b_0010_0000;
+        }
+        if lcdc.tile_data_select == TileDataSelect::Method8000 {
+            v |= 0b_0001_0000;
+        }
+        if lcdc.bg_tile_map_select == TileMapSelect::Method9C00 {
+            v |= 0b_0000_1000;
+        }
+        if lcdc.sprite_size == SpriteSize::Tall {
+            v |= 0b_0000_0100;
+        }
+        if lcdc.sprite_enable {
+            v |= 0b_0000_0010;
+        }
+        if lcdc.bg_win_enable {
+            v |= 0b_0000_0001;
+        }
+        v
     }
 }
 
@@ -158,7 +328,7 @@ pub struct PPU {
     // 5bit: 1ならウィンドウも描画, 0ならウィンドウは無視
     // 4bit: 1なら Method 8000, 0なら Method 8800
     // 3bit: 1なら 0x9C00 - 0x9FFF, 0なら 0x9800 - 0x9BFF にある背景データを使う
-    lcdc: u8,
+    lcdc: LcdControl,
     // 0xFF41: LCDステータス
     stat: u8,
     // 0xFF42: スクロールY座標
@@ -180,18 +350,21 @@ pub struct PPU {
     wy: u8,
     // 0xFF4B: ウィンドウX座標
     wx: u8,
+
+    bus: Weak<RefCell<dyn Bus>>,
 }
 
 impl PPU {
-    pub fn new(lcd: Box<dyn LCD>) -> Self {
+    pub fn new(lcd: Box<dyn LCD>, bus: Weak<RefCell<dyn Bus>>) -> Self {
         Self {
+            bus,
             lcd,
             clock: 0,
-            clock_next_target: REFRESH_CYCLE,
+            clock_next_target: SCANLINE_CYCLE,
             frame_buffer: [[WHITE; 160]; 144],
             oam: [0; 4 * 40],
             vram: [0; 8 * 1024],
-            lcdc: 0,
+            lcdc: LcdControl::from(0),
             stat: 0,
             scy: 0,
             scx: 0,
@@ -207,23 +380,6 @@ impl PPU {
         }
     }
 
-    fn tile_data_select(&self) -> TileDataSelect {
-        if (self.lcdc & 0b00010000) != 0 {
-            TileDataSelect::Method8000
-        } else {
-            TileDataSelect::Method8800
-        }
-    }
-    fn background_data_select(&self) -> Address {
-        if (self.lcdc & 0b00001000) != 0 {
-            // 0x9C00 - 0x9FFF の1024個
-            0x9C00
-        } else {
-            // 0x9800 - 0x9BFF の1024個
-            0x9800
-        }
-    }
-
     pub fn print_vram(&self) {
         println!("{:?}", self.vram);
     }
@@ -231,24 +387,20 @@ impl PPU {
     pub fn tick(&mut self, cycle: u8) {
         self.clock += cycle as u64;
         if self.clock_next_target <= self.clock {
-            debug_log!("LCD REFRESH!!!");
-            self.clock_next_target += REFRESH_CYCLE;
-            self.scan_lines();
-        }
-    }
-
-    fn scan_lines(&mut self) {
-        self.ly = 0;
-        loop {
-            // ly レジスタが現在処理中の行
-            // 1画面は154行（LCD144行 + 擬似スキャンライン10行）
-            if self.ly >= HEIGHT_LCD {
-                break;
-            }
+            self.clock_next_target += SCANLINE_CYCLE;
             self.scan_line(self.ly);
             self.ly += 1;
+            if self.ly == HEIGHT_LCD {
+                // V-Blank 割り込み
+                let value = self.bus.upgrade().unwrap().borrow().read(0xFF0F) | 0b_0000_0001;
+                self.bus.upgrade().unwrap().borrow().write(0xFF0F, value);
+            }
+            if self.ly >= (HEIGHT_LCD + HEIGHT_LCD_MARGIN) {
+                debug_log!("LCD REFRESH!!!");
+                self.lcd.draw(&self.frame_buffer);
+                self.ly = 0;
+            }
         }
-        self.lcd.draw(&self.frame_buffer);
     }
 
     // 1行(= 160 pixel)の描画
@@ -260,6 +412,9 @@ impl PPU {
         // タイル番号を取得、タイルデータの1バイト目を取得、タイルデータの2バイト目を取得、対応するFIFOにプッシュ
         // FIFOは2つある（背景ウィンドウ用とスプライト用）
         // FIFOが埋まったらLCDにプッシュ。（2つのFIFOをマージすることもある）
+        if self.ly >= HEIGHT_LCD {
+            return;
+        }
 
         // スキャンラインごとのLCDにpushしたピクセル数(0 - 160)
         let mut rx = 0u16;
@@ -267,51 +422,87 @@ impl PPU {
             if rx >= WIDTH_LCD - 1 {
                 break;
             }
-            // TODO: OAMスキャン
-            let tile_number = self.fetch_tile_number(ly, rx);
-            let tile_data = self.fetch_tile_data(tile_number, ly);
+            // mode 2: OAM Scan
+            let sprite_buffer = Sprite::oam_scan(&self.oam, self.ly, self.lcdc);
+            debug_log!("sprite_buffer: {:?}", sprite_buffer.len());
+
+            // mode 3: Drawing
+            for sprite in &sprite_buffer {
+                if sprite.x_position <= rx + 8 {
+                    let address = sprite.tile_address(self.ly, self.scy);
+                    let low = self.read(address);
+                    let high = self.read(address + 1);
+                    let tile_line = TileLine { low, high };
+                    for color in tile_line {
+                        self.fifo_sprite.push_back(Pixel {
+                            color,
+                            palette: self.obp0,
+                            background_priority: (sprite.flags >> 7) == 0b1,
+                        });
+                    }
+                }
+            }
+
+            let tile_number = self.fetch_bg_tile_number(ly, rx);
+            let tile_data = self.fetch_bg_tile_data(tile_number, ly);
             if self.fifo_background.is_empty() {
                 assert_eq!(self.fifo_background.len(), 0);
-                self.push_fifo(tile_data);
+                self.push_bg_fifo(tile_data);
             }
+
             if !self.fifo_background.is_empty() {
                 // Push Pixel to LCD
                 let mut discarded = self.scx % 8;
                 while self.fifo_background.len() > 0 {
-                    let pixel = self.fifo_background.pop_front();
+                    let bg_pixel = self.fifo_background.pop_front().unwrap();
+                    let sp_pixel = self.fifo_sprite.pop_front();
+                    let pixel = match sp_pixel {
+                        Some(sp_pixel) => {
+                            if sp_pixel.color == Color::White {
+                                bg_pixel
+                            } else if sp_pixel.background_priority && bg_pixel.color != Color::White
+                            {
+                                bg_pixel
+                            } else {
+                                sp_pixel
+                            }
+                        }
+                        None => bg_pixel,
+                    };
                     if discarded > 0 {
                         discarded -= 1;
                         continue;
                     }
-                    self.frame_buffer[ly as usize][rx as usize] = pixel.unwrap().color.to_rgba();
+                    self.frame_buffer[ly as usize][rx as usize] = pixel.color.to_rgba();
                     rx += 1;
                 }
             }
+            // mode 0: H-Blank
         }
     }
 
-    fn fetch_tile_number(&self, ly: u16, rx: u16) -> u8 {
+    fn fetch_bg_tile_number(&self, ly: u16, rx: u16) -> u8 {
         self.read(tile_number_address(
-            self.background_data_select(),
+            self.lcdc.bg_tile_map_select.into(),
             ly,
             rx,
             self.scx,
             self.scy,
         ))
     }
-    fn fetch_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
-        let address = tile_number_to_address(tile_number, self.tile_data_select(), ly, self.scy);
+    fn fetch_bg_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
+        let address = tile_number_to_address(tile_number, self.lcdc.tile_data_select, ly, self.scy);
         let low = self.read(address);
         let high = self.read(address + 1);
         TileLine { low, high }
     }
-    fn push_fifo(&mut self, tile_line: TileLine) {
+    fn push_bg_fifo(&mut self, tile_line: TileLine) {
         // 8画素分のピクセルデータを fifo にいれ、pushしたピクセル数を返す
         for color in tile_line {
             self.fifo_background.push_back(Pixel {
                 color,
                 palette: self.obp0,
-                background_priority: 0,
+                background_priority: false,
             });
         }
     }
@@ -334,7 +525,7 @@ impl IO for PPU {
             0xFF40..=0xFF4B => {
                 // レジスタ
                 match address {
-                    0xFF40 => self.lcdc,
+                    0xFF40 => self.lcdc.into(),
                     0xFF41 => self.stat,
                     0xFF42 => self.scy.try_into().unwrap(),
                     0xFF43 => self.scx.try_into().unwrap(),
@@ -354,7 +545,7 @@ impl IO for PPU {
     fn write(&mut self, address: Address, data: u8) {
         match address {
             0xFE00..=0xFE9F => {
-                debug_log!("Write Vram: {:X?}, Data: {}", address, data);
+                debug_log!("Write OAM: {:X?}, Data: {}", address, data);
                 self.oam[(address - 0xFE00) as usize] = data;
             }
             0x8000..=0x9FFF => {
@@ -365,12 +556,26 @@ impl IO for PPU {
             0xFF40..=0xFF4B => {
                 // レジスタ
                 match address {
-                    0xFF40 => self.lcdc = data,
+                    0xFF40 => self.lcdc = LcdControl::from(data),
                     0xFF41 => self.stat = data,
                     0xFF42 => self.scy = data as u16,
                     0xFF43 => self.scx = data as u16,
                     0xFF44 => self.ly = data as u16,
                     0xFF45 => self.lyc = data,
+                    0xFF46 => {
+                        debug_log!("Write FF46: 0x{:04X?}", data);
+                        // OAM DMA 転送
+                        // 転送元: XX00 - XX9F の4バイトx40個を転送。XXは00-F1
+                        // 転送元: FE00 - FE9F
+                        let src_start = (data as u16) << 8;
+                        debug_log!("src_start: 0x{:04X?}", src_start);
+                        let src_end = src_start | 0x009F;
+                        for a in (src_start..=src_end).step_by(0x1) {
+                            let data = self.bus.upgrade().unwrap().borrow().read(a);
+                            debug_log!("Write OAM: {:04X?}, Data: {}", a, data);
+                            self.oam[(a - src_start) as usize] = data;
+                        }
+                    }
                     0xFF47 => self.bgp = data,
                     0xFF48 => self.obp0 = data,
                     0xFF49 => self.obp1 = data,
