@@ -108,7 +108,7 @@ impl Color {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Pixel {
     // パレット適用前の値
     color: Color,
@@ -424,11 +424,11 @@ impl PPU {
             }
             // mode 2: OAM Scan
             let sprite_buffer = Sprite::oam_scan(&self.oam, self.ly, self.lcdc);
-            debug_log!("sprite_buffer: {:?}", sprite_buffer.len());
+            debug_log!("sprite_buffer: {:?}", sprite_buffer);
 
             // mode 3: Drawing
             for sprite in &sprite_buffer {
-                if sprite.x_position <= rx + 8 {
+                if sprite.x_position - 8 <= rx && rx < sprite.x_position {
                     let address = sprite.tile_address(self.ly, self.scy);
                     let low = self.read(address);
                     let high = self.read(address + 1);
@@ -444,7 +444,7 @@ impl PPU {
             }
 
             let tile_number = self.fetch_bg_tile_number(ly, rx);
-            let tile_data = self.fetch_bg_tile_data(tile_number, ly);
+            let tile_data = self.fetch_bg_tile_data(tile_number, ly, self.scy);
             if self.fifo_background.is_empty() {
                 assert_eq!(self.fifo_background.len(), 0);
                 self.push_bg_fifo(tile_data);
@@ -455,6 +455,10 @@ impl PPU {
                 let mut discarded = self.scx % 8;
                 while self.fifo_background.len() > 0 {
                     let bg_pixel = self.fifo_background.pop_front().unwrap();
+                    if discarded > 0 {
+                        discarded -= 1;
+                        continue;
+                    }
                     let sp_pixel = self.fifo_sprite.pop_front();
                     let pixel = match sp_pixel {
                         Some(sp_pixel) => {
@@ -464,15 +468,12 @@ impl PPU {
                             {
                                 bg_pixel
                             } else {
+                                // FIXME: スプライトの優先度がおかしい。カーソルが全て表示されている様子
                                 sp_pixel
                             }
                         }
                         None => bg_pixel,
                     };
-                    if discarded > 0 {
-                        discarded -= 1;
-                        continue;
-                    }
                     self.frame_buffer[ly as usize][rx as usize] = pixel.color.to_rgba();
                     rx += 1;
                 }
@@ -490,8 +491,8 @@ impl PPU {
             self.scy,
         ))
     }
-    fn fetch_bg_tile_data(&self, tile_number: u8, ly: u16) -> TileLine {
-        let address = tile_number_to_address(tile_number, self.lcdc.tile_data_select, ly, self.scy);
+    fn fetch_bg_tile_data(&self, tile_number: u8, ly: u16, scy: u16) -> TileLine {
+        let address = tile_number_to_address(tile_number, self.lcdc.tile_data_select, ly, scy);
         let low = self.read(address);
         let high = self.read(address + 1);
         TileLine { low, high }
