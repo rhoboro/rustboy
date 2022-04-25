@@ -80,31 +80,31 @@ impl JoyPad {
     pub fn handle_key_event(&self, data: u8) -> Result<u8, TryRecvError> {
         let c = match self.cache.borrow().val {
             Some(c) => {
-                log_debug!("Read JoyPad: Cache: {:?}", c);
+                debug_log!("Read JoyPad: Cache: {:?}", c);
                 c
             }
             None => match self.rx.try_recv() {
                 Ok(key) => match key.chars().next() {
                     Some(c) => c,
-                    _ => 'y',
+                    _ => '\0',
                 },
-                Err(_) => 'x',
+                Err(_) => '\0',
             },
         };
-        if c == 'x' || c == 'y' {
-            log_debug!("Read JoyPad: NoKey: {:?}", c);
+        if c == '\0' {
+            debug_log!("Read JoyPad: NoKey: {:?}", c);
             return Ok(data | 0x0F);
         } else {
-            log_debug!("Read JoyPad: set: {:?}", c);
+            debug_log!("Read JoyPad: set: {:?}", c);
             self.cache.borrow_mut().val = Some(c);
         }
         match u8::from(self.buttons) & 0x30 {
             0x00 => {
-                log_debug!("JoyPad pushed 0x00: {:?}", c);
+                debug_log!("JoyPad pushed 0x00: {:?}", c);
                 Ok(data)
             }
             0x10 => {
-                log_debug!("JoyPad pushed 0x10: {:?}", c);
+                debug_log!("JoyPad pushed 0x10: {:?}", c);
                 match c {
                     '\n' => Ok(data | 0b_0000_0111),
                     ' ' => Ok(data | 0b_0000_1011),
@@ -114,9 +114,8 @@ impl JoyPad {
                 }
             }
             0x20 => {
-                log_debug!("JoyPad pushed 0x20: {:?}", c);
+                debug_log!("JoyPad pushed 0x20: {:?}", c);
                 match c {
-                    '\n' => Ok(data | 0b_0000_0111),
                     'j' => Ok(data | 0b_0000_0111),
                     'k' => Ok(data | 0b_0000_1011),
                     'l' => Ok(data | 0b_0000_1110),
@@ -125,7 +124,7 @@ impl JoyPad {
                 }
             }
             _ => {
-                log_debug!("JoyPad pushed _: {:?}, {:?}", u8::from(self.buttons), c);
+                debug_log!("JoyPad pushed _: {:?}, {:?}", u8::from(self.buttons), c);
                 Ok(data | 0x0F)
             }
         }
@@ -136,21 +135,21 @@ impl IO for JoyPad {
     fn read(&self, address: Address) -> u8 {
         match self.handle_key_event(u8::from(self.buttons)) {
             Ok(data) => {
-                log_debug!("Read JoyPad: {:X?}, Data: {}", address, data);
+                debug_log!("Read JoyPad: {:X?}, Data: {:08b}", address, data);
                 data
             }
             Err(e) => panic!("Read JoyPad: {:?}", e),
         }
     }
     fn write(&mut self, address: Address, data: u8) {
-        log_debug!("Write JoyPad: {:X?}, Data: {}", address, data);
+        debug_log!("Write JoyPad: {:X?}, Data: {}", address, data);
         self.buttons = Buttons::from(data);
         if data == 0x30 {
-            log_debug!("Write JoyPad: Reset");
+            debug_log!("Write JoyPad: Reset");
             self.cache.borrow_mut().val = Option::None;
         }
-        log_debug!(
-            "Writed JoyPad: {:X?}, Data: {}",
+        debug_log!(
+            "Writed JoyPad: {:X?}, Data: {:08b}",
             address,
             u8::from(self.buttons)
         );
