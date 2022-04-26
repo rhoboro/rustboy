@@ -150,10 +150,7 @@ impl Bus for MotherBoard {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
                 self.stack.borrow()[(address - 0xFF80) as usize]
             }
-            _ => {
-                debug_log!("unreachable: 0x{:04X?}", address);
-                unreachable!()
-            }
+            _ => unreachable!(),
         }
     }
 
@@ -205,7 +202,6 @@ impl Bus for MotherBoard {
             0xFF40..=0xFF4B => self.ppu.as_ref().unwrap().borrow_mut().write(address, data),
             0xFF80..=0xFFFE => {
                 // 0xFF80 - 0xFFFE: 上位RAM スタック用の領域
-                debug_log!("Write RAM Stack(0x{:04X}): 0x{:04X}", address, data);
                 self.stack.borrow_mut()[(address - 0xFF80) as usize] = data;
             }
             _ => unreachable!(),

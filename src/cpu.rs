@@ -536,10 +536,7 @@ impl CPU {
             0xFD => self.illegal_fd_0xfd(),
             0xFE => self.cp_d8_0xfe(),
             0xFF => self.rst_38h_0xff(),
-            _ => {
-                println!("not implemented opcode: 0x{:x?}", opcode);
-                unreachable!()
-            }
+            _ => unreachable!(),
         }
     }
     fn execute_cb(&mut self, opcode: u8) -> u8 {
@@ -800,10 +797,7 @@ impl CPU {
             0xFD => self.set_7_l_0xcbfd(),
             0xFE => self.set_7_hl_0xcbfe(),
             0xFF => self.set_7_a_0xcbff(),
-            _ => {
-                println!("not implemented opcode: 0xcb{:x?}", opcode);
-                unreachable!()
-            }
+            _ => unreachable!(),
         }
     }
     fn read(&self, address: Address) -> u8 {
@@ -863,14 +857,7 @@ impl CPU {
                 match address {
                     // JoyPad
                     0xFF00 => self.bus.upgrade().unwrap().borrow().write(address, data),
-                    0xFF01 => {
-                        if let Some(c) = char::from_u32(data as u32) {
-                            if c.is_ascii() && data != 0 {
-                                debug_log!("SB: {}", char::from_u32(data as u32).unwrap());
-                            }
-                        }
-                        self.sb = data
-                    }
+                    0xFF01 => self.sb = data,
                     0xFF02 => self.sc = data,
                     0xFF04 => self.div = data,
                     0xFF05..=0xFF07 => self.bus.upgrade().unwrap().borrow().write(address, data),
@@ -2790,16 +2777,6 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn push_bc_0xc5(&mut self) -> u8 {
         debug_log!("PUSH BC");
-        debug_log!(
-            "PUSH BC Stack {:04X?} {:04X?}",
-            self.registers.sp.wrapping_sub(1),
-            self.registers.b
-        );
-        debug_log!(
-            "PUSH BC Stack {:04X?} {:04X?}",
-            self.registers.sp.wrapping_sub(2),
-            self.registers.c
-        );
         self.write(self.registers.sp.wrapping_sub(1), self.registers.b);
         self.write(self.registers.sp.wrapping_sub(2), self.registers.c);
         self.registers.sp = self.registers.sp.wrapping_sub(2);
@@ -3275,8 +3252,6 @@ impl CPU {
     fn ldh_a_a8_0xf0(&mut self) -> u8 {
         debug_log!("LDH A, (a8)");
         let a8: u16 = self.fetch().into();
-        debug_log!("LDH A, (a8): 0x{:04X?}", 0xFF00 + a8);
-        debug_log!("LDH A, (a8): 0b{:08b}", self.read(0xFF00 + a8));
         self.registers.a = self.read(0xFF00 + a8);
         12
     }
@@ -3307,17 +3282,6 @@ impl CPU {
     // bytes: 1 cycles: [16]
     fn push_af_0xf5(&mut self) -> u8 {
         debug_log!("PUSH AF");
-        let x: u8 = self.registers.f.into();
-        debug_log!(
-            "PUSH AF Stack {:04X?} {:04X?}",
-            self.registers.sp.wrapping_sub(1),
-            self.registers.a
-        );
-        debug_log!(
-            "PUSH AF Stack {:04X?} {:04X?}",
-            self.registers.sp.wrapping_sub(2),
-            x
-        );
         self.write(self.registers.sp.wrapping_sub(1), self.registers.a);
         self.write(self.registers.sp.wrapping_sub(2), self.registers.f.into());
         self.registers.sp = self.registers.sp.wrapping_sub(2);

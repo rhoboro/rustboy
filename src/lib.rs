@@ -1,3 +1,5 @@
+extern crate core;
+
 pub use mother_board::{run, Config};
 
 #[macro_use]

@@ -179,7 +179,6 @@ impl Debug for Timer {
 
 impl IO for Timer {
     fn read(&self, address: Address) -> u8 {
-        debug_log!("Read Timer: {:X?}", address);
         match address {
             0xFF04 => self.div,
             0xFF05 => self.tima,
@@ -189,7 +188,6 @@ impl IO for Timer {
         }
     }
     fn write(&mut self, address: Address, data: u8) {
-        debug_log!("Write Timer: {:X?}, Data: {}", address, data);
         match address {
             0xFF04 => self.div = 0,
             0xFF05 => self.tima = data,

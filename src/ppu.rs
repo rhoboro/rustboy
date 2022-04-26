@@ -144,7 +144,6 @@ impl Sprite {
     fn oam_scan(oam: &[u8; 4 * 40], ly: u16, lcdc: LcdControl) -> Vec<Sprite> {
         let mut sprite_buffer = Vec::with_capacity(40);
         for sprite_bytes in oam.chunks(4) {
-            debug_log!("sprite_bytes: {:?}", sprite_bytes);
             match Sprite::new(sprite_bytes, ly, lcdc) {
                 Some(sprite) => {
                     sprite_buffer.push(sprite);
@@ -396,7 +395,6 @@ impl PPU {
                 self.bus.upgrade().unwrap().borrow().write(0xFF0F, value);
             }
             if self.ly >= (HEIGHT_LCD + HEIGHT_LCD_MARGIN) {
-                debug_log!("LCD REFRESH!!!");
                 self.lcd.draw(&self.frame_buffer);
                 self.ly = 0;
             }
@@ -424,7 +422,6 @@ impl PPU {
             }
             // mode 2: OAM Scan
             let sprite_buffer = Sprite::oam_scan(&self.oam, self.ly, self.lcdc);
-            debug_log!("sprite_buffer: {:?}", sprite_buffer);
 
             // mode 3: Drawing
             for sprite in &sprite_buffer {
@@ -515,19 +512,11 @@ impl PPU {
 impl IO for PPU {
     fn read(&self, address: Address) -> u8 {
         match address {
-            0xFE00..=0xFE9F => {
-                let data = self.oam[(address - 0xFE00) as usize];
-                debug_log!("Read Vram: {:X?}, Data: {}", address, data);
-                data
-            }
-            0x8000..=0x9FFF => {
-                // 0x8000 - 0x9FFF: 8KB VRAM
-                let data = self.vram[(address - 0x8000) as usize];
-                debug_log!("Read Vram: {:X?}, Data: {}", address, data);
-                data
-            }
+            0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
+            // 0x8000 - 0x9FFF: 8KB VRAM
+            0x8000..=0x9FFF => self.vram[(address - 0x8000) as usize],
+            // レジスタ
             0xFF40..=0xFF4B => {
-                // レジスタ
                 match address {
                     0xFF40 => self.lcdc.into(),
                     0xFF41 => self.stat,
@@ -548,17 +537,11 @@ impl IO for PPU {
     }
     fn write(&mut self, address: Address, data: u8) {
         match address {
-            0xFE00..=0xFE9F => {
-                debug_log!("Write OAM: {:X?}, Data: {}", address, data);
-                self.oam[(address - 0xFE00) as usize] = data;
-            }
-            0x8000..=0x9FFF => {
-                // 0x8000 - 0x9FFF: 8KB VRAM
-                debug_log!("Write Vram: {:X?}, Data: {}", address, data);
-                self.vram[(address - 0x8000) as usize] = data;
-            }
+            0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize] = data,
+            // 0x8000 - 0x9FFF: 8KB VRAM
+            0x8000..=0x9FFF => self.vram[(address - 0x8000) as usize] = data,
+            // レジスタ
             0xFF40..=0xFF4B => {
-                // レジスタ
                 match address {
                     0xFF40 => self.lcdc = LcdControl::from(data),
                     0xFF41 => self.stat = data,
@@ -567,16 +550,13 @@ impl IO for PPU {
                     0xFF44 => self.ly = data as u16,
                     0xFF45 => self.lyc = data,
                     0xFF46 => {
-                        debug_log!("Write FF46: 0x{:04X?}", data);
                         // OAM DMA 転送
                         // 転送元: XX00 - XX9F の4バイトx40個を転送。XXは00-F1
                         // 転送元: FE00 - FE9F
                         let src_start = (data as u16) << 8;
-                        debug_log!("src_start: 0x{:04X?}", src_start);
                         let src_end = src_start | 0x009F;
                         for a in (src_start..=src_end).step_by(0x1) {
                             let data = self.bus.upgrade().unwrap().borrow().read(a);
-                            debug_log!("Write OAM: {:04X?}, Data: {}", a, data);
                             self.oam[(a - src_start) as usize] = data;
                         }
                     }

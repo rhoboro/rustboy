@@ -46,7 +46,6 @@ impl Terminal {
 
 impl LCD for Terminal {
     fn draw(&self, frame_buffer: &FrameBuffer) {
-        debug_log!("draw");
         let mut buf = String::new();
 
         // clear
@@ -88,7 +87,6 @@ impl BrailleTerminal {
 
 impl LCD for BrailleTerminal {
     fn draw(&self, frame_buffer: &FrameBuffer) {
-        debug_log!("draw");
         // TODO: capacityの指定
         let mut buf = String::new();
         // clear

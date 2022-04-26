@@ -80,10 +80,8 @@ impl Mbc for Mbc1 {
                 // ROM バンク番号 (書き込み専用)
                 // ROM バンクの下位5bit
                 let mask = data & 0x1F;
-                debug_log!("current bank: {}", self.current_rom_bank);
                 self.current_rom_bank =
                     (self.current_rom_bank & 0b1100000) | (mask as usize & 0x7F);
-                debug_log!("new current bank: {}", self.current_rom_bank);
             }
             0x4000..=0x5FFF => {
                 // RAM バンク番号または、 ROM バンク番号の上位ビット (書き込み専用)
@@ -124,10 +122,7 @@ impl Mbc for Mbc1 {
                 }
                 RamMode::Disable => {}
             },
-            _ => {
-                debug_log!("address {:X?}", address);
-                unreachable!();
-            }
+            _ => unreachable!()
         }
     }
 }
