@@ -91,14 +91,14 @@ impl MotherBoard {
                 self.ppu.as_ref().unwrap().borrow_mut().tick(cycle);
                 self.timer.as_ref().unwrap().borrow_mut().tick(cycle);
             }
-            bp.breakpoint(
-                opcode,
-                &cpu,
-                &self.stack.borrow(),
-                &self.ppu.as_ref().unwrap().borrow(),
-                &self.interruption.borrow(),
-                &self.timer.as_ref().unwrap().borrow(),
-            );
+            // bp.breakpoint(
+            //     opcode,
+            //     &cpu,
+            //     &self.stack.borrow(),
+            //     &self.ppu.as_ref().unwrap().borrow(),
+            //     &self.interruption.borrow(),
+            //     &self.timer.as_ref().unwrap().borrow(),
+            // );
         }
     }
 }
