@@ -4,6 +4,15 @@
 cargo run <path_to_rom>
 ```
 
+### Example
+
+```shell
+# https://github.com/retrio/gb-test-roms/blob/master/cpu_instrs/cpu_instrs.gb
+cargo run cpu_instrs.gb > /dev/null
+```
+
+![screenshot01](./images/ss01.png)
+
 ## 参考リンク
 
 - [Rustでゲームボーイエミュレータを自作した話](https://mjhd.hatenablog.com/entry/2021/04/14/221813)
