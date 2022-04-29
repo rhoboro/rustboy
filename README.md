@@ -1,10 +1,14 @@
 # Rust で作るゲームボーイエミュレータ
 
+Rust の勉強を兼ねてるので標準ライブラリ縛りで実装しています。  
+そのため描画先はターミナルです。  
+まだまだ実装中のためバグだらけですが、[GBAダンパー V3](https://www.amazon.co.jp/gp/product/B0838CVZ49)で吸い出したテトリスが何となくプレイできるところまでは実装済みです。
+
 ```shell
 cargo run <path_to_rom>
 ```
 
-### Example
+### Examples
 
 ```shell
 # https://github.com/retrio/gb-test-roms/blob/master/cpu_instrs/cpu_instrs.gb
@@ -12,6 +16,15 @@ cargo run cpu_instrs.gb > /dev/null
 ```
 
 ![screenshot01](./images/ss01.png)
+
+```shell
+# Tetris Data loaded using GBA Dumper v3
+# GBA Dumper v3: https://www.amazon.co.jp/gp/product/B0838CVZ49
+cargo run Tetris.gb > /dev/null
+```
+
+![screenshot02](./images/ss02.png)
+
 
 ## 参考リンク
 
