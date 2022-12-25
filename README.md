@@ -33,6 +33,6 @@ cargo run Tetris.gb > /dev/null
 - [Pan Docs](https://gbdev.io/pandocs/)
 - [Game Boy CPU (SM83) instruction set](https://gbdev.io/gb-opcodes/optables/)
 - [GB Spec](https://w.atwiki.jp/gbspec/)
-- [GBEDG](https://hacktixme.ga/GBEDG/)
+- [Hacktix/GBEDG](https://github.com/Hacktix/GBEDG)
 - [Baekalfen/PyBoy](https://github.com/Baekalfen/PyBoy)
 - [retrio/gb-test-roms](https://github.com/retrio/gb-test-roms)
