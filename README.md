@@ -36,3 +36,4 @@ cargo run Tetris.gb > /dev/null
 - [Hacktix/GBEDG](https://github.com/Hacktix/GBEDG)
 - [Baekalfen/PyBoy](https://github.com/Baekalfen/PyBoy)
 - [retrio/gb-test-roms](https://github.com/retrio/gb-test-roms)
+- [dusterherz/gb-hello-world](https://github.com/dusterherz/gb-hello-world/releases/tag/1.1)
